@@ -30,6 +30,18 @@ def test_wrong_order_passes_when_unordered() -> None:
     assert score(res([("b", 5.0), ("a", 10.0)]), GOLD_ROWS, check)
 
 
+def test_equal_valued_columns_backtrack() -> None:
+    # Gold col 0 (1.0) matches got cols 0 and 1; gold col 1 (1.0015) matches only got col 0.
+    # Greedy would give got col 0 to gold col 0 and then fail on gold col 1.
+    check = {"type": "rows", "tolerance": 0.001, "ordered": True}
+    assert score(res([(1.0008, 1.0)]), res([(1.0, 1.0015)]), check)
+
+
+def test_unordered_rows_must_stay_intact() -> None:
+    check = {**ROWS_CHECK, "ordered": False}
+    assert not score(res([("a", 5.0), ("b", 10.0)]), GOLD_ROWS, check)
+
+
 def test_scalar_not_first_column() -> None:
     gold = res([(42.0,)])
     assert score(res([("label", 42.001)]), gold, {"type": "scalar", "tolerance": 0.01})

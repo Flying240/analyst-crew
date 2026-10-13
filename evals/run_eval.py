@@ -66,22 +66,25 @@ def column_matches(got_col: list[Any], gold_col: list[Any], tol: float, ordered:
     return len(got_col) == len(gold_col) and all(values_match(a, b, tol) for a, b in zip(got_col, gold_col))
 
 
-def map_columns(got: list[tuple], gold: list[tuple], tol: float, ordered: bool) -> list[int] | None:
-    """Map each gold column to a distinct got column with matching values (order/extras ignored)."""
-    width = len(got[0]) if got else 0
-    used: set[int] = set()
-    mapping: list[int] = []
-    for g in range(len(gold[0]) if gold else 0):
-        gold_col = column(gold, g)
-        match = next(
-            (i for i in range(width) if i not in used and column_matches(column(got, i), gold_col, tol, ordered)),
-            None,
-        )
-        if match is None:
-            return None
-        used.add(match)
-        mapping.append(match)
-    return mapping
+def rows_match_mapped(got: list[tuple], gold: list[tuple], tol: float, ordered: bool) -> bool:
+    """True if some one-to-one mapping of gold columns onto got columns makes the rows match.
+
+    Column order and extra got columns are ignored. Backtracks, so an early
+    choice between equal-valued columns can't block a valid mapping.
+    """
+    width, n_gold = len(got[0]), len(gold[0])
+    candidates = [
+        [i for i in range(width) if column_matches(column(got, i), column(gold, g), tol, ordered)]
+        for g in range(n_gold)
+    ]
+
+    def search(g: int, mapping: list[int]) -> bool:
+        if g == n_gold:
+            projected = [tuple(r[i] for i in mapping) for r in got]
+            return rows_match(projected, gold, tol, ordered)
+        return any(search(g + 1, mapping + [i]) for i in candidates[g] if i not in mapping)
+
+    return search(0, [])
 
 
 def score(got: SqlResult, gold: SqlResult, check: dict) -> bool:
@@ -92,12 +95,7 @@ def score(got: SqlResult, gold: SqlResult, check: dict) -> bool:
         # Exactly one row with exactly one numeric value; text labels are allowed.
         numbers = [v for v in got.rows[0] if is_number(v)]
         return len(got.rows) == 1 and len(numbers) == 1 and values_match(numbers[0], gold.rows[0][0], tol)
-    ordered = check.get("ordered", True)
-    mapping = map_columns(got.rows, gold.rows, tol, ordered)
-    if mapping is None:
-        return False
-    projected = [tuple(r[i] for i in mapping) for r in got.rows]
-    return rows_match(projected, gold.rows, tol, ordered)
+    return rows_match_mapped(got.rows, gold.rows, tol, check.get("ordered", True))
 
 
 def evaluate(q: dict, answer: Answerer) -> dict:
