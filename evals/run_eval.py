@@ -108,11 +108,21 @@ def evaluate(q: dict, answer: Answerer) -> dict:
     gold = run_sql(q["gold_sql"])
     return {
         "id": q["id"],
+        "difficulty": q.get("difficulty", "unknown"),
         "passed": score(got, gold, q["check"]),
         "sql": sql,
         "error": got.error or gold.error,
         "seconds": round(time.perf_counter() - start, 2),
     }
+
+
+def by_difficulty(results: list[dict]) -> dict[str, dict[str, int]]:
+    scores: dict[str, dict[str, int]] = {}
+    for r in results:
+        bucket = scores.setdefault(r["difficulty"], {"score": 0, "total": 0})
+        bucket["score"] += r["passed"]
+        bucket["total"] += 1
+    return scores
 
 
 def main() -> None:
@@ -126,13 +136,17 @@ def main() -> None:
 
     for r in results:
         status = "PASS" if r["passed"] else "FAIL"
-        print(f"{status}  {r['id']:<26} {r['seconds']:>6}s  {r['error'] or ''}")
+        print(f"{status}  {r['difficulty']:<7} {r['id']:<30} {r['seconds']:>6}s  {r['error'] or ''}")
     passed = sum(r["passed"] for r in results)
+    levels = by_difficulty(results)
+    print()
+    for level, b in levels.items():
+        print(f"{level:<8} {b['score']}/{b['total']} ({b['score'] / b['total']:.0%})")
     print(f"\nScore: {passed}/{len(results)} ({passed / len(results):.0%})  answerer={args.answerer}")
 
     RESULTS_DIR.mkdir(exist_ok=True)
     out = RESULTS_DIR / f"{datetime.now():%Y%m%d_%H%M%S}.json"
-    out.write_text(json.dumps({"answerer": args.answerer, "score": passed, "total": len(results), "results": results}, indent=2), encoding="utf-8")
+    out.write_text(json.dumps({"answerer": args.answerer, "score": passed, "total": len(results), "by_difficulty": levels, "results": results}, indent=2), encoding="utf-8")
     print(f"Saved {out}")
 
 

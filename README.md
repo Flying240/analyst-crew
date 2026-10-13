@@ -8,8 +8,8 @@ The planned agents are Planner, Data (SQL), Viz (Plotly), Critic and Reporter, o
 | # | Step | Status |
 |---|------|--------|
 | 0 | Foundation: scaffold, DuckDB loader, schema.md, read-only SQL tool, eval harness | ✅ Done |
-| 1 | Single-agent baseline + eval score | ⬜ Next |
-| 2 | Multi-agent LangGraph (Planner, Data, Viz, Reporter) | ⬜ |
+| 1 | Single-agent baseline + eval score | ✅ Done |
+| 2 | Multi-agent LangGraph (Planner, Data, Viz, Reporter) | ⬜ Next |
 | 3 | Critic loop with max 3 retries | ⬜ |
 | 4 | Safety: timeouts, row limits, sandboxed code | ⬜ |
 | 5 | MCP server for the database | ⬜ |
@@ -19,7 +19,11 @@ The planned agents are Planner, Data (SQL), Viz (Plotly), Critic and Reporter, o
 ### Eval scores
 | Date | Answerer | Score |
 |------|----------|-------|
-| _pending_ | oracle (gold SQL, sanity check) | expected 10/10 |
+| 2026-10-14 | oracle (gold SQL, sanity check) | 10/10 |
+| 2026-10-14 | baseline, Groq `openai/gpt-oss-120b` (before) | 9/10 — e06 failed: months returned as DATE, not `'YYYY-MM'` |
+| 2026-10-14 | baseline + month-label prompt rule | 10/10 |
+| 2026-10-14 | oracle, 40-question set | 40/40 |
+| 2026-10-14 | **baseline, 40-question set (real "before")** | **32/40** — easy 9/10, medium 15/15, hard 8/15 |
 
 Every new feature must be measured with `evals/run_eval.py`. Add a row here after each run.
 
@@ -33,9 +37,17 @@ Every new feature must be measured with `evals/run_eval.py`. Add a row here afte
   - `is_read_only(sql)` allows only a single `SELECT`/`WITH` statement. It blocks INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, COPY, ATTACH, PRAGMA, multiple statements, and similar tricks.
   - `run_sql(sql, limit=1000)` opens DuckDB with `read_only=True` as a second layer of protection. It returns a `SqlResult` with columns, rows, a truncated flag and any error.
 - **Eval harness**, `evals/`
-  - `questions.json` holds 10 questions, each with a correct answer query and a check (single value or rows, with a tolerance).
+  - `questions.json` holds 40 questions (easy/medium/hard), each with a correct answer query and a check (single value or rows, with a tolerance).
   - `run_eval.py --answerer module:function` scores any `answer(question) -> sql` function and saves the results to `evals/results/`.
 - **Tests**: `tests/test_sql_tool.py` has 21 SQL-safety tests, all passing.
+
+## What's built (Step 1: Single-agent baseline)
+
+- `src/agents/baseline.py`: `answer(question) -> sql` makes one LLM call at temperature 0. The prompt contains `schema.md` plus the project rules: read-only SQL, the revenue definition, `customer_unique_id`, excluded months, one value means one row, and `'YYYY-MM'` month labels.
+- The provider is chosen by `LLM_PROVIDER` (`groq` or `gemini`), and the model by `GROQ_MODEL` or `GEMINI_MODEL`. There are no retries and no self-correction; this is the "before" number for the multi-agent steps.
+- Run it with `python evals/run_eval.py --answerer src.agents.baseline:answer`.
+- Gemini's free tier (5 requests/min) hits rate limits during a full eval run, so Groq is the default.
+- The eval set has 40 questions, each with a `difficulty` field (10 easy, 15 medium, 15 hard), and `run_eval.py` reports scores per difficulty.
 
 ## Business rules
 - Revenue = `price + freight_value` from `order_items`, delivered orders only.
@@ -66,7 +78,7 @@ db/              olist.duckdb (gitignored)
 scripts/         download, build DB, generate schema
 src/config.py    paths + env settings
 src/tools/       sql_tool.py (read-only SQL)
-src/agents/      (step 1+)
+src/agents/      baseline.py (single-agent SQL)
 evals/           questions.json, run_eval.py, results/
 tests/           pytest suite
 schema.md        generated schema doc for agents

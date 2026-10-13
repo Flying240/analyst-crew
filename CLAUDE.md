@@ -15,7 +15,7 @@ Agents: Planner, Data (SQL), Viz (Plotly), Critic, Reporter. Orchestrated with L
 
 ## Roadmap
 - [x] 0. Foundation: scaffold, DuckDB loader, schema.md, read-only SQL tool, eval harness
-- [ ] 1. Single-agent baseline + eval score
+- [x] 1. Single-agent baseline + eval score
 - [ ] 2. Multi-agent LangGraph (Planner, Data, Viz, Reporter)
 - [ ] 3. Critic loop with max 3 retries
 - [ ] 4. Safety: timeouts, row limits, sandboxed code
