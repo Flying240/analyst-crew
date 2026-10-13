@@ -11,6 +11,7 @@ Agents: Planner, Data (SQL), Viz (Plotly), Critic, Reporter. Orchestrated with L
 - Count customers with customer_unique_id, not customer_id
 - Exclude 2016 and Sept–Oct 2018 from trend analysis (incomplete months)
 - Every new feature must be measurable with evals/run_eval.py
+- Eval scalar check is strict: agent prompts must say "For questions asking for one value, return exactly one row with one numeric column" (text labels OK)
 
 ## Roadmap
 - [x] 0. Foundation: scaffold, DuckDB loader, schema.md, read-only SQL tool, eval harness
