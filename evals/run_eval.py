@@ -12,6 +12,7 @@ import math
 import sys
 import time
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Callable
 
@@ -23,6 +24,7 @@ QUESTIONS_PATH = ROOT / "evals" / "questions.json"
 RESULTS_DIR = ROOT / "evals" / "results"
 
 Answerer = Callable[[str], str]
+NUMERIC = (int, float, Decimal)
 
 
 def load_answerer(spec: str, questions: list[dict]) -> Answerer:
@@ -33,8 +35,12 @@ def load_answerer(spec: str, questions: list[dict]) -> Answerer:
     return getattr(importlib.import_module(module), func or "answer")
 
 
+def is_number(v: Any) -> bool:
+    return isinstance(v, NUMERIC) and not isinstance(v, bool)
+
+
 def values_match(a: Any, b: Any, tol: float) -> bool:
-    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+    if is_number(a) and is_number(b):
         return math.isclose(float(a), float(b), rel_tol=tol, abs_tol=tol)
     return str(a) == str(b)
 
@@ -83,8 +89,9 @@ def score(got: SqlResult, gold: SqlResult, check: dict) -> bool:
         return False
     tol = float(check.get("tolerance", 0))
     if check["type"] == "scalar":
-        # Pass if any cell in the first row equals the gold value.
-        return any(values_match(v, gold.rows[0][0], tol) for v in got.rows[0])
+        # Exactly one row with exactly one numeric value; text labels are allowed.
+        numbers = [v for v in got.rows[0] if is_number(v)]
+        return len(got.rows) == 1 and len(numbers) == 1 and values_match(numbers[0], gold.rows[0][0], tol)
     ordered = check.get("ordered", True)
     mapping = map_columns(got.rows, gold.rows, tol, ordered)
     if mapping is None:

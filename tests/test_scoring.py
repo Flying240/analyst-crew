@@ -34,3 +34,10 @@ def test_scalar_not_first_column() -> None:
     gold = res([(42.0,)])
     assert score(res([("label", 42.001)]), gold, {"type": "scalar", "tolerance": 0.01})
     assert not score(res([("label", 50.0)]), gold, {"type": "scalar", "tolerance": 0.01})
+
+
+def test_scalar_rejects_ambiguous_wide_row() -> None:
+    gold = res([(42.0,)])
+    check = {"type": "scalar", "tolerance": 0.01}
+    assert not score(res([(7, 42.0)]), gold, check)  # two numbers: ambiguous
+    assert not score(res([(42.0,), (1.0,)]), gold, check)  # more than one row
