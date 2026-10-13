@@ -1,0 +1,5 @@
+duckdb>=1.1
+pandas>=2.2
+python-dotenv>=1.0
+kaggle>=1.6
+pytest>=8.0

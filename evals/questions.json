@@ -1,0 +1,62 @@
+[
+  {
+    "id": "q01_total_revenue",
+    "question": "What is the total revenue from delivered orders?",
+    "gold_sql": "SELECT SUM(oi.price + oi.freight_value) AS revenue FROM order_items oi JOIN orders o USING (order_id) WHERE o.order_status = 'delivered'",
+    "check": {"type": "scalar", "tolerance": 0.01}
+  },
+  {
+    "id": "q02_unique_customers",
+    "question": "How many unique customers are there?",
+    "gold_sql": "SELECT COUNT(DISTINCT customer_unique_id) AS customers FROM customers",
+    "check": {"type": "scalar", "tolerance": 0}
+  },
+  {
+    "id": "q03_delivered_orders",
+    "question": "How many orders were delivered?",
+    "gold_sql": "SELECT COUNT(*) AS delivered_orders FROM orders WHERE order_status = 'delivered'",
+    "check": {"type": "scalar", "tolerance": 0}
+  },
+  {
+    "id": "q04_avg_order_value",
+    "question": "What is the average order value (revenue per delivered order)?",
+    "gold_sql": "SELECT SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id) AS aov FROM order_items oi JOIN orders o USING (order_id) WHERE o.order_status = 'delivered'",
+    "check": {"type": "scalar", "tolerance": 0.01}
+  },
+  {
+    "id": "q05_top_categories",
+    "question": "What are the top 5 product categories (English names) by revenue?",
+    "gold_sql": "SELECT t.product_category_name_english AS category, SUM(oi.price + oi.freight_value) AS revenue FROM order_items oi JOIN orders o USING (order_id) JOIN products p USING (product_id) LEFT JOIN category_translation t USING (product_category_name) WHERE o.order_status = 'delivered' GROUP BY 1 ORDER BY revenue DESC LIMIT 5",
+    "check": {"type": "rows", "tolerance": 0.01, "ordered": true}
+  },
+  {
+    "id": "q06_monthly_revenue",
+    "question": "Show monthly revenue for the complete months (Jan 2017 to Aug 2018).",
+    "gold_sql": "SELECT strftime(o.order_purchase_timestamp, '%Y-%m') AS month, SUM(oi.price + oi.freight_value) AS revenue FROM order_items oi JOIN orders o USING (order_id) WHERE o.order_status = 'delivered' AND o.order_purchase_timestamp >= '2017-01-01' AND o.order_purchase_timestamp < '2018-09-01' GROUP BY 1 ORDER BY 1",
+    "check": {"type": "rows", "tolerance": 0.01, "ordered": true}
+  },
+  {
+    "id": "q07_avg_review",
+    "question": "What is the average review score?",
+    "gold_sql": "SELECT AVG(review_score) AS avg_score FROM reviews",
+    "check": {"type": "scalar", "tolerance": 0.001}
+  },
+  {
+    "id": "q08_top_states",
+    "question": "Which 5 states have the most unique customers?",
+    "gold_sql": "SELECT customer_state AS state, COUNT(DISTINCT customer_unique_id) AS customers FROM customers GROUP BY 1 ORDER BY customers DESC LIMIT 5",
+    "check": {"type": "rows", "tolerance": 0, "ordered": true}
+  },
+  {
+    "id": "q09_payment_types",
+    "question": "How many payments were made with each payment type?",
+    "gold_sql": "SELECT payment_type, COUNT(*) AS payments FROM payments GROUP BY 1 ORDER BY payments DESC",
+    "check": {"type": "rows", "tolerance": 0, "ordered": false}
+  },
+  {
+    "id": "q10_avg_delivery_days",
+    "question": "What is the average delivery time in days for delivered orders?",
+    "gold_sql": "SELECT AVG(date_diff('day', order_purchase_timestamp, order_delivered_customer_date)) AS avg_days FROM orders WHERE order_status = 'delivered' AND order_delivered_customer_date IS NOT NULL",
+    "check": {"type": "scalar", "tolerance": 0.01}
+  }
+]
