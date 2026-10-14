@@ -9,6 +9,7 @@ import argparse
 import importlib
 import json
 import math
+import re
 import sys
 import time
 from datetime import datetime
@@ -125,6 +126,12 @@ def by_difficulty(results: list[dict]) -> dict[str, dict[str, int]]:
     return scores
 
 
+def answerer_slug(answerer: str) -> str:
+    """Short filename-safe name for an answerer, e.g. src.agents.baseline:answer -> baseline."""
+    module = answerer.split(":")[0]
+    return re.sub(r"[^a-z0-9]+", "-", module.split(".")[-1].lower()).strip("-") or "unknown"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--answerer", default="oracle", help="'oracle' or module:function")
@@ -145,7 +152,7 @@ def main() -> None:
     print(f"\nScore: {passed}/{len(results)} ({passed / len(results):.0%})  answerer={args.answerer}")
 
     RESULTS_DIR.mkdir(exist_ok=True)
-    out = RESULTS_DIR / f"{datetime.now():%Y%m%d_%H%M%S}.json"
+    out = RESULTS_DIR / f"{datetime.now():%Y%m%d_%H%M%S}_{answerer_slug(args.answerer)}.json"
     out.write_text(json.dumps({"answerer": args.answerer, "score": passed, "total": len(results), "by_difficulty": levels, "results": results}, indent=2), encoding="utf-8")
     print(f"Saved {out}")
 
