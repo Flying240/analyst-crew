@@ -30,7 +30,14 @@ Every new feature must be measured with `evals/run_eval.py`. Add a row here afte
 
 ### Eval set corrections
 
-Reviewing the 8 baseline failures turned up three defects in the eval set itself, fixed in `evals/questions.json`. The oracle still scores 40/40 and no question's expected answer changed, so the 32/40 baseline number remains comparable.
+Reviewing the 8 baseline failures turned up three defects in the eval set itself, fixed in `evals/questions.json`. The oracle still scores 40/40 and no question's expected answer changed.
+
+How far the 32/40 baseline stays comparable depends on the question:
+
+- **38 of 40 questions** have byte-identical text, h04 among them — only its gold SQL changed, and it returns the same category as before, so it is fully comparable.
+- **h09 and h08** had their question text reworded, so a later run may answer either one differently. That is partly the point: both rewrites state a scope the agent previously had to guess. h09 was one of the 8 failures and h08 was already passing.
+
+Treat a change in the h09 or h08 result as a change in the question, not as evidence about the agent. A run-to-run comparison that needs to be airtight should be scored over the 38 unchanged questions.
 
 - **h09_best_review_month** — the question asked for the best month by average review score without saying which orders to count, and the baseline filtered to `order_status = 'delivered'` while the gold SQL did not. CLAUDE.md's `delivered orders only` is scoped to the revenue definition, so it does not apply to a reviews question, but the question never said so. The non-delivered reviews it turns on are few (~2,800 of ~99,000 in the window) and harsh (averaging under 2.0 against 4.16 for delivered), and the top four months sit within 0.012 points of each other, so the filter choice decides the answer. The question now says **"across all orders, regardless of order status"**; the gold SQL is unchanged and still returns `2018-06`.
 - **h04_drop_category** — the gold SQL compared each category's revenue in the worst month against its *previous row* via `LAG(rev) OVER (PARTITION BY cat ORDER BY month)`, which silently reaches past a month in which the category sold nothing, and a category with zero revenue in the worst month had no row at all, so the biggest possible drop was invisible. Rewritten to pin the comparison to the worst month and the calendar month before it, treating a missing month as 0 revenue. Both flaws are real at the current data point but too small to move the result: four categories vanish between 2017-11 and 2017-12, the largest worth R$259.94 against the winner's R$45,585.09 decline. Old and new SQL both return `bed_bath_table`, with an identical top eight.
