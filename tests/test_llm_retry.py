@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "evals"))
-from run_eval import evaluate, summarize, tally  # noqa: E402
-from src.llm_retry import InfraError, is_rate_limit, with_backoff  # noqa: E402
+from run_eval import evaluate, run_questions, summarize, tally, token_totals  # noqa: E402
+from src.llm_retry import DailyLimitError, InfraError, is_rate_limit, with_backoff  # noqa: E402
 
 
 class RateLimited(Exception):
@@ -73,3 +73,59 @@ def test_summary_keeps_infra_errors_out_of_flips():
     s = summarize([report(True, False), report(False, True), report(True, False)])
     assert s["flipped"] == {} and s["infra_errors"] == {"x": 1}
     assert s["overall"]["mean_pct"] == 100.0 and s["overall"]["infra_errors"] == 1
+
+
+DAILY = Exception(
+    "Error code: 429 - Rate limit reached for model `openai/gpt-oss-120b` on tokens per day (TPD): Limit 200000"
+)
+
+
+def test_daily_limit_raises_without_backoff():
+    call, calls = flaky(99, DAILY)
+    waits: list[float] = []
+    with pytest.raises(DailyLimitError):
+        with_backoff(call, sleep=waits.append)
+    assert waits == [] and calls["n"] == 1
+
+
+def test_daily_limit_stops_run_and_marks_it_incomplete():
+    questions = [
+        {"id": f"q{i}", "difficulty": "easy", "question": f"q{i}", "gold_sql": "SELECT 1", "check": {"type": "scalar"}}
+        for i in range(4)
+    ]
+    asked: list[str] = []
+
+    def answer(question: str) -> str:
+        asked.append(question)
+        if question == "q1":
+            raise DailyLimitError("tokens per day")
+        return "SELECT 1"
+
+    results, complete = run_questions(questions, answer)
+    assert not complete and asked == ["q0", "q1"] and len(results) == 2
+    assert results[1]["daily_limit"] and results[1]["infra_error"]
+
+
+def test_summary_excludes_incomplete_runs():
+    def report(passed: bool, complete: bool) -> dict:
+        r = {"id": "x", "difficulty": "easy", "passed": passed, "infra_error": False}
+        return {"answerer": "a", "complete": complete, **tally([r]), "by_difficulty": {"easy": tally([r])}, "results": [r]}
+
+    s = summarize([report(True, True), report(False, False), report(True, True)])
+    assert s["runs"] == 2 and s["incomplete_runs"] == [2]
+    assert s["overall"]["mean_pct"] == 100.0 and s["flipped"] == {}
+    assert summarize([report(False, False)]) == {"runs": 0, "incomplete_runs": [1]}
+
+
+def test_token_usage_is_logged_per_question():
+    from src import llm_usage
+
+    def answer(question: str) -> str:
+        llm_usage.record(120, 30)
+        return "SELECT 1"
+
+    q = {"id": "x", "difficulty": "easy", "question": "q", "gold_sql": "SELECT 1", "check": {"type": "scalar"}}
+    r = evaluate(q, answer)
+    assert r["tokens"] == {"prompt": 120, "completion": 30}
+    assert evaluate(q, lambda question: "SELECT 1")["tokens"] is None
+    assert token_totals([r, r])["mean_prompt"] == 120

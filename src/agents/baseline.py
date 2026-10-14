@@ -2,7 +2,8 @@
 import os
 import re
 
-from src.config import LLM_PROVIDER, SCHEMA_PATH
+from src import llm_usage
+from src.config import LLM_PROVIDER, PROMPT_SCHEMA, SCHEMA_COMPACT_PATH, SCHEMA_PATH
 from src.llm_retry import with_backoff
 
 RULES = """\
@@ -16,7 +17,8 @@ RULES = """\
 
 
 def build_prompt(question: str) -> str:
-    schema = SCHEMA_PATH.read_text(encoding="utf-8")
+    path = SCHEMA_PATH if PROMPT_SCHEMA == "full" else SCHEMA_COMPACT_PATH
+    schema = path.read_text(encoding="utf-8")
     return (
         "You are a data analyst writing SQL for the Olist e-commerce DuckDB database.\n\n"
         f"# Schema\n{schema}\n\n# Rules\n{RULES}\n\n# Question\n{question}\n\nSQL:"
@@ -32,6 +34,8 @@ def call_groq(prompt: str) -> str:
         messages=[{"role": "user", "content": prompt}],
         temperature=0,
     )
+    if resp.usage:
+        llm_usage.record(resp.usage.prompt_tokens, resp.usage.completion_tokens)
     return resp.choices[0].message.content or ""
 
 
@@ -45,6 +49,9 @@ def call_gemini(prompt: str) -> str:
         contents=prompt,
         config=types.GenerateContentConfig(temperature=0),
     )
+    meta = resp.usage_metadata
+    if meta:
+        llm_usage.record(meta.prompt_token_count, (meta.candidates_token_count or 0) + (meta.thoughts_token_count or 0))
     return resp.text or ""
 
 

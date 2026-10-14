@@ -1,0 +1,53 @@
+{
+  "description": "Baseline 'before' on the 50-question set: 3 complete runs wanted, collected across days because of Groq's 200k tokens/day free-tier limit. Combine with: python evals/run_eval.py --answerer src.agents.baseline:answer --include <files>",
+  "answerer": "src.agents.baseline:answer",
+  "model": "groq openai/gpt-oss-120b, temperature 0",
+  "prompt_schema": "full",
+  "runs": [
+    {
+      "file": "evals/results/20261014_222750_baseline.json",
+      "date": "2026-10-14",
+      "complete": true,
+      "score": 43,
+      "total": 50,
+      "by_difficulty": {
+        "easy": {
+          "score": 10,
+          "total": 10,
+          "infra_errors": 0
+        },
+        "medium": {
+          "score": 20,
+          "total": 21,
+          "infra_errors": 0
+        },
+        "hard": {
+          "score": 13,
+          "total": 19,
+          "infra_errors": 0
+        }
+      },
+      "by_split": {
+        "heldout": {
+          "score": 14,
+          "total": 15,
+          "infra_errors": 0
+        },
+        "dev": {
+          "score": 29,
+          "total": 35,
+          "infra_errors": 0
+        }
+      },
+      "failed": [
+        "h02_review_gap",
+        "h04_drop_category",
+        "h05_same_state_days",
+        "h06_state_gap_days",
+        "h10_corr_days_review",
+        "h15_median_out_of_state_days",
+        "m18_credit_card_customers_pct"
+      ]
+    }
+  ]
+}

@@ -5,6 +5,9 @@ Usage:
     python evals/run_eval.py                                  # oracle (returns gold SQL)
     python evals/run_eval.py --answerer src.agents.baseline:answer
     python evals/run_eval.py --answerer src.agents.baseline:answer --runs 3
+    python evals/run_eval.py --answerer src.agents.baseline:answer --include evals/results/<earlier run>.json
+
+A run stopped by a daily quota is saved as *_incomplete.json and left out of the summary.
 """
 import argparse
 import importlib
@@ -20,7 +23,8 @@ from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from src.llm_retry import InfraError  # noqa: E402
+from src import llm_usage  # noqa: E402
+from src.llm_retry import DailyLimitError, InfraError  # noqa: E402
 from src.tools.sql_tool import SqlResult, run_sql  # noqa: E402
 
 QUESTIONS_PATH = ROOT / "evals" / "questions.json"
@@ -103,12 +107,14 @@ def score(got: SqlResult, gold: SqlResult, check: dict) -> bool:
 
 def evaluate(q: dict, answer: Answerer) -> dict:
     start = time.perf_counter()
-    infra_error = False
+    infra_error = daily_limit = False
+    llm_usage.take()
     try:
         sql = answer(q["question"])
         got = run_sql(sql)
     except InfraError as exc:
         sql, got, infra_error = "", SqlResult(error=f"infra_error: {exc}"), True
+        daily_limit = isinstance(exc, DailyLimitError)
     except Exception as exc:
         sql, got = "", SqlResult(error=f"answerer failed: {exc}")
     gold = run_sql(q["gold_sql"])
@@ -118,6 +124,8 @@ def evaluate(q: dict, answer: Answerer) -> dict:
         "split": q.get("split", "unknown"),
         "passed": not infra_error and score(got, gold, q["check"]),
         "infra_error": infra_error,
+        "daily_limit": daily_limit,
+        "tokens": llm_usage.take(),
         "sql": sql,
         "error": got.error or gold.error,
         "seconds": round(time.perf_counter() - start, 2),
@@ -158,20 +166,50 @@ def answerer_slug(answerer: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", module.split(".")[-1].lower()).strip("-") or "unknown"
 
 
-def run_once(questions: list[dict], answer: Answerer, answerer: str) -> dict:
-    results = [evaluate(q, answer) for q in questions]
-    for r in results:
+def token_totals(results: list[dict]) -> dict:
+    used = [r["tokens"] for r in results if r.get("tokens")]
+    prompt, completion = sum(u["prompt"] for u in used), sum(u["completion"] for u in used)
+    n = len(used)
+    return {
+        "questions": n,
+        "prompt": prompt,
+        "completion": completion,
+        "mean_prompt": round(prompt / n, 1) if n else 0,
+        "mean_completion": round(completion / n, 1) if n else 0,
+    }
+
+
+def run_questions(questions: list[dict], answer: Answerer) -> tuple[list[dict], bool]:
+    """Evaluate questions in order; stop early if the provider's daily quota runs out."""
+    results = []
+    for q in questions:
+        r = evaluate(q, answer)
         status = "INFRA" if r["infra_error"] else "PASS" if r["passed"] else "FAIL"
         print(f"{status:<5} {r['difficulty']:<7} {r['id']:<30} {r['seconds']:>6}s  {r['error'] or ''}")
+        results.append(r)
+        if r["daily_limit"]:
+            print(f"\nDaily quota exhausted at {r['id']}: stopping this run ({len(results)}/{len(questions)} asked).")
+            return results, False
+    return results, True
+
+
+def run_once(questions: list[dict], answer: Answerer, answerer: str) -> dict:
+    results, complete = run_questions(questions, answer)
     overall = tally(results)
     levels = by_difficulty(results)
     splits = by_split(results)
+    tokens = token_totals(results)
     print()
     for name, b in [*levels.items(), *splits.items()]:
         print(f"{name:<8} {fmt(b)}")
-    print(f"\nScore: {fmt(overall)}  answerer={answerer}")
-    report = {"answerer": answerer, **overall, "by_difficulty": levels, "by_split": splits, "results": results}
-    save(report, answerer_slug(answerer))
+    if tokens["questions"]:
+        print(f"tokens   prompt {tokens['mean_prompt']}/q, completion {tokens['mean_completion']}/q, total {tokens['prompt'] + tokens['completion']}")
+    print(f"\nScore: {fmt(overall)}  answerer={answerer}{'' if complete else '  [INCOMPLETE]'}")
+    report = {
+        "answerer": answerer, "complete": complete, **overall,
+        "by_difficulty": levels, "by_split": splits, "tokens": tokens, "results": results,
+    }
+    save(report, answerer_slug(answerer) + ("" if complete else "_incomplete"))
     return report
 
 
@@ -200,8 +238,14 @@ def spread(buckets: list[dict]) -> dict:
 def summarize(reports: list[dict]) -> dict:
     """Mean and min-max score across runs, plus questions whose pass/fail differs between runs.
 
-    Infra-error runs of a question are left out of its pass/fail history and listed separately.
+    Incomplete runs (stopped by a daily quota) are excluded from everything but the
+    `incomplete_runs` count. Infra-error runs of a question are left out of its pass/fail
+    history and listed separately.
     """
+    incomplete = [i + 1 for i, r in enumerate(reports) if not r.get("complete", True)]
+    reports = [r for r in reports if r.get("complete", True)]
+    if not reports:
+        return {"runs": 0, "incomplete_runs": incomplete}
     levels = reports[0]["by_difficulty"]
     outcomes: dict[str, list[bool]] = {}
     infra: dict[str, int] = {}
@@ -214,6 +258,8 @@ def summarize(reports: list[dict]) -> dict:
     return {
         "answerer": reports[0]["answerer"],
         "runs": len(reports),
+        "incomplete_runs": incomplete,
+        "tokens": [r.get("tokens") for r in reports],
         "overall": spread(reports),
         "by_difficulty": {lv: spread([r["by_difficulty"][lv] for r in reports]) for lv in levels},
         "by_split": {sp: spread([r["by_split"][sp] for r in reports]) for sp in reports[0].get("by_split", {})},
@@ -224,7 +270,10 @@ def summarize(reports: list[dict]) -> dict:
 
 
 def print_summary(s: dict) -> None:
-    print(f"\n=== Summary over {s['runs']} runs ===")
+    skipped = f" (excluded incomplete runs: {s['incomplete_runs']})" if s["incomplete_runs"] else ""
+    print(f"\n=== Summary over {s['runs']} complete runs{skipped} ===")
+    if not s["runs"]:
+        return
     for name, b in [("overall", s["overall"]), *s["by_difficulty"].items(), *s["by_split"].items()]:
         infra = f"  ({b['infra_errors']} infra_error, not scored)" if b["infra_errors"] else ""
         print(f"{name:<8} mean {b['mean_pct']}%  range {b['min_pct']}-{b['max_pct']}%  runs {', '.join(b['scores'])}{infra}")
@@ -236,25 +285,35 @@ def print_summary(s: dict) -> None:
     print(f"Failed every run: {', '.join(s['always_failed']) or '(none)'}")
     infra = ", ".join(f"{qid} x{n}" for qid, n in s["infra_errors"].items())
     print(f"Infra errors (not scored): {infra or '(none)'}")
+    for i, t in enumerate(s["tokens"], 1):
+        if t and t["questions"]:
+            print(f"Run {i} tokens: prompt {t['mean_prompt']}/q, completion {t['mean_completion']}/q")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--answerer", default="oracle", help="'oracle' or module:function")
     parser.add_argument("--runs", type=int, default=1, help="repeat the eval N times and summarize")
+    parser.add_argument(
+        "--include", nargs="*", default=[], metavar="RESULT_JSON",
+        help="saved run files to summarize together with this invocation's runs (e.g. runs from earlier days)",
+    )
     args = parser.parse_args()
 
     questions = json.loads(QUESTIONS_PATH.read_text(encoding="utf-8"))
     answer = load_answerer(args.answerer, questions)
-    reports = []
+    reports = [json.loads(Path(p).read_text(encoding="utf-8")) for p in args.include]
     for i in range(args.runs):
         if args.runs > 1:
             print(f"\n=== Run {i + 1}/{args.runs} ===")
         reports.append(run_once(questions, answer, args.answerer))
-    if args.runs > 1:
+        if not reports[-1]["complete"]:
+            print("Skipping remaining runs: the daily quota will not reset within this invocation.")
+            break
+    if len(reports) > 1:
         summary = summarize(reports)
         print_summary(summary)
-        save(summary, f"{answerer_slug(args.answerer)}_summary{args.runs}")
+        save(summary, f"{answerer_slug(args.answerer)}_summary{len(reports)}")
 
 
 if __name__ == "__main__":
