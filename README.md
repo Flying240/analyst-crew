@@ -54,7 +54,7 @@ Treat a change in the h09 or h08 result as a change in the question, not as evid
   - `run_sql(sql, limit=1000)` opens DuckDB with `read_only=True` as a second layer of protection. It returns a `SqlResult` with columns, rows, a truncated flag and any error.
 - **Eval harness**, `evals/`
   - `questions.json` holds 40 questions (easy/medium/hard), each with a correct answer query and a check (single value or rows, with a tolerance).
-  - `run_eval.py --answerer module:function` scores any `answer(question) -> sql` function and saves the results to `evals/results/`.
+  - `run_eval.py --answerer module:function` scores any `answer(question) -> sql` function and saves the results to `evals/results/` as `YYYYMMDD_HHMMSS_<answerer>.json` (e.g. `20261014_145208_oracle.json`, `20261014_012927_baseline.json`), where the suffix is the last segment of the answerer's module.
 - **Tests**: `tests/test_sql_tool.py` has 21 SQL-safety tests, all passing.
 
 ## What's built (Step 1: Single-agent baseline)
