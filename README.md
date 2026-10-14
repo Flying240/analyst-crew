@@ -24,8 +24,17 @@ The planned agents are Planner, Data (SQL), Viz (Plotly), Critic and Reporter, o
 | 2026-10-14 | baseline + month-label prompt rule | 10/10 |
 | 2026-10-14 | oracle, 40-question set | 40/40 |
 | 2026-10-14 | **baseline, 40-question set (real "before")** | **32/40** — easy 9/10, medium 15/15, hard 8/15 |
+| 2026-10-14 | oracle, after eval-set corrections below | 40/40 |
 
 Every new feature must be measured with `evals/run_eval.py`. Add a row here after each run.
+
+### Eval set corrections
+
+Reviewing the 8 baseline failures turned up three defects in the eval set itself, fixed in `evals/questions.json`. The oracle still scores 40/40 and no question's expected answer changed, so the 32/40 baseline number remains comparable.
+
+- **h09_best_review_month** — the question asked for the best month by average review score without saying which orders to count, and the baseline filtered to `order_status = 'delivered'` while the gold SQL did not. CLAUDE.md's `delivered orders only` is scoped to the revenue definition, so it does not apply to a reviews question, but the question never said so. The non-delivered reviews it turns on are few (~2,800 of ~99,000 in the window) and harsh (averaging under 2.0 against 4.16 for delivered), and the top four months sit within 0.012 points of each other, so the filter choice decides the answer. The question now says **"across all orders, regardless of order status"**; the gold SQL is unchanged and still returns `2018-06`.
+- **h04_drop_category** — the gold SQL compared each category's revenue in the worst month against its *previous row* via `LAG(rev) OVER (PARTITION BY cat ORDER BY month)`, which silently reaches past a month in which the category sold nothing, and a category with zero revenue in the worst month had no row at all, so the biggest possible drop was invisible. Rewritten to pin the comparison to the worst month and the calendar month before it, treating a missing month as 0 revenue. Both flaws are real at the current data point but too small to move the result: four categories vanish between 2017-11 and 2017-12, the largest worth R$259.94 against the winner's R$45,585.09 decline. Old and new SQL both return `bed_bath_table`, with an identical top eight.
+- **h08_worst_late_state** — the question said "at least 1000 delivered orders" while the gold SQL applied `order_delivered_customer_date IS NOT NULL`, counting only delivered orders whose delivery date is known. The question now says **"at least 1000 delivered orders with a known delivery date"**; the gold SQL is unchanged.
 
 ## What's built (Step 0: Foundation)
 
@@ -68,7 +77,7 @@ python scripts/gen_schema.py
 
 # Check
 pytest
-python evals/run_eval.py          # oracle should score 10/10
+python evals/run_eval.py          # oracle should score 40/40
 ```
 
 ## Project structure

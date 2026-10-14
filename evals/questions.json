@@ -293,7 +293,7 @@
     "id": "h04_drop_category",
     "difficulty": "hard",
     "question": "In the complete months (Jan 2017 to Aug 2018), find the month with the biggest month-over-month revenue drop. Which product category (English name) had the largest revenue decrease that month compared with the previous month?",
-    "gold_sql": "WITH m AS (SELECT strftime(o.order_purchase_timestamp, '%Y-%m') AS month, SUM(oi.price + oi.freight_value) AS rev FROM order_items oi JOIN orders o USING (order_id) WHERE o.order_status = 'delivered' AND o.order_purchase_timestamp >= '2017-01-01' AND o.order_purchase_timestamp < '2018-09-01' GROUP BY 1), worst AS (SELECT month FROM (SELECT month, LAG(rev) OVER (ORDER BY month) - rev AS decline FROM m) ORDER BY decline DESC NULLS LAST LIMIT 1), cm AS (SELECT strftime(o.order_purchase_timestamp, '%Y-%m') AS month, t.product_category_name_english AS cat, SUM(oi.price + oi.freight_value) AS rev FROM order_items oi JOIN orders o USING (order_id) JOIN products p USING (product_id) JOIN category_translation t USING (product_category_name) WHERE o.order_status = 'delivered' AND o.order_purchase_timestamp >= '2017-01-01' AND o.order_purchase_timestamp < '2018-09-01' GROUP BY 1, 2), cd AS (SELECT month, cat, LAG(rev) OVER (PARTITION BY cat ORDER BY month) - rev AS decline FROM cm) SELECT cat FROM cd WHERE month = (SELECT month FROM worst) ORDER BY decline DESC NULLS LAST LIMIT 1",
+    "gold_sql": "WITH m AS (SELECT strftime(o.order_purchase_timestamp, '%Y-%m') AS month, SUM(oi.price + oi.freight_value) AS rev FROM order_items oi JOIN orders o USING (order_id) WHERE o.order_status = 'delivered' AND o.order_purchase_timestamp >= '2017-01-01' AND o.order_purchase_timestamp < '2018-09-01' GROUP BY 1), worst AS (SELECT month FROM (SELECT month, LAG(rev) OVER (ORDER BY month) - rev AS decline FROM m) ORDER BY decline DESC NULLS LAST LIMIT 1), bounds AS (SELECT month AS wm, strftime(strptime(month || '-01', '%Y-%m-%d') - INTERVAL 1 MONTH, '%Y-%m') AS pm FROM worst), cm AS (SELECT t.product_category_name_english AS cat, strftime(o.order_purchase_timestamp, '%Y-%m') AS month, SUM(oi.price + oi.freight_value) AS rev FROM order_items oi JOIN orders o USING (order_id) JOIN products p USING (product_id) JOIN category_translation t USING (product_category_name) WHERE o.order_status = 'delivered' GROUP BY 1, 2) SELECT cat FROM (SELECT cat, COALESCE(SUM(rev) FILTER (WHERE month = (SELECT pm FROM bounds)), 0) - COALESCE(SUM(rev) FILTER (WHERE month = (SELECT wm FROM bounds)), 0) AS decline FROM cm GROUP BY cat) ORDER BY decline DESC, cat LIMIT 1",
     "check": {
       "type": "rows",
       "tolerance": 0,
@@ -333,7 +333,7 @@
   {
     "id": "h08_worst_late_state",
     "difficulty": "hard",
-    "question": "Among customer states with at least 1000 delivered orders, which state has the highest share of late deliveries (delivered after the estimated date)?",
+    "question": "Among customer states with at least 1000 delivered orders with a known delivery date, which state has the highest share of late deliveries (delivered after the estimated date)?",
     "gold_sql": "SELECT c.customer_state FROM orders o JOIN customers c USING (customer_id) WHERE o.order_status = 'delivered' AND o.order_delivered_customer_date IS NOT NULL GROUP BY 1 HAVING COUNT(*) >= 1000 ORDER BY AVG(CASE WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1 ELSE 0 END) DESC LIMIT 1",
     "check": {
       "type": "rows",
@@ -344,7 +344,7 @@
   {
     "id": "h09_best_review_month",
     "difficulty": "hard",
-    "question": "In the complete months (Jan 2017 to Aug 2018), which purchase month had the highest average review score?",
+    "question": "In the complete months (Jan 2017 to Aug 2018), which purchase month had the highest average review score across all orders, regardless of order status?",
     "gold_sql": "SELECT strftime(o.order_purchase_timestamp, '%Y-%m') FROM reviews rv JOIN orders o USING (order_id) WHERE o.order_purchase_timestamp >= '2017-01-01' AND o.order_purchase_timestamp < '2018-09-01' GROUP BY 1 ORDER BY AVG(rv.review_score) DESC LIMIT 1",
     "check": {
       "type": "rows",
