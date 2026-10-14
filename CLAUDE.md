@@ -10,6 +10,7 @@ Agents: Planner, Data (SQL), Viz (Plotly), Critic, Reporter. Orchestrated with L
 - Revenue = price + freight_value from order_items, delivered orders only
 - Count customers with customer_unique_id, not customer_id
 - Exclude 2016 and Sept–Oct 2018 from trend analysis (incomplete months)
+- Late = order_delivered_customer_date > order_estimated_delivery_date (timestamp comparison, not calendar date)
 - Every new feature must be measurable with evals/run_eval.py
 - Eval scalar check is strict: agent prompts must say "For questions asking for one value, return exactly one row with one numeric column" (text labels OK)
 

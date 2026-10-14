@@ -4,6 +4,7 @@ An answerer is any function `answer(question: str) -> str` that returns SQL.
 Usage:
     python evals/run_eval.py                                  # oracle (returns gold SQL)
     python evals/run_eval.py --answerer src.agents.baseline:answer
+    python evals/run_eval.py --answerer src.agents.baseline:answer --runs 3
 """
 import argparse
 import importlib
@@ -19,6 +20,7 @@ from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+from src.llm_retry import InfraError  # noqa: E402
 from src.tools.sql_tool import SqlResult, run_sql  # noqa: E402
 
 QUESTIONS_PATH = ROOT / "evals" / "questions.json"
@@ -101,29 +103,53 @@ def score(got: SqlResult, gold: SqlResult, check: dict) -> bool:
 
 def evaluate(q: dict, answer: Answerer) -> dict:
     start = time.perf_counter()
+    infra_error = False
     try:
         sql = answer(q["question"])
         got = run_sql(sql)
+    except InfraError as exc:
+        sql, got, infra_error = "", SqlResult(error=f"infra_error: {exc}"), True
     except Exception as exc:
         sql, got = "", SqlResult(error=f"answerer failed: {exc}")
     gold = run_sql(q["gold_sql"])
     return {
         "id": q["id"],
         "difficulty": q.get("difficulty", "unknown"),
-        "passed": score(got, gold, q["check"]),
+        "split": q.get("split", "unknown"),
+        "passed": not infra_error and score(got, gold, q["check"]),
+        "infra_error": infra_error,
         "sql": sql,
         "error": got.error or gold.error,
         "seconds": round(time.perf_counter() - start, 2),
     }
 
 
-def by_difficulty(results: list[dict]) -> dict[str, dict[str, int]]:
-    scores: dict[str, dict[str, int]] = {}
+def tally(results: list[dict]) -> dict[str, int]:
+    """Score over scored questions; infra errors are counted apart and excluded from total."""
+    infra = sum(r.get("infra_error", False) for r in results)
+    return {"score": sum(r["passed"] for r in results), "total": len(results) - infra, "infra_errors": infra}
+
+
+def group_tally(results: list[dict], key: str) -> dict[str, dict[str, int]]:
+    groups: dict[str, list[dict]] = {}
     for r in results:
-        bucket = scores.setdefault(r["difficulty"], {"score": 0, "total": 0})
-        bucket["score"] += r["passed"]
-        bucket["total"] += 1
-    return scores
+        groups.setdefault(r.get(key, "unknown"), []).append(r)
+    return {name: tally(rs) for name, rs in groups.items()}
+
+
+def by_difficulty(results: list[dict]) -> dict[str, dict[str, int]]:
+    return group_tally(results, "difficulty")
+
+
+def by_split(results: list[dict]) -> dict[str, dict[str, int]]:
+    """Dev questions are for prompt tuning; heldout scores show whether gains generalize."""
+    return group_tally(results, "split")
+
+
+def fmt(b: dict[str, int]) -> str:
+    pct = f"{b['score'] / b['total']:.0%}" if b["total"] else "n/a"
+    infra = f"  +{b['infra_errors']} infra_error (not scored)" if b["infra_errors"] else ""
+    return f"{b['score']}/{b['total']} ({pct}){infra}"
 
 
 def answerer_slug(answerer: str) -> str:
@@ -132,29 +158,103 @@ def answerer_slug(answerer: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", module.split(".")[-1].lower()).strip("-") or "unknown"
 
 
+def run_once(questions: list[dict], answer: Answerer, answerer: str) -> dict:
+    results = [evaluate(q, answer) for q in questions]
+    for r in results:
+        status = "INFRA" if r["infra_error"] else "PASS" if r["passed"] else "FAIL"
+        print(f"{status:<5} {r['difficulty']:<7} {r['id']:<30} {r['seconds']:>6}s  {r['error'] or ''}")
+    overall = tally(results)
+    levels = by_difficulty(results)
+    splits = by_split(results)
+    print()
+    for name, b in [*levels.items(), *splits.items()]:
+        print(f"{name:<8} {fmt(b)}")
+    print(f"\nScore: {fmt(overall)}  answerer={answerer}")
+    report = {"answerer": answerer, **overall, "by_difficulty": levels, "by_split": splits, "results": results}
+    save(report, answerer_slug(answerer))
+    return report
+
+
+def save(report: dict, name: str) -> None:
+    RESULTS_DIR.mkdir(exist_ok=True)
+    out = RESULTS_DIR / f"{datetime.now():%Y%m%d_%H%M%S}_{name}.json"
+    out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print(f"Saved {out}")
+
+
+def spread(buckets: list[dict]) -> dict:
+    """Mean and range of each run's pass rate; rates, because infra errors can shrink a run's total.
+
+    A run with nothing scored (all infra errors) is left out rather than counted as 0%.
+    """
+    rates = [b["score"] / b["total"] for b in buckets if b["total"]] or [0.0]
+    return {
+        "mean_pct": round(100 * sum(rates) / len(rates), 1),
+        "min_pct": round(100 * min(rates), 1),
+        "max_pct": round(100 * max(rates), 1),
+        "scores": [f"{b['score']}/{b['total']}" for b in buckets],
+        "infra_errors": sum(b["infra_errors"] for b in buckets),
+    }
+
+
+def summarize(reports: list[dict]) -> dict:
+    """Mean and min-max score across runs, plus questions whose pass/fail differs between runs.
+
+    Infra-error runs of a question are left out of its pass/fail history and listed separately.
+    """
+    levels = reports[0]["by_difficulty"]
+    outcomes: dict[str, list[bool]] = {}
+    infra: dict[str, int] = {}
+    for rep in reports:
+        for r in rep["results"]:
+            if r.get("infra_error"):
+                infra[r["id"]] = infra.get(r["id"], 0) + 1
+            else:
+                outcomes.setdefault(r["id"], []).append(r["passed"])
+    return {
+        "answerer": reports[0]["answerer"],
+        "runs": len(reports),
+        "overall": spread(reports),
+        "by_difficulty": {lv: spread([r["by_difficulty"][lv] for r in reports]) for lv in levels},
+        "by_split": {sp: spread([r["by_split"][sp] for r in reports]) for sp in reports[0].get("by_split", {})},
+        "flipped": {qid: runs for qid, runs in outcomes.items() if len(set(runs)) > 1},
+        "always_failed": [qid for qid, runs in outcomes.items() if not any(runs)],
+        "infra_errors": infra,
+    }
+
+
+def print_summary(s: dict) -> None:
+    print(f"\n=== Summary over {s['runs']} runs ===")
+    for name, b in [("overall", s["overall"]), *s["by_difficulty"].items(), *s["by_split"].items()]:
+        infra = f"  ({b['infra_errors']} infra_error, not scored)" if b["infra_errors"] else ""
+        print(f"{name:<8} mean {b['mean_pct']}%  range {b['min_pct']}-{b['max_pct']}%  runs {', '.join(b['scores'])}{infra}")
+    print("Flipped between runs:")
+    for qid, runs in s["flipped"].items():
+        print(f"  {qid:<30} {' '.join('P' if p else 'F' for p in runs)}")
+    if not s["flipped"]:
+        print("  (none)")
+    print(f"Failed every run: {', '.join(s['always_failed']) or '(none)'}")
+    infra = ", ".join(f"{qid} x{n}" for qid, n in s["infra_errors"].items())
+    print(f"Infra errors (not scored): {infra or '(none)'}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--answerer", default="oracle", help="'oracle' or module:function")
+    parser.add_argument("--runs", type=int, default=1, help="repeat the eval N times and summarize")
     args = parser.parse_args()
 
     questions = json.loads(QUESTIONS_PATH.read_text(encoding="utf-8"))
     answer = load_answerer(args.answerer, questions)
-    results = [evaluate(q, answer) for q in questions]
-
-    for r in results:
-        status = "PASS" if r["passed"] else "FAIL"
-        print(f"{status}  {r['difficulty']:<7} {r['id']:<30} {r['seconds']:>6}s  {r['error'] or ''}")
-    passed = sum(r["passed"] for r in results)
-    levels = by_difficulty(results)
-    print()
-    for level, b in levels.items():
-        print(f"{level:<8} {b['score']}/{b['total']} ({b['score'] / b['total']:.0%})")
-    print(f"\nScore: {passed}/{len(results)} ({passed / len(results):.0%})  answerer={args.answerer}")
-
-    RESULTS_DIR.mkdir(exist_ok=True)
-    out = RESULTS_DIR / f"{datetime.now():%Y%m%d_%H%M%S}_{answerer_slug(args.answerer)}.json"
-    out.write_text(json.dumps({"answerer": args.answerer, "score": passed, "total": len(results), "by_difficulty": levels, "results": results}, indent=2), encoding="utf-8")
-    print(f"Saved {out}")
+    reports = []
+    for i in range(args.runs):
+        if args.runs > 1:
+            print(f"\n=== Run {i + 1}/{args.runs} ===")
+        reports.append(run_once(questions, answer, args.answerer))
+    if args.runs > 1:
+        summary = summarize(reports)
+        print_summary(summary)
+        save(summary, f"{answerer_slug(args.answerer)}_summary{args.runs}")
 
 
 if __name__ == "__main__":

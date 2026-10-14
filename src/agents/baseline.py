@@ -3,6 +3,7 @@ import os
 import re
 
 from src.config import LLM_PROVIDER, SCHEMA_PATH
+from src.llm_retry import with_backoff
 
 RULES = """\
 - Write a single read-only DuckDB SELECT (or WITH) query. Never INSERT/UPDATE/DELETE/DROP/ALTER.
@@ -54,4 +55,5 @@ def extract_sql(text: str) -> str:
 
 def answer(question: str) -> str:
     call = call_gemini if LLM_PROVIDER == "gemini" else call_groq
-    return extract_sql(call(build_prompt(question)))
+    prompt = build_prompt(question)
+    return extract_sql(with_backoff(lambda: call(prompt)))

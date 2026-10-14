@@ -5,6 +5,7 @@
 - Count customers with `customers.customer_unique_id`, not `customer_id` (customer_id is per order).
 - Trend analysis: exclude 2016 and Sept-Oct 2018 (incomplete months); use 2017-01 to 2018-08.
 - Category names are Portuguese; join `category_translation` for English.
+- Late = `orders.order_delivered_customer_date > orders.order_estimated_delivery_date` (timestamp comparison, not calendar date).
 
 ## Joins
 - orders.customer_id -> customers.customer_id

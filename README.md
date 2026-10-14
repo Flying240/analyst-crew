@@ -26,8 +26,12 @@ The planned agents are Planner, Data (SQL), Viz (Plotly), Critic and Reporter, o
 | 2026-10-14 | **baseline, 40-question set (real "before")** | **32/40** — easy 9/10, medium 15/15, hard 8/15 |
 | 2026-10-14 | oracle, after eval-set corrections below | 40/40 |
 | 2026-10-14 | baseline, corrected 40-question set (same prompt/model) | 34/40 — easy 10/10, medium 14/15, hard 10/15 |
+| 2026-10-14 | baseline, `--runs 3` (temperature 0) | mean 33.7/40, range 33–34 — easy 10/10, medium 13.7/15 (13–15), hard 10/15 (9–11); 8 questions flip between runs; one run-1 failure (h15) was a Groq 429 rate limit |
+| 2026-10-14 | oracle, 50 questions (+10 silent-wrong-answer) with dev/heldout split | 50/50 — dev 35/35, heldout 15/15 |
 
 Every new feature must be measured with `evals/run_eval.py`. Add a row here after each run.
+
+Heldout caveat: the 10 older heldout questions were seen during baseline work, so only the 5 new heldout questions (m16, m17, m20, h17, h19) are truly unseen.
 
 ### Eval set corrections
 
