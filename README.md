@@ -25,6 +25,7 @@ The planned agents are Planner, Data (SQL), Viz (Plotly), Critic and Reporter, o
 | 2026-10-14 | oracle, 40-question set | 40/40 |
 | 2026-10-14 | **baseline, 40-question set (real "before")** | **32/40** — easy 9/10, medium 15/15, hard 8/15 |
 | 2026-10-14 | oracle, after eval-set corrections below | 40/40 |
+| 2026-10-14 | baseline, corrected 40-question set (same prompt/model) | 34/40 — easy 10/10, medium 14/15, hard 10/15 |
 
 Every new feature must be measured with `evals/run_eval.py`. Add a row here after each run.
 
