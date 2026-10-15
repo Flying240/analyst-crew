@@ -3,7 +3,7 @@ import os
 import re
 
 from src import llm_usage
-from src.config import LLM_PROVIDER, PROMPT_SCHEMA, SCHEMA_COMPACT_PATH, SCHEMA_PATH
+from src.config import LLM_PROVIDER, PROMPT_SCHEMA, REASONING_EFFORT, SCHEMA_COMPACT_PATH, SCHEMA_PATH
 from src.llm_retry import with_backoff
 
 RULES = """\
@@ -29,10 +29,12 @@ def call_groq(prompt: str) -> str:
     from groq import Groq
 
     client = Groq(api_key=os.environ["GROQ_API_KEY"])
+    extra = {"reasoning_effort": REASONING_EFFORT} if REASONING_EFFORT else {}
     resp = client.chat.completions.create(
         model=os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
         messages=[{"role": "user", "content": prompt}],
         temperature=0,
+        **extra,
     )
     if resp.usage:
         llm_usage.record(resp.usage.prompt_tokens, resp.usage.completion_tokens)
