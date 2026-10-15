@@ -15,5 +15,6 @@ SCHEMA_COMPACT_PATH = ROOT / "schema_compact.md"
 PROMPT_SCHEMA = os.getenv("PROMPT_SCHEMA", "compact").lower()
 
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq").lower()
-# Groq gpt-oss reasoning effort: "low" | "medium" | "high". Empty = don't send it (provider default).
-REASONING_EFFORT = os.getenv("REASONING_EFFORT", "").lower() or None
+# Groq gpt-oss reasoning effort: "low" (frozen eval default) | "medium" | "high"; "none" = don't send it.
+_effort = os.getenv("REASONING_EFFORT", "").lower() or "low"
+REASONING_EFFORT = None if _effort == "none" else _effort

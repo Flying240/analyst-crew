@@ -1,53 +1,316 @@
 {
-  "description": "Baseline 'before' on the 50-question set: 3 complete runs wanted, collected across days because of Groq's 200k tokens/day free-tier limit. Combine with: python evals/run_eval.py --answerer src.agents.baseline:answer --include <files>",
-  "answerer": "src.agents.baseline:answer",
-  "model": "groq openai/gpt-oss-120b, temperature 0",
-  "prompt_schema": "full",
-  "runs": [
-    {
-      "file": "evals/results/20261014_222750_baseline.json",
-      "date": "2026-10-14",
-      "complete": true,
-      "score": 43,
-      "total": 50,
-      "by_difficulty": {
-        "easy": {
-          "score": 10,
-          "total": 10,
-          "infra_errors": 0
-        },
-        "medium": {
-          "score": 20,
-          "total": 21,
-          "infra_errors": 0
-        },
-        "hard": {
-          "score": 13,
-          "total": 19,
-          "infra_errors": 0
-        }
-      },
-      "by_split": {
-        "heldout": {
-          "score": 14,
-          "total": 15,
-          "infra_errors": 0
-        },
-        "dev": {
-          "score": 29,
-          "total": 35,
-          "infra_errors": 0
-        }
-      },
-      "failed": [
-        "h02_review_gap",
-        "h04_drop_category",
-        "h05_same_state_days",
-        "h06_state_gap_days",
-        "h10_corr_days_review",
-        "h15_median_out_of_state_days",
-        "m18_credit_card_customers_pct"
-      ]
+ "description": "Final baseline 'before' on the 50-question set with the frozen eval setup (see README 'Eval setup').",
+ "answerer": "src.agents.baseline:answer",
+ "model": "groq openai/gpt-oss-120b, temperature 0, reasoning_effort low",
+ "prompt_schema": "compact",
+ "runs": [
+  {
+   "file": "evals/results/20261015_113639_baseline.json",
+   "date": "2026-10-15",
+   "complete": true,
+   "score": 42,
+   "total": 50,
+   "by_difficulty": {
+    "easy": {
+     "score": 10,
+     "total": 10,
+     "infra_errors": 0
+    },
+    "medium": {
+     "score": 18,
+     "total": 21,
+     "infra_errors": 0
+    },
+    "hard": {
+     "score": 14,
+     "total": 19,
+     "infra_errors": 0
     }
+   },
+   "by_split": {
+    "heldout": {
+     "score": 13,
+     "total": 15,
+     "infra_errors": 0
+    },
+    "dev": {
+     "score": 29,
+     "total": 35,
+     "infra_errors": 0
+    }
+   },
+   "tokens": {
+    "questions": 50,
+    "prompt": 33913,
+    "completion": 8220,
+    "mean_prompt": 678.3,
+    "mean_completion": 164.4
+   },
+   "failed": [
+    "m04_health_beauty_revenue",
+    "m11_null_category_products",
+    "h02_review_gap",
+    "h04_drop_category",
+    "h06_state_gap_days",
+    "h10_corr_days_review",
+    "h15_median_out_of_state_days",
+    "m19_avg_freight_per_order"
+   ]
+  },
+  {
+   "file": "evals/results/20261015_113908_baseline.json",
+   "date": "2026-10-15",
+   "complete": true,
+   "score": 44,
+   "total": 50,
+   "by_difficulty": {
+    "easy": {
+     "score": 10,
+     "total": 10,
+     "infra_errors": 0
+    },
+    "medium": {
+     "score": 19,
+     "total": 21,
+     "infra_errors": 0
+    },
+    "hard": {
+     "score": 15,
+     "total": 19,
+     "infra_errors": 0
+    }
+   },
+   "by_split": {
+    "heldout": {
+     "score": 14,
+     "total": 15,
+     "infra_errors": 0
+    },
+    "dev": {
+     "score": 30,
+     "total": 35,
+     "infra_errors": 0
+    }
+   },
+   "tokens": {
+    "questions": 50,
+    "prompt": 33913,
+    "completion": 8102,
+    "mean_prompt": 678.3,
+    "mean_completion": 162.0
+   },
+   "failed": [
+    "m11_null_category_products",
+    "h02_review_gap",
+    "h06_state_gap_days",
+    "h10_corr_days_review",
+    "h15_median_out_of_state_days",
+    "m19_avg_freight_per_order"
+   ]
+  },
+  {
+   "file": "evals/results/20261015_114135_baseline.json",
+   "date": "2026-10-15",
+   "complete": true,
+   "score": 42,
+   "total": 50,
+   "by_difficulty": {
+    "easy": {
+     "score": 10,
+     "total": 10,
+     "infra_errors": 0
+    },
+    "medium": {
+     "score": 19,
+     "total": 21,
+     "infra_errors": 0
+    },
+    "hard": {
+     "score": 13,
+     "total": 19,
+     "infra_errors": 0
+    }
+   },
+   "by_split": {
+    "heldout": {
+     "score": 14,
+     "total": 15,
+     "infra_errors": 0
+    },
+    "dev": {
+     "score": 28,
+     "total": 35,
+     "infra_errors": 0
+    }
+   },
+   "tokens": {
+    "questions": 50,
+    "prompt": 33913,
+    "completion": 7983,
+    "mean_prompt": 678.3,
+    "mean_completion": 159.7
+   },
+   "failed": [
+    "m11_null_category_products",
+    "h02_review_gap",
+    "h06_state_gap_days",
+    "h07_repeat_revenue_share",
+    "h10_corr_days_review",
+    "h15_median_out_of_state_days",
+    "m19_avg_freight_per_order",
+    "h18_five_star_revenue"
+   ]
+  }
+ ],
+ "summary_file": "evals/results/20261015_114135_baseline_summary3.json",
+ "summary": {
+  "overall": {
+   "mean_pct": 85.3,
+   "min_pct": 84.0,
+   "max_pct": 88.0,
+   "scores": [
+    "42/50",
+    "44/50",
+    "42/50"
+   ],
+   "infra_errors": 0
+  },
+  "by_difficulty": {
+   "easy": {
+    "mean_pct": 100.0,
+    "min_pct": 100.0,
+    "max_pct": 100.0,
+    "scores": [
+     "10/10",
+     "10/10",
+     "10/10"
+    ],
+    "infra_errors": 0
+   },
+   "medium": {
+    "mean_pct": 88.9,
+    "min_pct": 85.7,
+    "max_pct": 90.5,
+    "scores": [
+     "18/21",
+     "19/21",
+     "19/21"
+    ],
+    "infra_errors": 0
+   },
+   "hard": {
+    "mean_pct": 73.7,
+    "min_pct": 68.4,
+    "max_pct": 78.9,
+    "scores": [
+     "14/19",
+     "15/19",
+     "13/19"
+    ],
+    "infra_errors": 0
+   }
+  },
+  "by_split": {
+   "heldout": {
+    "mean_pct": 91.1,
+    "min_pct": 86.7,
+    "max_pct": 93.3,
+    "scores": [
+     "13/15",
+     "14/15",
+     "14/15"
+    ],
+    "infra_errors": 0
+   },
+   "dev": {
+    "mean_pct": 82.9,
+    "min_pct": 80.0,
+    "max_pct": 85.7,
+    "scores": [
+     "29/35",
+     "30/35",
+     "28/35"
+    ],
+    "infra_errors": 0
+   }
+  },
+  "flipped": {
+   "m04_health_beauty_revenue": [
+    false,
+    true,
+    true
+   ],
+   "h04_drop_category": [
+    false,
+    true,
+    true
+   ],
+   "h07_repeat_revenue_share": [
+    true,
+    true,
+    false
+   ],
+   "h18_five_star_revenue": [
+    true,
+    true,
+    false
+   ]
+  },
+  "always_failed": [
+   "m11_null_category_products",
+   "h02_review_gap",
+   "h06_state_gap_days",
+   "h10_corr_days_review",
+   "h15_median_out_of_state_days",
+   "m19_avg_freight_per_order"
   ]
+ },
+ "early_experiments": [
+  {
+   "file": "evals/results/20261014_222750_baseline.json",
+   "date": "2026-10-14",
+   "complete": true,
+   "score": 43,
+   "total": 50,
+   "by_difficulty": {
+    "easy": {
+     "score": 10,
+     "total": 10,
+     "infra_errors": 0
+    },
+    "medium": {
+     "score": 20,
+     "total": 21,
+     "infra_errors": 0
+    },
+    "hard": {
+     "score": 13,
+     "total": 19,
+     "infra_errors": 0
+    }
+   },
+   "by_split": {
+    "heldout": {
+     "score": 14,
+     "total": 15,
+     "infra_errors": 0
+    },
+    "dev": {
+     "score": 29,
+     "total": 35,
+     "infra_errors": 0
+    }
+   },
+   "failed": [
+    "h02_review_gap",
+    "h04_drop_category",
+    "h05_same_state_days",
+    "h06_state_gap_days",
+    "h10_corr_days_review",
+    "h15_median_out_of_state_days",
+    "m18_credit_card_customers_pct"
+   ],
+   "note": "Early experiment (full schema, default reasoning effort); not part of the final baseline."
+  }
+ ]
 }

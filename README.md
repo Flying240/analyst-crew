@@ -16,6 +16,16 @@ The planned agents are Planner, Data (SQL), Viz (Plotly), Critic and Reporter, o
 | 6 | Streamlit UI + Langfuse tracing | ⬜ |
 | 7 | Deploy | ⬜ |
 
+### Eval setup (frozen 2026-10-15)
+
+Every eval row from 2026-10-15 on uses this setup, which is the default in `src/config.py` and `.env.example`:
+
+- Model: Groq `openai/gpt-oss-120b`, temperature 0
+- Schema: `PROMPT_SCHEMA=compact` (`schema_compact.md`)
+- Reasoning effort: `REASONING_EFFORT=low`
+
+Why: about 900 tokens per question (≈680 prompt + ≈220 completion) against ≈4,000 with the full schema and default reasoning effort, mostly from fewer reasoning tokens. A 10-question dev check scored 7/10 both ways. That leaves room for 3 full 50-question runs inside Groq's free 200K tokens/day. Rows dated before 2026-10-15 used the full schema and default effort.
+
 ### Eval scores
 | Date | Answerer | Score |
 |------|----------|-------|
@@ -28,6 +38,8 @@ The planned agents are Planner, Data (SQL), Viz (Plotly), Critic and Reporter, o
 | 2026-10-14 | baseline, corrected 40-question set (same prompt/model) | 34/40 — easy 10/10, medium 14/15, hard 10/15 |
 | 2026-10-14 | baseline, `--runs 3` (temperature 0) | mean 33.7/40, range 33–34 — easy 10/10, medium 13.7/15 (13–15), hard 10/15 (9–11); 8 questions flip between runs; one run-1 failure (h15) was a Groq 429 rate limit |
 | 2026-10-14 | oracle, 50 questions (+10 silent-wrong-answer) with dev/heldout split | 50/50 — dev 35/35, heldout 15/15 |
+| 2026-10-14 | baseline, 50 questions, full schema, default effort (early experiment, not the baseline) | 43/50, 1 run |
+| 2026-10-15 | **baseline, 50 questions, frozen eval setup, `--runs 3` (official "before")** | **mean 85.3% (42.7/50), range 42–44** — easy 100%; medium 88.9% (18–19/21); hard 73.7% (13–15/19); dev 82.9% (28–30/35); heldout 91.1% (13–14/15). Failed every run: m11, m19, h02, h06, h10, h15. Flipped: m04, h04, h07, h18. ≈840 tokens/question, ≈126K for 3 runs. Details: `evals/baseline_50q_runs.json` |
 
 Every new feature must be measured with `evals/run_eval.py`. Add a row here after each run.
 
