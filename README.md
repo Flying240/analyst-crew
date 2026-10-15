@@ -40,6 +40,7 @@ Why: about 900 tokens per question (≈680 prompt + ≈220 completion) against �
 | 2026-10-14 | oracle, 50 questions (+10 silent-wrong-answer) with dev/heldout split | 50/50 — dev 35/35, heldout 15/15 |
 | 2026-10-14 | baseline, 50 questions, full schema, default effort (early experiment, not the baseline) | 43/50, 1 run |
 | 2026-10-15 | **baseline, 50 questions, frozen eval setup, `--runs 3` (official "before")** | **mean 85.3% (42.7/50), range 42–44** — easy 100%; medium 88.9% (18–19/21); hard 73.7% (13–15/19); dev 82.9% (28–30/35); heldout 91.1% (13–14/15). Failed every run: m11, m19, h02, h06, h10, h15. Flipped: m04, h04, h07, h18. ≈840 tokens/question, ≈126K for 3 runs. Details: `evals/baseline_50q_runs.json` |
+| 2026-10-15 | baseline `--retries 2` (error-feedback retry), 5 always-failing dev questions only (`--ids`) | 2/5 — fixed h10, h15; still failing h06 (DB error after 2 retries), m11 and m19 (SQL ran but answer wrong, so no retry) |
 
 Every new feature must be measured with `evals/run_eval.py`. Add a row here after each run.
 

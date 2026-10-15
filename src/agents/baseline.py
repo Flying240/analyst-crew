@@ -2,9 +2,10 @@
 import os
 import re
 
-from src import llm_usage
+from src import llm_usage, retry_info
 from src.config import LLM_PROVIDER, PROMPT_SCHEMA, REASONING_EFFORT, SCHEMA_COMPACT_PATH, SCHEMA_PATH
 from src.llm_retry import with_backoff
+from src.tools.sql_tool import run_sql
 
 RULES = """\
 - Write a single read-only DuckDB SELECT (or WITH) query. Never INSERT/UPDATE/DELETE/DROP/ALTER.
@@ -22,6 +23,14 @@ def build_prompt(question: str) -> str:
     return (
         "You are a data analyst writing SQL for the Olist e-commerce DuckDB database.\n\n"
         f"# Schema\n{schema}\n\n# Rules\n{RULES}\n\n# Question\n{question}\n\nSQL:"
+    )
+
+
+def build_retry_prompt(question: str, failed_sql: str, error: str) -> str:
+    return (
+        f"{build_prompt(question)}\n{failed_sql}\n\n"
+        f"# That SQL failed with this database error\n{error}\n\n"
+        "Fix the SQL so it runs and answers the question. Follow the same rules.\n\nSQL:"
     )
 
 
@@ -62,7 +71,20 @@ def extract_sql(text: str) -> str:
     return (match.group(1) if match else text).strip().rstrip(";").strip()
 
 
-def answer(question: str) -> str:
+def ask(prompt: str) -> str:
     call = call_gemini if LLM_PROVIDER == "gemini" else call_groq
-    prompt = build_prompt(question)
     return extract_sql(with_backoff(lambda: call(prompt)))
+
+
+def answer(question: str, retries: int = 0) -> str:
+    """Return SQL; on a database error, feed the error back and retry up to `retries` times."""
+    sql = ask(build_prompt(question))
+    used = 0
+    while used < retries:
+        error = run_sql(sql).error
+        if error is None:
+            break
+        used += 1
+        sql = ask(build_retry_prompt(question, sql, error))
+    retry_info.record(used)
+    return sql

@@ -6,10 +6,12 @@ Usage:
     python evals/run_eval.py --answerer src.agents.baseline:answer
     python evals/run_eval.py --answerer src.agents.baseline:answer --runs 3
     python evals/run_eval.py --answerer src.agents.baseline:answer --include evals/results/<earlier run>.json
+    python evals/run_eval.py --answerer src.agents.baseline:answer --retries 2   # feed DB errors back, retry up to 2x
 
 A run stopped by a daily quota is saved as *_incomplete.json and left out of the summary.
 """
 import argparse
+import functools
 import importlib
 import json
 import math
@@ -23,7 +25,7 @@ from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from src import llm_usage  # noqa: E402
+from src import llm_usage, retry_info  # noqa: E402
 from src.llm_retry import DailyLimitError, InfraError  # noqa: E402
 from src.tools.sql_tool import SqlResult, run_sql  # noqa: E402
 
@@ -109,6 +111,7 @@ def evaluate(q: dict, answer: Answerer) -> dict:
     start = time.perf_counter()
     infra_error = daily_limit = False
     llm_usage.take()
+    retry_info.take()
     try:
         sql = answer(q["question"])
         got = run_sql(sql)
@@ -118,6 +121,7 @@ def evaluate(q: dict, answer: Answerer) -> dict:
     except Exception as exc:
         sql, got = "", SqlResult(error=f"answerer failed: {exc}")
     gold = run_sql(q["gold_sql"])
+    retries_used = retry_info.take()
     return {
         "id": q["id"],
         "difficulty": q.get("difficulty", "unknown"),
@@ -126,6 +130,8 @@ def evaluate(q: dict, answer: Answerer) -> dict:
         "infra_error": infra_error,
         "daily_limit": daily_limit,
         "tokens": llm_usage.take(),
+        "retries_used": retries_used,
+        "from_retry": retries_used > 0,
         "sql": sql,
         "error": got.error or gold.error,
         "seconds": round(time.perf_counter() - start, 2),
@@ -298,10 +304,19 @@ def main() -> None:
         "--include", nargs="*", default=[], metavar="RESULT_JSON",
         help="saved run files to summarize together with this invocation's runs (e.g. runs from earlier days)",
     )
+    parser.add_argument(
+        "--retries", type=int, default=0,
+        help="on a database error, send the error back to the answerer and retry up to N times (answerer must accept retries=)",
+    )
+    parser.add_argument("--ids", nargs="*", default=[], metavar="ID", help="only ask these question ids")
     args = parser.parse_args()
 
     questions = json.loads(QUESTIONS_PATH.read_text(encoding="utf-8"))
+    if args.ids:
+        questions = [q for q in questions if q["id"] in set(args.ids)]
     answer = load_answerer(args.answerer, questions)
+    if args.retries:
+        answer = functools.partial(answer, retries=args.retries)
     reports = [json.loads(Path(p).read_text(encoding="utf-8")) for p in args.include]
     for i in range(args.runs):
         if args.runs > 1:
