@@ -68,3 +68,9 @@ def test_live_run_streams_cards_saves_and_then_hits_cache(monkeypatch, tmp_path)
     assert len(list(tmp_path.glob("*.json"))) == 1 and len(calls) == 3
     next(b for b in at.button if b.label == "Ask").click().run()
     assert len(calls) == 3 and any("cached from" in m.value for m in at.markdown)
+
+
+@pytest.mark.parametrize("page", ["eval_dashboard", "schema_explorer"])
+def test_other_pages_render(page):
+    at = AppTest.from_file(f"../app_pages/{page}.py", default_timeout=30).run()
+    assert not at.exception and at.dataframe

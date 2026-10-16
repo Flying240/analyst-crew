@@ -1,0 +1,111 @@
+{
+  "file": "20261016_165258_baseline.json",
+  "run": "baseline",
+  "date": "2026-10-16",
+  "time": "16:52",
+  "official": null,
+  "answerer": "src.agents.baseline:answer_with_tips",
+  "complete": true,
+  "score": 4,
+  "total": 5,
+  "infra_errors": 0,
+  "by_difficulty": {
+    "easy": {
+      "score": 1,
+      "total": 1,
+      "infra_errors": 0
+    },
+    "medium": {
+      "score": 2,
+      "total": 3,
+      "infra_errors": 0
+    },
+    "hard": {
+      "score": 1,
+      "total": 1,
+      "infra_errors": 0
+    }
+  },
+  "by_split": {
+    "dev": {
+      "score": 4,
+      "total": 5,
+      "infra_errors": 0
+    }
+  },
+  "tokens": {
+    "questions": 5,
+    "prompt": 5892,
+    "completion": 1735,
+    "mean_prompt": 1178.4,
+    "mean_completion": 347.0
+  },
+  "critic": null,
+  "questions": [
+    {
+      "id": "e10_avg_delivery_days",
+      "difficulty": "easy",
+      "split": "dev",
+      "passed": true,
+      "infra_error": false,
+      "seconds": 1.91,
+      "tokens": {
+        "prompt": 771,
+        "completion": 136
+      },
+      "retries_used": 0
+    },
+    {
+      "id": "m09_revenue_by_state",
+      "difficulty": "medium",
+      "split": "dev",
+      "passed": true,
+      "infra_error": false,
+      "seconds": 2.6,
+      "tokens": {
+        "prompt": 773,
+        "completion": 193
+      },
+      "retries_used": 0
+    },
+    {
+      "id": "m11_null_category_products",
+      "difficulty": "medium",
+      "split": "dev",
+      "passed": true,
+      "infra_error": false,
+      "seconds": 1.32,
+      "tokens": {
+        "prompt": 766,
+        "completion": 66
+      },
+      "retries_used": 0
+    },
+    {
+      "id": "h15_median_out_of_state_days",
+      "difficulty": "hard",
+      "split": "dev",
+      "passed": true,
+      "infra_error": false,
+      "seconds": 8.02,
+      "tokens": {
+        "prompt": 2813,
+        "completion": 1255
+      },
+      "retries_used": 2
+    },
+    {
+      "id": "m19_avg_freight_per_order",
+      "difficulty": "medium",
+      "split": "dev",
+      "passed": false,
+      "infra_error": false,
+      "seconds": 4.78,
+      "tokens": {
+        "prompt": 769,
+        "completion": 85
+      },
+      "retries_used": 0
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "file": "20261016_173500_graph.json",
+  "run": "graph",
+  "date": "2026-10-16",
+  "time": "17:35",
+  "official": null,
+  "answerer": "src.graph:answer",
+  "complete": true,
+  "score": 5,
+  "total": 5,
+  "infra_errors": 0,
+  "by_difficulty": {
+    "easy": {
+      "score": 1,
+      "total": 1,
+      "infra_errors": 0
+    },
+    "medium": {
+      "score": 3,
+      "total": 3,
+      "infra_errors": 0
+    },
+    "hard": {
+      "score": 1,
+      "total": 1,
+      "infra_errors": 0
+    }
+  },
+  "by_split": {
+    "dev": {
+      "score": 5,
+      "total": 5,
+      "infra_errors": 0
+    }
+  },
+  "tokens": {
+    "questions": 5,
+    "prompt": 9919,
+    "completion": 1699,
+    "mean_prompt": 1983.8,
+    "mean_completion": 339.8
+  },
+  "critic": {
+    "rounds": 0,
+    "caught": 0,
+    "false_alarm": 0,
+    "missed": 0,
+    "confirmed": 0,
+    "returned": {
+      "no_critic": 5
+    }
+  },
+  "questions": [
+    {
+      "id": "e10_avg_delivery_days",
+      "difficulty": "easy",
+      "split": "dev",
+      "passed": true,
+      "infra_error": false,
+      "seconds": 3.14,
+      "tokens": {
+        "prompt": 1714,
+        "completion": 235
+      },
+      "retries_used": 0
+    },
+    {
+      "id": "m09_revenue_by_state",
+      "difficulty": "medium",
+      "split": "dev",
+      "passed": true,
+      "infra_error": false,
+      "seconds": 2.83,
+      "tokens": {
+        "prompt": 1748,
+        "completion": 304
+      },
+      "retries_used": 0
+    },
+    {
+      "id": "m11_null_category_products",
+      "difficulty": "medium",
+      "split": "dev",
+      "passed": true,
+      "infra_error": false,
+      "seconds": 2.31,
+      "tokens": {
+        "prompt": 1691,
+        "completion": 204
+      },
+      "retries_used": 0
+    },
+    {
+      "id": "h15_median_out_of_state_days",
+      "difficulty": "hard",
+      "split": "dev",
+      "passed": true,
+      "infra_error": false,
+      "seconds": 7.49,
+      "tokens": {
+        "prompt": 3053,
+        "completion": 667
+      },
+      "retries_used": 1
+    },
+    {
+      "id": "m19_avg_freight_per_order",
+      "difficulty": "medium",
+      "split": "dev",
+      "passed": true,
+      "infra_error": false,
+      "seconds": 15.96,
+      "tokens": {
+        "prompt": 1713,
+        "completion": 289
+      },
+      "retries_used": 0
+    }
+  ]
+}

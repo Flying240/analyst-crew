@@ -1,0 +1,431 @@
+{
+  "file": "20261014_215216_baseline.json",
+  "run": "baseline",
+  "date": "2026-10-14",
+  "time": "21:52",
+  "official": null,
+  "answerer": "src.agents.baseline:answer",
+  "complete": true,
+  "score": 33,
+  "total": 40,
+  "infra_errors": 0,
+  "by_difficulty": {
+    "easy": {
+      "score": 10,
+      "total": 10
+    },
+    "medium": {
+      "score": 13,
+      "total": 15
+    },
+    "hard": {
+      "score": 10,
+      "total": 15
+    }
+  },
+  "by_split": null,
+  "tokens": null,
+  "critic": null,
+  "questions": [
+    {
+      "id": "e01_total_revenue",
+      "difficulty": "easy",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 6.82,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "e02_unique_customers",
+      "difficulty": "easy",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 2.87,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "e03_delivered_orders",
+      "difficulty": "easy",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 1.9,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "e04_avg_order_value",
+      "difficulty": "easy",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 1.95,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "e05_top_categories",
+      "difficulty": "easy",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 4.12,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "e06_monthly_revenue",
+      "difficulty": "easy",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 2.9,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "e07_avg_review",
+      "difficulty": "easy",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 6.5,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "e08_top_states",
+      "difficulty": "easy",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 1.49,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "e09_payment_types",
+      "difficulty": "easy",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 3.31,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "e10_avg_delivery_days",
+      "difficulty": "easy",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 2.15,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m01_repeat_customers",
+      "difficulty": "medium",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 2.68,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m02_orders_per_customer",
+      "difficulty": "medium",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 4.51,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m03_sp_customers",
+      "difficulty": "medium",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 2.3,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m04_health_beauty_revenue",
+      "difficulty": "medium",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 3.24,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m05_cama_mesa_banho_english",
+      "difficulty": "medium",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 1.61,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m06_delivered_no_date",
+      "difficulty": "medium",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 2.56,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m07_late_pct",
+      "difficulty": "medium",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 4.92,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m08_top_sellers",
+      "difficulty": "medium",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 3.44,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m09_revenue_by_state",
+      "difficulty": "medium",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 2.52,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m10_untranslated_categories",
+      "difficulty": "medium",
+      "split": null,
+      "passed": false,
+      "infra_error": null,
+      "seconds": 2.51,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m11_null_category_products",
+      "difficulty": "medium",
+      "split": null,
+      "passed": false,
+      "infra_error": null,
+      "seconds": 1.73,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m12_items_per_order",
+      "difficulty": "medium",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 8.31,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m13_orders_by_status",
+      "difficulty": "medium",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 2.94,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m14_top_cities",
+      "difficulty": "medium",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 2.16,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "m15_avg_review_furniture",
+      "difficulty": "medium",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 2.47,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h01_review_late",
+      "difficulty": "hard",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 9.49,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h02_review_gap",
+      "difficulty": "hard",
+      "split": null,
+      "passed": false,
+      "infra_error": null,
+      "seconds": 5.52,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h03_biggest_drop_month",
+      "difficulty": "hard",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 2.45,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h04_drop_category",
+      "difficulty": "hard",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 6.62,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h05_same_state_days",
+      "difficulty": "hard",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 15.2,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h06_state_gap_days",
+      "difficulty": "hard",
+      "split": null,
+      "passed": false,
+      "infra_error": null,
+      "seconds": 6.3,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h07_repeat_revenue_share",
+      "difficulty": "hard",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 8.9,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h08_worst_late_state",
+      "difficulty": "hard",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 5.72,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h09_best_review_month",
+      "difficulty": "hard",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 6.18,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h10_corr_days_review",
+      "difficulty": "hard",
+      "split": null,
+      "passed": false,
+      "infra_error": null,
+      "seconds": 5.09,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h11_multi_item_review_gap",
+      "difficulty": "hard",
+      "split": null,
+      "passed": false,
+      "infra_error": null,
+      "seconds": 6.2,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h12_top_rated_seller",
+      "difficulty": "hard",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 5.61,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h13_yoy_growth",
+      "difficulty": "hard",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 8.38,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h14_late_category",
+      "difficulty": "hard",
+      "split": null,
+      "passed": true,
+      "infra_error": null,
+      "seconds": 5.43,
+      "tokens": null,
+      "retries_used": null
+    },
+    {
+      "id": "h15_median_out_of_state_days",
+      "difficulty": "hard",
+      "split": null,
+      "passed": false,
+      "infra_error": null,
+      "seconds": 5.8,
+      "tokens": null,
+      "retries_used": null
+    }
+  ]
+}
