@@ -22,3 +22,5 @@ REASONING_EFFORT = None if _effort == "none" else _effort
 PLANNER_MODEL = os.getenv("PLANNER_MODEL", "openai/gpt-oss-120b")
 DATA_MODEL = os.getenv("DATA_MODEL", "openai/gpt-oss-120b")
 REPORTER_MODEL = os.getenv("REPORTER_MODEL", "openai/gpt-oss-20b")
+CRITIC_MODEL = os.getenv("CRITIC_MODEL", "openai/gpt-oss-120b")
+MAX_CRITIC_ROUNDS = 3

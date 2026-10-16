@@ -139,8 +139,38 @@ def evaluate(q: dict, answer: Answerer) -> dict:
         "seconds": round(time.perf_counter() - start, 2),
     }
     if trace is not None:
+        label_critic_rounds(trace, gold, q["check"])
         result["trace"] = trace
     return result
+
+
+def label_critic_rounds(trace: dict, gold: SqlResult, check: dict) -> None:
+    """Score each Critic round's SQL against gold and label the verdict (false_alarm = flagged a correct SQL)."""
+    for rnd in trace.get("critic_rounds", []):
+        rnd["correct"] = score(run_sql(rnd["sql"]), gold, check)
+        flagged = rnd["verdict"] == "revise"
+        rnd["outcome"] = {
+            (True, True): "false_alarm", (True, False): "caught",
+            (False, True): "confirmed", (False, False): "missed",
+        }[(flagged, rnd["correct"])]
+
+
+CRITIC_OUTCOMES = ("caught", "false_alarm", "missed", "confirmed")
+
+
+def critic_totals(results: list[dict]) -> dict:
+    """Count Critic round outcomes and how the returned SQL was chosen."""
+    rounds = [r for res in results for r in (res.get("trace") or {}).get("critic_rounds", [])]
+    returned: dict[str, int] = {}
+    for res in results:
+        if res.get("trace") and "returned" in res["trace"]:
+            how = res["trace"]["returned"]
+            returned[how] = returned.get(how, 0) + 1
+    return {
+        "rounds": len(rounds),
+        **{o: sum(r["outcome"] == o for r in rounds) for o in CRITIC_OUTCOMES},
+        "returned": returned,
+    }
 
 
 def tally(results: list[dict]) -> dict[str, int]:
@@ -174,7 +204,8 @@ def fmt(b: dict[str, int]) -> str:
 def answerer_slug(answerer: str) -> str:
     """Short filename-safe name for an answerer, e.g. src.agents.baseline:answer -> baseline."""
     module = answerer.split(":")[0]
-    return re.sub(r"[^a-z0-9]+", "-", module.split(".")[-1].lower()).strip("-") or "unknown"
+    slug = re.sub(r"[^a-z0-9]+", "-", module.split(".")[-1].lower()).strip("-") or "unknown"
+    return slug + ("-critic" if answerer.endswith("+critic") else "")
 
 
 def token_totals(results: list[dict]) -> dict:
@@ -210,15 +241,18 @@ def run_once(questions: list[dict], answer: Answerer, answerer: str) -> dict:
     levels = by_difficulty(results)
     splits = by_split(results)
     tokens = token_totals(results)
+    critic = critic_totals(results)
     print()
     for name, b in [*levels.items(), *splits.items()]:
         print(f"{name:<8} {fmt(b)}")
     if tokens["questions"]:
         print(f"tokens   prompt {tokens['mean_prompt']}/q, completion {tokens['mean_completion']}/q, total {tokens['prompt'] + tokens['completion']}")
+    if critic["rounds"]:
+        print("critic   " + ", ".join(f"{k} {critic[k]}" for k in ("rounds", *CRITIC_OUTCOMES)) + f"; returned {critic['returned']}")
     print(f"\nScore: {fmt(overall)}  answerer={answerer}{'' if complete else '  [INCOMPLETE]'}")
     report = {
         "answerer": answerer, "complete": complete, **overall,
-        "by_difficulty": levels, "by_split": splits, "tokens": tokens, "results": results,
+        "by_difficulty": levels, "by_split": splits, "tokens": tokens, "critic": critic, "results": results,
     }
     save(report, answerer_slug(answerer) + ("" if complete else "_incomplete"))
     return report
@@ -277,6 +311,7 @@ def summarize(reports: list[dict]) -> dict:
         "flipped": {qid: runs for qid, runs in outcomes.items() if len(set(runs)) > 1},
         "always_failed": [qid for qid, runs in outcomes.items() if not any(runs)],
         "infra_errors": infra,
+        "critic": {o: sum(r.get("critic", {}).get(o, 0) for r in reports) for o in ("rounds", *CRITIC_OUTCOMES)},
     }
 
 
@@ -313,6 +348,10 @@ def main() -> None:
         "--retries", type=int, default=0,
         help="on a database error, send the error back to the answerer and retry up to N times (answerer must accept retries=)",
     )
+    parser.add_argument(
+        "--critic", action="store_true",
+        help="turn on the Critic loop (answerer must accept critic=); results are labelled '<answerer>+critic'",
+    )
     parser.add_argument("--ids", nargs="*", default=[], metavar="ID", help="only ask these question ids")
     args = parser.parse_args()
 
@@ -322,6 +361,9 @@ def main() -> None:
     answer = load_answerer(args.answerer, questions)
     if args.retries:
         answer = functools.partial(answer, retries=args.retries)
+    if args.critic:
+        answer = functools.partial(answer, critic=True)
+        args.answerer += "+critic"
     reports = [json.loads(Path(p).read_text(encoding="utf-8")) for p in args.include]
     for i in range(args.runs):
         if args.runs > 1:
