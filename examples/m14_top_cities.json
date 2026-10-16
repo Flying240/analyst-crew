@@ -1,0 +1,28 @@
+{
+  "id": "m14_top_cities",
+  "question": "Which 3 customer cities have the most unique customers, and how many?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 674,
+    "completion": 108
+  },
+  "sql": "SELECT\n    c.customer_city,\n    COUNT(DISTINCT c.customer_unique_id) AS unique_customers\nFROM customers AS c\nGROUP BY c.customer_city\nORDER BY unique_customers DESC\nLIMIT 3",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 2.33,
+      "calls": []
+    }
+  ]
+}

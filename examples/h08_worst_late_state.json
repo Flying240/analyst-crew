@@ -1,0 +1,28 @@
+{
+  "id": "h08_worst_late_state",
+  "question": "Among customer states with at least 1000 delivered orders with a known delivery date, which state has the highest share of late deliveries (delivered after the estimated date)?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 693,
+    "completion": 225
+  },
+  "sql": "WITH delivered AS (\n    SELECT\n        o.order_id,\n        c.customer_state,\n        o.order_delivered_customer_date,\n        o.order_estimated_delivery_date,\n        CASE\n            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 1\n            ELSE 0\n        END AS is_late\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    customer_state,\n    SUM(is_late)::DOUBLE / COUNT(*) AS late_share\nFROM delivered\nGROUP BY customer_state\nHAVING COUNT(*) >= 1000\nORDER BY late_share DESC\nLIMIT 1",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 2.82,
+      "calls": []
+    }
+  ]
+}

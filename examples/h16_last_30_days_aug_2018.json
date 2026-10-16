@@ -1,0 +1,28 @@
+{
+  "id": "h16_last_30_days_aug_2018",
+  "question": "How many orders were purchased in the 30 days ending on 2018-08-31, including that day?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 683,
+    "completion": 97
+  },
+  "sql": "SELECT COUNT(*) AS orders_last_30_days\nFROM orders\nWHERE order_purchase_timestamp >= TIMESTAMP '2018-08-02 00:00:00'\n  AND order_purchase_timestamp <= TIMESTAMP '2018-08-31 23:59:59'",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 3.25,
+      "calls": []
+    }
+  ]
+}

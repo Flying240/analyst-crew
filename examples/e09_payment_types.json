@@ -1,0 +1,28 @@
+{
+  "id": "e09_payment_types",
+  "question": "How many payments were made with each payment type?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 669,
+    "completion": 55
+  },
+  "sql": "SELECT\n    payment_type,\n    COUNT(*) AS payment_count\nFROM\n    payments\nGROUP BY\n    payment_type\nORDER BY\n    payment_count DESC",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 2.8,
+      "calls": []
+    }
+  ]
+}

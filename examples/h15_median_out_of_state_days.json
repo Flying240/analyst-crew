@@ -1,0 +1,57 @@
+{
+  "id": "h15_median_out_of_state_days",
+  "question": "For delivered order items where seller and customer are in different states, what is the median delivery time in fractional days?",
+  "source": "eval",
+  "eval_run": "graph-critic",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": true,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 4201,
+    "completion": 732
+  },
+  "sql": "WITH delivered AS (\n    SELECT \n        (extract(epoch FROM o.order_delivered_customer_date) - extract(epoch FROM o.order_purchase_timestamp)) / 86400.0 AS delivery_days\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND c.customer_state <> s.seller_state\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n)\nSELECT median(delivery_days) AS median_delivery_days\nFROM delivered",
+  "error": null,
+  "plan": "- Count the delivery time for each delivered order item: compute the difference between\u202forder_delivered_customer_date\u202fand\u202forder_purchase_timestamp\u202fin days (as a fractional value).  \n- Use the\u202forders\u202ftable (order_id, order_status, order_purchase_timestamp, order_delivered_customer_date) joined to\u202forder_items\u202f(on order_id) to get the items, and join to\u202fcustomers\u202f(on customer_id) and\u202fsellers\u202f(on seller_id) to obtain the customer\u2019s state and the seller\u2019s state.  \n- Apply filters: keep only rows where\u202forder_status = 'delivered'\u202fand where\u202fcustomer_state\u202f\u2260\u202fseller_state.  \n- No additional grouping is needed; the median is calculated over the entire set of delivery\u2011time values that meet the filters.  \n- The final metric is the median of those fractional\u2011day differences.  \n- Return a single numeric value representing that median.",
+  "attempts": [
+    {
+      "sql": "WITH delivered AS (\n    SELECT \n        oi.order_id,\n        o.order_purchase_timestamp,\n        o.order_delivered_customer_date,\n        c.customer_state,\n        s.seller_state,\n        (CAST(o.order_delivered_customer_date AS TIMESTAMP) - CAST(o.order_purchase_timestamp AS TIMESTAMP))::DOUBLE / 86400.0 AS delivery_days\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND c.customer_state <> s.seller_state\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n)\nSELECT median(delivery_days) AS median_delivery_days\nFROM delivered",
+      "error": "ConversionException: Conversion Error: Unimplemented type for cast (INTERVAL -> DOUBLE)\n\nLINE 8: ... AS TIMESTAMP) - CAST(o.order_purchase_timestamp AS TIMESTAMP))::DOUBLE / 86400.0 AS delivery_days\n                                                                          ^"
+    },
+    {
+      "sql": "WITH delivered AS (\n    SELECT \n        (extract(epoch FROM o.order_delivered_customer_date) - extract(epoch FROM o.order_purchase_timestamp)) / 86400.0 AS delivery_days\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND c.customer_state <> s.seller_state\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n)\nSELECT median(delivery_days) AS median_delivery_days\nFROM delivered",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH delivered AS (\n    SELECT \n        (extract(epoch FROM o.order_delivered_customer_date) - extract(epoch FROM o.order_purchase_timestamp)) / 86400.0 AS delivery_days\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND c.customer_state <> s.seller_state\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n)\nSELECT median(delivery_days) AS median_delivery_days\nFROM delivered",
+      "verdict": "ok",
+      "feedback": "",
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH delivered AS (\n    SELECT \n        oi.order_id,\n        o.order_purchase_timestamp,\n        o.order_delivered_customer_date,\n        c.customer_state,\n        s.seller_state,\n        (CAST(o.order_delivered_customer_date AS TIMESTAMP) - CAST(o.order_purchase_timestamp AS TIMESTAMP))::DOUBLE / 86400.0 AS delivery_days\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND c.customer_state <> s.seller_state\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n)\nSELECT median(delivery_days) AS median_delivery_days\nFROM delivered",
+          "error": "ConversionException: Conversion Error: Unimplemented type for cast (INTERVAL -> DOUBLE)\n\nLINE 8: ... AS TIMESTAMP) - CAST(o.order_purchase_timestamp AS TIMESTAMP))::DOUBLE / 86400.0 AS delivery_days\n                                                                          ^"
+        },
+        {
+          "sql": "WITH delivered AS (\n    SELECT \n        (extract(epoch FROM o.order_delivered_customer_date) - extract(epoch FROM o.order_purchase_timestamp)) / 86400.0 AS delivery_days\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND c.customer_state <> s.seller_state\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n)\nSELECT median(delivery_days) AS median_delivery_days\nFROM delivered",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 37.47,
+      "calls": []
+    }
+  ]
+}

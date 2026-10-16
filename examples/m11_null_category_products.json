@@ -1,0 +1,33 @@
+{
+  "id": "m11_null_category_products",
+  "question": "How many products have no category?",
+  "source": "eval",
+  "eval_run": "graph",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 1691,
+    "completion": 204
+  },
+  "sql": "SELECT COUNT(DISTINCT product_id) AS product_count_no_category\nFROM products\nWHERE product_category_name IS NULL\n   OR TRIM(product_category_name) = ''",
+  "error": null,
+  "plan": "- Count distinct product_id values where the product has no associated category; this is a product\u2011level count.  \n- Use the **products** table for product_id and product_category_name columns.  \n- Identify products with no category by checking where product_category_name is NULL or empty (''), since category information resides only in this column.  \n- No joins are required because the category information is stored directly in the products table; ignore the category_translation table.  \n- Apply no additional filters beyond the requirement that the product lacks a category.  \n- Return a single numeric result representing the count of such products.",
+  "attempts": [
+    {
+      "sql": "SELECT COUNT(DISTINCT product_id) AS product_count_no_category\nFROM products\nWHERE product_category_name IS NULL\n   OR TRIM(product_category_name) = ''",
+      "error": null
+    }
+  ],
+  "critic_rounds": [],
+  "returned": "no_critic",
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 2.31,
+      "calls": []
+    }
+  ]
+}

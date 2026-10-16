@@ -1,0 +1,28 @@
+{
+  "id": "m15_avg_review_furniture",
+  "question": "What is the average review score for orders containing products in the furniture_decor category?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 676,
+    "completion": 227
+  },
+  "sql": "WITH furniture_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'furniture_decor'\n)\nSELECT AVG(r.review_score) AS avg_review_score\nFROM reviews r\nJOIN furniture_orders fo ON r.order_id = fo.order_id",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 2.41,
+      "calls": []
+    }
+  ]
+}

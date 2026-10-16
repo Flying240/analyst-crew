@@ -1,0 +1,28 @@
+{
+  "id": "m21_revenue_per_customer",
+  "question": "What is the average revenue per customer from delivered orders?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 670,
+    "completion": 161
+  },
+  "sql": "WITH revenue_per_customer AS (\n    SELECT\n        c.customer_unique_id,\n        SUM(oi.price + oi.freight_value) AS total_revenue\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n    GROUP BY c.customer_unique_id\n)\nSELECT AVG(total_revenue) AS avg_revenue_per_customer\nFROM revenue_per_customer",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 1.9,
+      "calls": []
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "h14_late_category",
+  "question": "Among product categories (English names) with at least 500 delivered order items, which category has the highest share of late-delivered items (delivered after the estimated date)?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 694,
+    "completion": 304
+  },
+  "sql": "WITH delivered AS (\n    SELECT \n        oi.order_id,\n        oi.product_id,\n        o.order_delivered_customer_date,\n        o.order_estimated_delivery_date,\n        p.product_category_name\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    JOIN products p ON oi.product_id = p.product_id\n    WHERE o.order_status = 'delivered'\n),\ncategory_counts AS (\n    SELECT \n        ct.product_category_name_english AS category,\n        COUNT(*) AS total_items,\n        SUM(CASE \n                WHEN d.order_delivered_customer_date > d.order_estimated_delivery_date THEN 1 \n                ELSE 0 \n            END) AS late_items\n    FROM delivered d\n    JOIN category_translation ct \n        ON d.product_category_name = ct.product_category_name\n    GROUP BY ct.product_category_name_english\n    HAVING COUNT(*) >= 500\n)\nSELECT \n    category,\n    CAST(late_items AS DOUBLE) / total_items AS late_share\nFROM category_counts\nORDER BY late_share DESC\nLIMIT 1",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 3.89,
+      "calls": []
+    }
+  ]
+}

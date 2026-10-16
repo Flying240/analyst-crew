@@ -1,0 +1,28 @@
+{
+  "id": "e08_top_states",
+  "question": "Which 5 states have the most unique customers?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 669,
+    "completion": 93
+  },
+  "sql": "SELECT\n    c.customer_state,\n    COUNT(DISTINCT c.customer_unique_id) AS unique_customers\nFROM customers AS c\nGROUP BY c.customer_state\nORDER BY unique_customers DESC\nLIMIT 5",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 5.29,
+      "calls": []
+    }
+  ]
+}

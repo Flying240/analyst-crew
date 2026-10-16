@@ -1,0 +1,28 @@
+{
+  "id": "e04_avg_order_value",
+  "question": "What is the average order value (revenue per delivered order)?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 672,
+    "completion": 130
+  },
+  "sql": "WITH delivered_orders AS (\n    SELECT \n        o.order_id,\n        SUM(oi.price + oi.freight_value) AS order_revenue\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n    GROUP BY o.order_id\n)\nSELECT AVG(order_revenue) AS avg_order_value\nFROM delivered_orders",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 2.43,
+      "calls": []
+    }
+  ]
+}

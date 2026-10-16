@@ -1,0 +1,28 @@
+{
+  "id": "h17_first_purchase_2018",
+  "question": "How many customers made their first-ever purchase in 2018, counting orders of any status?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 678,
+    "completion": 141
+  },
+  "sql": "WITH first_orders AS (\n    SELECT\n        c.customer_unique_id,\n        MIN(o.order_purchase_timestamp) AS first_purchase_ts\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT COUNT(*) AS customers_first_purchase_2018\nFROM first_orders\nWHERE strftime(first_purchase_ts, '%Y') = '2018'",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 6.62,
+      "calls": []
+    }
+  ]
+}

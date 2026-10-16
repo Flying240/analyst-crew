@@ -1,0 +1,28 @@
+{
+  "id": "m01_repeat_customers",
+  "question": "How many unique customers placed more than one order?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 669,
+    "completion": 113
+  },
+  "sql": "WITH customer_orders AS (\n    SELECT c.customer_unique_id, COUNT(DISTINCT o.order_id) AS order_cnt\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT COUNT(*) AS unique_customers_multiple_orders\nFROM customer_orders\nWHERE order_cnt > 1",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 1.44,
+      "calls": []
+    }
+  ]
+}

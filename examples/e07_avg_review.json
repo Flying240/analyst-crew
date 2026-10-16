@@ -1,0 +1,28 @@
+{
+  "id": "e07_avg_review",
+  "question": "What is the average review score?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 666,
+    "completion": 45
+  },
+  "sql": "SELECT AVG(review_score) AS average_review_score FROM reviews",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 6.12,
+      "calls": []
+    }
+  ]
+}

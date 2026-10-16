@@ -1,0 +1,28 @@
+{
+  "id": "m17_q4_2017_revenue",
+  "question": "What was the revenue from orders purchased in Q4 2017 (October through December)?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 677,
+    "completion": 142
+  },
+  "sql": "WITH delivered_orders AS (\n    SELECT oi.price, oi.freight_value\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= TIMESTAMP '2017-10-01'\n      AND o.order_purchase_timestamp < TIMESTAMP '2018-01-01'\n)\nSELECT SUM(price + freight_value) AS revenue_q4_2017 FROM delivered_orders",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 1.33,
+      "calls": []
+    }
+  ]
+}

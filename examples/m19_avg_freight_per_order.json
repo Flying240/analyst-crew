@@ -1,0 +1,49 @@
+{
+  "id": "m19_avg_freight_per_order",
+  "question": "What is the average freight cost per delivered order?",
+  "source": "eval",
+  "eval_run": "graph-critic",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": true,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 2784,
+    "completion": 348
+  },
+  "sql": "WITH delivered_freight AS (\n    SELECT\n        oi.order_id,\n        SUM(oi.freight_value) AS total_freight\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n    GROUP BY oi.order_id\n)\nSELECT AVG(total_freight) AS avg_freight_per_delivered_order\nFROM delivered_freight",
+  "error": null,
+  "plan": "- Compute freight cost by summing the\u202ffreight_value\u202ffield from **order_items** for each order that is delivered (\u202forder_status = 'delivered'\u202f in **orders**).  \n- Use the relationship\u202forders.order_id = order_items.order_id\u202f to join the two tables and filter to delivered orders only.  \n- Aggregate the freight values at the order level (one row per\u202forder_id) and then calculate the average of those per\u2011order freight totals.  \n- No additional filters beyond the delivered\u2011order condition are required.  \n- The final result is a single numeric value representing the average freight cost per delivered order.  \n- Return one row with one column containing that average.",
+  "attempts": [
+    {
+      "sql": "WITH delivered_freight AS (\n    SELECT\n        oi.order_id,\n        SUM(oi.freight_value) AS total_freight\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n    GROUP BY oi.order_id\n)\nSELECT AVG(total_freight) AS avg_freight_per_delivered_order\nFROM delivered_freight",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH delivered_freight AS (\n    SELECT\n        oi.order_id,\n        SUM(oi.freight_value) AS total_freight\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n    GROUP BY oi.order_id\n)\nSELECT AVG(total_freight) AS avg_freight_per_delivered_order\nFROM delivered_freight",
+      "verdict": "ok",
+      "feedback": "",
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH delivered_freight AS (\n    SELECT\n        oi.order_id,\n        SUM(oi.freight_value) AS total_freight\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n    GROUP BY oi.order_id\n)\nSELECT AVG(total_freight) AS avg_freight_per_delivered_order\nFROM delivered_freight",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 17.54,
+      "calls": []
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "e05_top_categories",
+  "question": "What are the top 5 product categories (English names) by revenue?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 674,
+    "completion": 206
+  },
+  "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n),\norder_revenue AS (\n    SELECT oi.order_id,\n           oi.price + oi.freight_value AS revenue,\n           p.product_category_name\n    FROM order_items oi\n    JOIN delivered_orders d ON oi.order_id = d.order_id\n    JOIN products p ON oi.product_id = p.product_id\n)\nSELECT ct.product_category_name_english AS category,\n       SUM(orv.revenue) AS total_revenue\nFROM order_revenue orv\nJOIN category_translation ct\n  ON orv.product_category_name = ct.product_category_name\nGROUP BY ct.product_category_name_english\nORDER BY total_revenue DESC\nLIMIT 5",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 2.63,
+      "calls": []
+    }
+  ]
+}

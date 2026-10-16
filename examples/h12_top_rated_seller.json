@@ -1,0 +1,28 @@
+{
+  "id": "h12_top_rated_seller",
+  "question": "Among sellers with at least 100 delivered orders and an average review score of at least 4.5, which seller (seller_id) has the highest revenue?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 692,
+    "completion": 214
+  },
+  "sql": "WITH seller_stats AS (\n    SELECT\n        oi.seller_id,\n        COUNT(DISTINCT o.order_id) AS delivered_orders,\n        AVG(r.review_score) AS avg_review_score,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    LEFT JOIN reviews r USING (order_id)\n    WHERE o.order_status = 'delivered'\n    GROUP BY oi.seller_id\n    HAVING COUNT(DISTINCT o.order_id) >= 100\n       AND AVG(r.review_score) >= 4.5\n)\nSELECT seller_id\nFROM seller_stats\nORDER BY revenue DESC\nLIMIT 1",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 2.84,
+      "calls": []
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "h01_review_late",
+  "question": "What is the average review score of delivered orders that arrived after the estimated delivery date?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 676,
+    "completion": 154
+  },
+  "sql": "SELECT AVG(r.review_score) AS avg_review_score\nFROM orders o\nJOIN reviews r ON o.order_id = r.order_id\nWHERE o.order_status = 'delivered'\n  AND o.order_delivered_customer_date > o.order_estimated_delivery_date",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 6.2,
+      "calls": []
+    }
+  ]
+}

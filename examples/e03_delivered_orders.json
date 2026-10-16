@@ -1,0 +1,28 @@
+{
+  "id": "e03_delivered_orders",
+  "question": "How many orders were delivered?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 665,
+    "completion": 53
+  },
+  "sql": "SELECT COUNT(*) AS delivered_orders\nFROM orders\nWHERE order_status = 'delivered'",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 0.95,
+      "calls": []
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "m13_orders_by_status",
+  "question": "How many orders are there in each order status?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 669,
+    "completion": 52
+  },
+  "sql": "SELECT\n    order_status,\n    COUNT(*) AS order_count\nFROM\n    orders\nGROUP BY\n    order_status\nORDER BY\n    order_status",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 0.83,
+      "calls": []
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "h13_yoy_growth",
+  "question": "By what percentage (0-100 scale) did revenue for January-August 2018 grow compared with January-August 2017?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 687,
+    "completion": 315
+  },
+  "sql": "WITH rev AS (\n    SELECT \n        strftime(order_purchase_timestamp, '%Y-%m') AS month,\n        SUM(price + freight_value) AS revenue\n    FROM orders\n    JOIN order_items USING (order_id)\n    WHERE order_status = 'delivered'\n      AND order_purchase_timestamp >= '2017-01-01'\n      AND order_purchase_timestamp <  '2018-09-01'\n      AND strftime(order_purchase_timestamp, '%Y-%m') NOT BETWEEN '2016-01' AND '2016-12'\n      AND strftime(order_purchase_timestamp, '%Y-%m') NOT BETWEEN '2018-09' AND '2018-10'\n    GROUP BY month\n),\nrev_2017 AS (\n    SELECT SUM(revenue) AS total_rev_2017\n    FROM rev\n    WHERE month BETWEEN '2017-01' AND '2017-08'\n),\nrev_2018 AS (\n    SELECT SUM(revenue) AS total_rev_2018\n    FROM rev\n    WHERE month BETWEEN '2018-01' AND '2018-08'\n)\nSELECT \n    CASE \n        WHEN total_rev_2017 = 0 THEN NULL\n        ELSE ROUND(100.0 * (total_rev_2018 - total_rev_2017) / total_rev_2017, 2)\n    END AS revenue_growth_percentage\nFROM rev_2017, rev_2018",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 6.83,
+      "calls": []
+    }
+  ]
+}

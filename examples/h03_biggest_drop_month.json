@@ -1,0 +1,28 @@
+{
+  "id": "h03_biggest_drop_month",
+  "question": "In the complete months (Jan 2017 to Aug 2018), which month had the biggest month-over-month revenue drop, and how large was the drop?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 692,
+    "completion": 224
+  },
+  "sql": "WITH monthly_rev AS (\n    SELECT \n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= TIMESTAMP '2017-01-01'\n      AND o.order_purchase_timestamp < TIMESTAMP '2018-09-01'\n    GROUP BY month\n),\nrev_diff AS (\n    SELECT \n        month,\n        revenue,\n        revenue - LAG(revenue) OVER (ORDER BY month) AS diff\n    FROM monthly_rev\n)\nSELECT \n    month,\n    -diff AS drop_amount\nFROM rev_diff\nWHERE diff < 0\nORDER BY drop_amount DESC\nLIMIT 1",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 3.6,
+      "calls": []
+    }
+  ]
+}

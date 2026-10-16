@@ -1,0 +1,28 @@
+{
+  "id": "h05_same_state_days",
+  "question": "For delivered order items where the seller and customer are in the same state, what is the average delivery time in days (fractional days from purchase to customer delivery)?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 2565,
+    "completion": 847
+  },
+  "sql": "WITH delivered AS (\n    SELECT\n        o.order_purchase_timestamp,\n        o.order_delivered_customer_date,\n        c.customer_state,\n        s.seller_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n      AND c.customer_state = s.seller_state\n)\nSELECT AVG(EXTRACT(EPOCH FROM (order_delivered_customer_date - order_purchase_timestamp)) / 86400.0) AS avg_delivery_days\nFROM delivered",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 18.43,
+      "calls": []
+    }
+  ]
+}

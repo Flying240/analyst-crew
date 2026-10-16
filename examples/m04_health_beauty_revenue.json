@@ -1,0 +1,28 @@
+{
+  "id": "m04_health_beauty_revenue",
+  "question": "What is the total revenue of the health_beauty category?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 672,
+    "completion": 178
+  },
+  "sql": "WITH health_items AS (\n    SELECT oi.price, oi.freight_value\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n)\nSELECT SUM(price + freight_value) AS total_revenue\nFROM health_items",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 1.33,
+      "calls": []
+    }
+  ]
+}

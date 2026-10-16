@@ -1,0 +1,28 @@
+{
+  "id": "m03_sp_customers",
+  "question": "How many unique customers are in the state of SP?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 670,
+    "completion": 60
+  },
+  "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers_sp\nFROM customers\nWHERE customer_state = 'SP'",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 1.5,
+      "calls": []
+    }
+  ]
+}

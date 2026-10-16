@@ -1,0 +1,28 @@
+{
+  "id": "m08_top_sellers",
+  "question": "Which 5 sellers (seller_id) have the highest revenue, and what is it?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 677,
+    "completion": 149
+  },
+  "sql": "WITH seller_revenue AS (\n    SELECT\n        oi.seller_id,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM order_items AS oi\n    JOIN orders AS o\n        ON oi.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n    GROUP BY oi.seller_id\n)\nSELECT\n    seller_id,\n    revenue\nFROM seller_revenue\nORDER BY revenue DESC\nLIMIT 5",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 2.92,
+      "calls": []
+    }
+  ]
+}

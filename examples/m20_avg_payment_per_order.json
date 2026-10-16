@@ -1,0 +1,28 @@
+{
+  "id": "m20_avg_payment_per_order",
+  "question": "What is the average total amount paid per order, across all orders that have payments?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 676,
+    "completion": 117
+  },
+  "sql": "SELECT AVG(order_total) AS avg_total_paid_per_order\nFROM (\n    SELECT order_id, SUM(payment_value) AS order_total\n    FROM payments\n    GROUP BY order_id\n) t",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 1.46,
+      "calls": []
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "m06_delivered_no_date",
+  "question": "How many orders have status 'delivered' but no customer delivery date?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 674,
+    "completion": 64
+  },
+  "sql": "SELECT COUNT(*) AS delivered_orders_missing_delivery_date\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date IS NULL",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 2.08,
+      "calls": []
+    }
+  ]
+}

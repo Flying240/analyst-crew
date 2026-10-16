@@ -1,0 +1,28 @@
+{
+  "id": "m16_on_time_orders",
+  "question": "How many delivered orders arrived on time (on or before the estimated delivery date)?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 675,
+    "completion": 78
+  },
+  "sql": "SELECT COUNT(*) AS on_time_delivered_orders\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date <= order_estimated_delivery_date",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 2.45,
+      "calls": []
+    }
+  ]
+}

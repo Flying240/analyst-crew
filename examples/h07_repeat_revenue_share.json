@@ -1,0 +1,28 @@
+{
+  "id": "h07_repeat_revenue_share",
+  "question": "What percentage (0-100) of revenue comes from unique customers who have more than one delivered order?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 680,
+    "completion": 323
+  },
+  "sql": "WITH delivered_orders AS (\n    SELECT \n        o.order_id,\n        o.customer_id,\n        c.customer_unique_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n),\ncustomer_order_counts AS (\n    SELECT \n        customer_unique_id,\n        COUNT(DISTINCT order_id) AS delivered_order_cnt\n    FROM delivered_orders\n    GROUP BY customer_unique_id\n),\nrevenue_by_customer AS (\n    SELECT \n        d.customer_unique_id,\n        SUM(d.revenue) AS customer_revenue,\n        coc.delivered_order_cnt\n    FROM delivered_orders d\n    JOIN customer_order_counts coc\n        ON d.customer_unique_id = coc.customer_unique_id\n    GROUP BY d.customer_unique_id, coc.delivered_order_cnt\n),\ntotal_rev AS (\n    SELECT SUM(customer_revenue) AS total_revenue FROM revenue_by_customer\n),\nmulti_rev AS (\n    SELECT SUM(customer_revenue) AS multi_revenue\n    FROM revenue_by_customer\n    WHERE delivered_order_cnt > 1\n)\nSELECT \n    (multi_rev.multi_revenue / total_rev.total_revenue) * 100.0 AS revenue_percentage_from_multi_order_customers\nFROM total_rev, multi_rev",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 4.57,
+      "calls": []
+    }
+  ]
+}

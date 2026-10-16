@@ -1,0 +1,28 @@
+{
+  "id": "e02_unique_customers",
+  "question": "How many unique customers are there?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 666,
+    "completion": 44
+  },
+  "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers FROM customers",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 2.14,
+      "calls": []
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "m05_cama_mesa_banho_english",
+  "question": "What is the English name of the category 'cama_mesa_banho', and how many products does it have?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 683,
+    "completion": 122
+  },
+  "sql": "WITH cat AS (\n    SELECT \n        ct.product_category_name_english AS english_name,\n        COUNT(p.product_id) AS product_count\n    FROM category_translation ct\n    JOIN products p\n      ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name = 'cama_mesa_banho'\n    GROUP BY ct.product_category_name_english\n)\nSELECT english_name, product_count FROM cat",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 6.8,
+      "calls": []
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "id": "e10_avg_delivery_days",
+  "question": "What is the average delivery time in days for delivered orders?",
+  "source": "eval",
+  "eval_run": "graph-critic",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": true,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 2721,
+    "completion": 280
+  },
+  "sql": "SELECT AVG(date_diff('day', o.order_purchase_timestamp, o.order_delivered_customer_date)) AS average_delivery_days\nFROM orders o\nWHERE o.order_status = 'delivered'",
+  "error": null,
+  "plan": "- Compute delivery time as the difference in days between `order_delivered_customer_date` and `order_purchase_timestamp` for each order that has `order_status = 'delivered'`.  \n- Use the **orders** table for the timestamps and the delivery status.  \n- Apply the filter `order_status = 'delivered'` only; no additional date range filter is required for this metric.  \n- Perform the calculation at the **order** grain, i.e., one delivery time value per order.  \n- Aggregate by taking the average of the per\u2011order delivery\u2011time differences (in days).  \n- Return a single numeric result representing the average delivery time in days.",
+  "attempts": [
+    {
+      "sql": "SELECT AVG(date_diff('day', o.order_purchase_timestamp, o.order_delivered_customer_date)) AS average_delivery_days\nFROM orders o\nWHERE o.order_status = 'delivered'",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "SELECT AVG(date_diff('day', o.order_purchase_timestamp, o.order_delivered_customer_date)) AS average_delivery_days\nFROM orders o\nWHERE o.order_status = 'delivered'",
+      "verdict": "ok",
+      "feedback": "",
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "SELECT AVG(date_diff('day', o.order_purchase_timestamp, o.order_delivered_customer_date)) AS average_delivery_days\nFROM orders o\nWHERE o.order_status = 'delivered'",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 10.24,
+      "calls": []
+    }
+  ]
+}

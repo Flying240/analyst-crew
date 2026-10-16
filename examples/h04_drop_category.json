@@ -1,0 +1,28 @@
+{
+  "id": "h04_drop_category",
+  "question": "In the complete months (Jan 2017 to Aug 2018), find the month with the biggest month-over-month revenue drop. Which product category (English name) had the largest revenue decrease that month compared with the previous month?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 706,
+    "completion": 482
+  },
+  "sql": "WITH monthly_revenue AS (\n    SELECT \n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        ct.product_category_name_english,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= '2017-01-01'\n      AND o.order_purchase_timestamp <  '2018-09-01'  -- up to Aug 2018 inclusive\n    GROUP BY month, ct.product_category_name_english\n),\nmonth_diff AS (\n    SELECT \n        cur.month,\n        cur.product_category_name_english,\n        cur.revenue,\n        LAG(cur.revenue) OVER (PARTITION BY cur.product_category_name_english ORDER BY cur.month) AS prev_revenue,\n        cur.revenue - LAG(cur.revenue) OVER (PARTITION BY cur.product_category_name_english ORDER BY cur.month) AS diff\n    FROM monthly_revenue cur\n),\noverall_month_drop AS (\n    SELECT \n        month,\n        SUM(diff) AS total_diff\n    FROM month_diff\n    GROUP BY month\n    HAVING total_diff IS NOT NULL\n),\nworst_month AS (\n    SELECT month\n    FROM overall_month_drop\n    ORDER BY total_diff ASC  -- most negative drop\n    LIMIT 1\n),\ncategory_drop_in_worst_month AS (\n    SELECT \n        md.product_category_name_english,\n        md.diff\n    FROM month_diff md\n    JOIN worst_month wm ON md.month = wm.month\n    WHERE md.diff IS NOT NULL\n    ORDER BY md.diff ASC\n    LIMIT 1\n)\nSELECT \n    wm.month AS month,\n    cdw.product_category_name_english AS category_with_largest_drop,\n    cdw.diff AS revenue_drop\nFROM worst_month wm\nJOIN category_drop_in_worst_month cdw ON TRUE",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 4.66,
+      "calls": []
+    }
+  ]
+}

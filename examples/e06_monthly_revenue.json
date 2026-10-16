@@ -1,0 +1,28 @@
+{
+  "id": "e06_monthly_revenue",
+  "question": "Show monthly revenue for the complete months (Jan 2017 to Aug 2018).",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 677,
+    "completion": 290
+  },
+  "sql": "WITH delivered AS (\n    SELECT \n        oi.price,\n        oi.freight_value,\n        o.order_purchase_timestamp\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n)\nSELECT \n    strftime(order_purchase_timestamp, '%Y-%m') AS month,\n    SUM(price + freight_value) AS revenue\nFROM delivered\nGROUP BY month\nORDER BY month",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 6.97,
+      "calls": []
+    }
+  ]
+}

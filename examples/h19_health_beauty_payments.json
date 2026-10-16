@@ -1,0 +1,28 @@
+{
+  "id": "h19_health_beauty_payments",
+  "question": "What is the total amount paid for delivered orders that contain at least one health_beauty product?",
+  "source": "eval",
+  "eval_run": "baseline",
+  "created_at": "2026-10-16",
+  "settings": {
+    "critic": false,
+    "retries": null
+  },
+  "eval_tokens": {
+    "prompt": 679,
+    "completion": 261
+  },
+  "sql": "WITH health_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'health_beauty'\n),\ndelivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id\nWHERE oi.order_id IN (SELECT order_id FROM health_orders)",
+  "error": null,
+  "plan": null,
+  "attempts": [],
+  "critic_rounds": [],
+  "returned": null,
+  "nodes": [
+    {
+      "node": "eval",
+      "seconds": 3.04,
+      "calls": []
+    }
+  ]
+}
