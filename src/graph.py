@@ -3,6 +3,7 @@ from functools import lru_cache
 
 from langgraph.graph import END, START, StateGraph
 
+from src import trace_info
 from src.agents import data, planner, reporter, viz
 from src.state import CrewState
 
@@ -34,5 +35,7 @@ def run(question: str, retries: int = 0, skip_report: bool = False) -> CrewState
 
 
 def answer(question: str, retries: int = 0) -> str:
-    """Eval entry point: return the final SQL (Viz and Reporter are skipped)."""
-    return run(question, retries, skip_report=True)["sql"]
+    """Eval entry point: return the final SQL (Viz and Reporter are skipped); plan and attempts go to the eval result."""
+    state = run(question, retries, skip_report=True)
+    trace_info.record({"plan": state.get("plan"), "attempts": state.get("attempts", [])})
+    return state["sql"]

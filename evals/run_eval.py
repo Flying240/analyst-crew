@@ -25,7 +25,7 @@ from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from src import llm_usage, retry_info  # noqa: E402
+from src import llm_usage, retry_info, trace_info  # noqa: E402
 from src.llm_retry import DailyLimitError, InfraError  # noqa: E402
 from src.tools.sql_tool import SqlResult, run_sql  # noqa: E402
 
@@ -112,6 +112,7 @@ def evaluate(q: dict, answer: Answerer) -> dict:
     infra_error = daily_limit = False
     llm_usage.take()
     retry_info.take()
+    trace_info.take()
     try:
         sql = answer(q["question"])
         got = run_sql(sql)
@@ -122,7 +123,8 @@ def evaluate(q: dict, answer: Answerer) -> dict:
         sql, got = "", SqlResult(error=f"answerer failed: {exc}")
     gold = run_sql(q["gold_sql"])
     retries_used = retry_info.take()
-    return {
+    trace = trace_info.take()
+    result = {
         "id": q["id"],
         "difficulty": q.get("difficulty", "unknown"),
         "split": q.get("split", "unknown"),
@@ -136,6 +138,9 @@ def evaluate(q: dict, answer: Answerer) -> dict:
         "error": got.error or gold.error,
         "seconds": round(time.perf_counter() - start, 2),
     }
+    if trace is not None:
+        result["trace"] = trace
+    return result
 
 
 def tally(results: list[dict]) -> dict[str, int]:

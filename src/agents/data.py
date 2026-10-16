@@ -11,7 +11,8 @@ def build_prompt(question: str, plan: str) -> str:
     return (
         "You are a data analyst writing SQL for the Olist e-commerce DuckDB database.\n\n"
         f"# Schema\n{load_schema()}\n\n# Rules\n{RULES}\n\n# DuckDB tips\n{DUCKDB_TIPS}\n\n"
-        f"# Plan\n{plan}\n\n# Question\n{question}\n\nSQL:"
+        "# Plan\nThe plan is guidance. If it conflicts with the question, follow the question.\n"
+        f"{plan}\n\n# Question\n{question}\n\nSQL:"
     )
 
 

@@ -43,7 +43,7 @@ def test_eval_answer_skips_viz_and_reporter(fake_llm):
 def test_planner_prompt_forbids_extra_filters(fake_llm):
     calls = fake_llm(GOOD)
     graph.answer("q")
-    assert "Only use filters stated in the question or the project rules; never add others." in calls[0][1]
+    assert "only filters stated in the question or the project rules; never add others" in calls[0][1]
 
 
 def test_retry_fills_attempts(fake_llm):
@@ -95,3 +95,46 @@ def test_answer_with_tips_adds_tips(monkeypatch):
 
 def test_tips_have_no_date_trunc():
     assert "date_trunc" not in DUCKDB_TIPS and "strftime(ts, '%Y-%m')" in DUCKDB_TIPS
+
+
+def test_planner_on_120b_reporter_on_20b():
+    assert PLANNER_MODEL == "openai/gpt-oss-120b" and REPORTER_MODEL == "openai/gpt-oss-20b"
+
+
+def test_planner_prompt_has_rules_and_bans_sql_functions(fake_llm):
+    calls = fake_llm(GOOD)
+    graph.answer("q")
+    prompt = calls[0][1]
+    assert baseline.RULES in prompt and "Never name SQL functions" in prompt
+
+
+def test_data_prompt_puts_question_over_plan(fake_llm):
+    calls = fake_llm(GOOD)
+    graph.answer("q")
+    assert "The plan is guidance. If it conflicts with the question, follow the question." in calls[1][1]
+
+
+def test_eval_result_saves_plan_and_attempts(fake_llm):
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "evals"))
+    from run_eval import evaluate
+
+    fake_llm(BAD, GOOD)
+    q = {"id": "x", "question": "q", "gold_sql": "SELECT 1", "check": {"type": "scalar"}}
+    r = evaluate(q, lambda question: graph.answer(question, retries=2))
+    assert r["passed"] and r["trace"]["plan"] == "- a plan"
+    assert [a["sql"] for a in r["trace"]["attempts"]] == [BAD, GOOD] and r["trace"]["attempts"][0]["error"]
+
+
+def test_baseline_eval_result_has_no_trace(monkeypatch):
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "evals"))
+    from run_eval import evaluate
+
+    monkeypatch.setattr(baseline, "ask", lambda p: "SELECT 1")
+    r = evaluate({"id": "x", "question": "q", "gold_sql": "SELECT 1", "check": {"type": "scalar"}}, baseline.answer)
+    assert "trace" not in r
