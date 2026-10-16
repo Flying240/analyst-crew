@@ -14,7 +14,7 @@ The planned agents are Planner, Data (SQL), Viz (Plotly), Critic and Reporter, o
 | 4 | Safety: timeouts, row limits, sandboxed code | ⬜ |
 | 5 | MCP server for the database | ⬜ |
 | 6 | Streamlit UI + Langfuse tracing | 🟨 Streamlit app built (see below); Langfuse not started |
-| 7 | Deploy | ⬜ Must get `db/olist.duckdb` onto the deployed app (it is gitignored and built from the Kaggle CSVs): e.g. build it at startup, download it from a release/bucket, or ship a smaller read-only copy. Set `APP_MODE=deployed` there |
+| 7 | Deploy | ⬜ Data is ready: the app builds `db/olist.duckdb` from the committed `data/parquet/` on first start. Set `APP_MODE=deployed` on the host |
 
 ### Eval setup (frozen 2026-10-15)
 
@@ -111,6 +111,27 @@ Question gate:
 - In the app, the Planner then answers in JSON `{answerable: yes|partly|no, reason, plan}`. "no" stops before the Data agent. "partly" continues, and the Reporter states the caveat.
 - For evals the gate is off by default (`PLANNER_GATE=0`). `--gate` turns it on for a run.
 - `python evals/gate_eval.py` measures wrong and missed rejections on 6 answerable and 6 unanswerable cases.
+
+## Deployment storage
+
+| What | Where | Lifetime |
+|------|-------|----------|
+| Olist tables | `data/parquet/*.parquet`, committed: 9 files, 36 MB, largest 13 MB (zstd) | permanent |
+| Database | `db/olist.duckdb`, gitignored; built from the Parquet files at app start if missing | rebuilt per host |
+| Example traces | `examples/*.json`, committed | permanent |
+| Dashboard data | `evals/summaries/*.json`, committed | permanent |
+| Live run cache, token ledger | `.cache/`, gitignored | temporary on free hosting (lost on restart) |
+
+Live-question quotas live in Streamlit session state and are lost on restart too.
+
+Refresh the Parquet files after rebuilding the database with `python scripts/export_parquet.py`. The script fails if any file passes 50 MB, where GitHub starts warning; GitHub blocks files over 100 MB.
+
+## Dataset license and attribution
+
+The data is the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), published by Olist on Kaggle under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+- The Parquet files in `data/parquet/` are a format conversion of that data (CSV to Parquet; rows and values unchanged). They are shared under the same license, for non-commercial use only, with attribution to Olist.
+- This project is not affiliated with or endorsed by Olist.
 
 ## Business rules
 - Revenue = `price + freight_value` from `order_items`, delivered orders only.

@@ -3,6 +3,17 @@ import streamlit as st
 
 st.set_page_config(page_title="Analyst crew", page_icon=":material/query_stats:", layout="wide")
 
+
+@st.cache_resource(show_spinner="Building the database from Parquet (first start only)…")
+def database_ready() -> bool:
+    from src.db_bootstrap import ensure_db
+
+    ensure_db()
+    return True
+
+
+database_ready()
+
 page = st.navigation(
     [
         st.Page("app_pages/ask.py", title="Ask", icon=":material/chat:", default=True),

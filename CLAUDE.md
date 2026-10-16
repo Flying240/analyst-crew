@@ -22,11 +22,11 @@ Agents: Planner, Data (SQL), Viz (Plotly), Critic, Reporter. Orchestrated with L
 - [ ] 4. Safety: timeouts, row limits, sandboxed code
 - [ ] 5. MCP server for the database
 - [ ] 6. Streamlit UI + Langfuse tracing
-- [ ] 7. Deploy (must get db/olist.duckdb onto the host; it is gitignored)
+- [ ] 7. Deploy (app builds db/olist.duckdb from committed data/parquet/ at startup)
 
 ## Commands
 - Setup: `pip install -r requirements.txt`, copy `.env.example` to `.env`
-- Data: `python scripts/download_data.py` → `python scripts/build_db.py` → `python scripts/gen_schema.py`
+- Data: `python scripts/download_data.py` → `python scripts/build_db.py` → `python scripts/gen_schema.py` → `python scripts/export_parquet.py`
 - Tests: `pytest`
 - Eval: `python evals/run_eval.py [--answerer module:function]` (default `oracle` = gold SQL)
 
