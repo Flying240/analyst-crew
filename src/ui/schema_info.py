@@ -5,6 +5,8 @@ from typing import Any
 
 from src.config import SCHEMA_META_PATH, SCHEMA_STATS_PATH
 
+BOX_FILL, BOX_TEXT, LINE = "#E8EEF6", "#1F2937", "#8B97A8"
+
 
 @lru_cache(maxsize=1)
 def meta() -> dict[str, Any]:
@@ -41,8 +43,10 @@ def links(table: str | None = None) -> list[tuple[str, str, bool]]:
 def er_dot() -> str:
     """Graphviz ER diagram: one box per table with its key columns; edges from foreign key to referenced key."""
     lines = ['digraph ER {', '  rankdir=LR; bgcolor="transparent";',
-             '  node [shape=box, style="rounded", fontname="Helvetica", fontsize=11];',
-             '  edge [fontname="Helvetica", fontsize=9, arrowhead=crow, arrowtail=none];']
+             # Light boxes with dark text, mid-gray lines and labels: readable on both light and dark themes.
+             f'  node [shape=box, style="rounded,filled", fillcolor="{BOX_FILL}", color="{LINE}", fontcolor="{BOX_TEXT}",'
+             ' fontname="Helvetica", fontsize=10, margin="0.12,0.06"];',
+             f'  edge [color="{LINE}", fontcolor="{LINE}", fontname="Helvetica", fontsize=9, arrowhead=crow, arrowtail=none];']
     for t, m in sorted(meta().items()):
         keys = [f"PK {', '.join(m['primary_key'])}" if m["primary_key"] else "no key"]
         keys += [f"FK {fk['column']}" for fk in m["foreign_keys"]]
@@ -54,6 +58,11 @@ def er_dot() -> str:
         lines.append(f'  {parent.split(".")[0]} -> {child.split(".")[0]} [{style[2:]}];')
     lines.append("}")
     return "\n".join(lines)
+
+
+def all_columns() -> list[dict[str, Any]]:
+    """Every table with all its columns, for the list under the ER diagram."""
+    return [{"table": t, "columns": ", ".join(c["column"] for c in s["columns"])} for t, s in sorted(stats().items())]
 
 
 def column_table(table: str) -> list[dict[str, Any]]:

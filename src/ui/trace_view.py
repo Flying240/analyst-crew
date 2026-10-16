@@ -111,3 +111,21 @@ def render_totals(steps: list[dict[str, Any]], seconds: float | None, returned: 
         st.caption(" · ".join(f"{m}: {t:,}" for m, t in per_model.items()))
     if returned:
         st.caption(f"Outcome: {RETURNED.get(returned, returned)}")
+
+
+def summary_line(
+    steps: list[dict[str, Any]], seconds: float | None, returned: str | None, eval_tokens: dict[str, int] | None = None,
+) -> str:
+    """One line: agents that ran, tokens, time and outcome, e.g. "Planner → Data (SQL) → Reporter · 3,210 tokens · 4.2s · Critic off"."""
+    agents = list(dict.fromkeys(AGENTS[s["node"]][0] for s in steps if s["node"] in AGENTS))
+    used = sum(tokens(s.get("calls", [])) for s in steps)
+    if not used and eval_tokens:  # cached eval runs keep their tokens apart from the steps
+        token_text = f"{eval_tokens['prompt'] + eval_tokens['completion']:,} tokens in the eval"
+    else:
+        token_text = f"{used:,} tokens"
+    bits = [" → ".join(agents) or "no agents", token_text]
+    if seconds is not None:
+        bits.append(f"{seconds:,.1f}s")
+    if returned:
+        bits.append(RETURNED.get(returned, returned))
+    return " · ".join(bits)

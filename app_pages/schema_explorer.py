@@ -10,7 +10,7 @@ import streamlit as st
 
 from src.config import SCHEMA_PATH
 from src.tools.sql_tool import run_sql
-from src.ui import schema_info
+from src.ui import formatting, schema_info
 
 
 @st.cache_data(ttl=3600)
@@ -29,7 +29,8 @@ def schema_section(table: str) -> str:
 
 st.subheader("Tables")
 st.dataframe(pd.DataFrame(schema_info.overview()), hide_index=True, column_config={
-    "rows": st.column_config.NumberColumn(format="localized"),
+    "rows": st.column_config.NumberColumn(format="%,d"),
+    "columns": st.column_config.NumberColumn(format="%,d"),
     "description": st.column_config.TextColumn(width="large"),
 })
 
@@ -37,7 +38,10 @@ st.subheader("How the tables join")
 st.caption("Arrows point from the referenced key (one) to the table that holds the foreign key (many). "
            "Dashed: zip-prefix links to geolocation, which has many rows per prefix. "
            "Keys are defined in schema_meta.json, because the CSV-loaded DuckDB has none declared.")
-st.graphviz_chart(schema_info.er_dot())
+st.graphviz_chart(schema_info.er_dot(), alt="Entity-relationship diagram: orders links customers, order_items, payments and reviews; order_items links products and sellers")
+st.dataframe(pd.DataFrame(schema_info.all_columns()), hide_index=True, column_config={
+    "columns": st.column_config.TextColumn(width="large"),
+})
 
 st.subheader("Table details")
 table = st.selectbox("Table", sorted(schema_info.meta()))
@@ -63,7 +67,7 @@ if info["traps"]:
 st.markdown("**Columns**")
 st.dataframe(pd.DataFrame(schema_info.column_table(table)), hide_index=True, column_config={
     "% NULL": st.column_config.NumberColumn(format="%.2f%%"),
-    "distinct": st.column_config.NumberColumn(format="localized"),
+    "distinct": st.column_config.NumberColumn(format="%,d"),
 })
 st.caption("Examples are the most frequent values. Stats are precomputed by scripts/export_schema_stats.py.")
 
@@ -72,7 +76,7 @@ rows = sample(table)
 if rows is None:
     st.info("The database isn't available, so sample rows can't be shown.")
 else:
-    st.dataframe(rows, hide_index=True)
+    st.dataframe(rows, hide_index=True, column_config=formatting.column_config(rows))
 section = schema_section(table)
 if section:
     with st.expander("From schema.md", icon=":material/description:"):

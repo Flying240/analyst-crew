@@ -61,7 +61,7 @@ st.markdown(
 counts = row_counts()
 st.dataframe(
     pd.DataFrame([{"table": t, "rows": counts.get(t), "covers": d} for t, d in TABLES.items()]),
-    hide_index=True, column_config={"rows": st.column_config.NumberColumn(format="localized")},
+    hide_index=True, column_config={"rows": st.column_config.NumberColumn(format="%,d")},
 )
 st.caption(
     "Data: Olist, published on Kaggle under the CC BY-NC-SA 4.0 license (attribution, non-commercial, share-alike). "

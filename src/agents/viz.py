@@ -3,6 +3,7 @@ import re
 from typing import Any
 
 from src.state import CrewState
+from src.ui.formatting import style_chart
 
 MONTH_RE = re.compile(r"^\d{4}-\d{2}$")
 
@@ -27,4 +28,4 @@ def make_chart(state: CrewState) -> CrewState:
 
     data = {columns[0]: [r[0] for r in rows], columns[1]: [r[1] for r in rows]}
     draw = px.line if kind == "line" else px.bar
-    return {"chart": draw(data, x=columns[0], y=columns[1])}
+    return {"chart": style_chart(draw(data, x=columns[0], y=columns[1]), columns[1])}

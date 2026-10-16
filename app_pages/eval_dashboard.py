@@ -31,7 +31,7 @@ table = pd.DataFrame([{
 
 st.subheader("Score per run")
 st.bar_chart(table, x="run", y="score %", horizontal=True, sort=False, height=max(240, 28 * len(table)))
-st.dataframe(table.drop(columns=["answerer", "date"]), hide_index=True)
+st.dataframe(table.drop(columns=["answerer", "date"]), hide_index=True, column_config={"tokens / question": st.column_config.NumberColumn(format="%,d")})
 
 st.subheader("Tokens per question")
 st.bar_chart(table, x="run", y="tokens / question", horizontal=True, sort=False, height=max(240, 28 * len(table)))
@@ -58,4 +58,4 @@ if status == "Failed":
     questions = questions[questions["result"] != "✅ pass"]
 elif status == "Passed":
     questions = questions[questions["result"] == "✅ pass"]
-st.dataframe(questions, hide_index=True)
+st.dataframe(questions, hide_index=True, column_config={"tokens": st.column_config.NumberColumn(format="%,d")})
