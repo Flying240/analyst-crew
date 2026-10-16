@@ -13,6 +13,8 @@ def build_prompt(state: CrewState) -> str:
         rows = state.get("rows", [])
         lines = [" | ".join(state.get("columns", []))] + [" | ".join(map(str, r)) for r in rows[:MAX_ROWS]]
         more = f"\n({len(rows) - MAX_ROWS} more rows not shown)" if len(rows) > MAX_ROWS else ""
+        if state.get("truncated"):
+            more += f"\n(The query hit the row limit; only the first {len(rows)} rows were returned. Say so.)"
         result = "\n".join(lines) + more
     caveat = ""
     if state.get("answerable") == "partly":

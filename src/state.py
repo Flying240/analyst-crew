@@ -28,6 +28,7 @@ class CrewState(TypedDict, total=False):
     sql: str
     columns: list[str]
     rows: list[tuple[Any, ...]]
+    truncated: bool  # run_sql hit the row limit
     error: str | None
     attempts: list[Attempt]  # every Data try across all rounds
     round_attempts: list[Attempt]  # the latest Data run's tries

@@ -19,7 +19,7 @@ Agents: Planner, Data (SQL), Viz (Plotly), Critic, Reporter. Orchestrated with L
 - [x] 1. Single-agent baseline + eval score
 - [ ] 2. Multi-agent LangGraph (Planner, Data, Viz, Reporter)
 - [ ] 3. Critic loop with max 3 retries
-- [ ] 4. Safety: timeouts, row limits, sandboxed code
+- [x] 4. Safety: timeouts, row limits, sandboxed code
 - [ ] 5. MCP server for the database
 - [ ] 6. Streamlit UI + Langfuse tracing
 - [ ] 7. Deploy (app builds db/olist.duckdb from committed data/parquet/ at startup)

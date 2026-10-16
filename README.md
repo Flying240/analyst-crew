@@ -11,7 +11,7 @@ The planned agents are Planner, Data (SQL), Viz (Plotly), Critic and Reporter, o
 | 1 | Single-agent baseline + eval score | ✅ Done |
 | 2 | Multi-agent LangGraph (Planner, Data, Viz, Reporter) | ⬜ Next |
 | 3 | Critic loop with max 3 retries | ⬜ |
-| 4 | Safety: timeouts, row limits, sandboxed code | ⬜ |
+| 4 | Safety: timeouts, row limits, sandboxed code | ✅ Done (see Safety) |
 | 5 | MCP server for the database | ⬜ |
 | 6 | Streamlit UI + Langfuse tracing | 🟨 Streamlit app built (see below); Langfuse not started |
 | 7 | Deploy | ⬜ Data is ready: the app builds `db/olist.duckdb` from the committed `data/parquet/` on first start. Set `APP_MODE=deployed` on the host |
@@ -87,6 +87,19 @@ Treat a change in the h09 or h08 result as a change in the question, not as evid
 - Run it with `python evals/run_eval.py --answerer src.agents.baseline:answer`.
 - Gemini's free tier (5 requests/min) hits rate limits during a full eval run, so Groq is the default.
 - The eval set has 40 questions, each with a `difficulty` field (10 easy, 15 medium, 15 hard), and `run_eval.py` reports scores per difficulty.
+
+## Safety (step 4)
+
+All database access goes through `run_sql` in `src/tools/sql_tool.py`.
+
+- **Read-only SQL, enforced twice.** `is_read_only` allows one `SELECT`/`WITH` statement and nothing else. Comments and string literals are removed first, then the check rejects `;`-separated statements and any write or admin keyword (INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, COPY, ATTACH, PRAGMA, SET, ...). Separately, the connection is opened with `duckdb.connect(..., read_only=True)`. DuckDB itself refuses writes on that connection, so a query that slipped past the check still could not change the file (tested in `tests/test_sql_tool.py`).
+  Two outputs that gpt-oss-120b actually produced and that were rejected:
+  - Prose instead of SQL: `You are using the Olist e-commerce DuckDB dataset, which includes the tables: ...`
+  - A valid query that names a column `drop` (`... AS drop`, eval `h03_biggest_drop_month`). The keyword check cannot tell an alias from a statement, so it errs on the side of blocking. The rejection message goes back to the Data agent, which retries.
+  Multiple statements such as `SELECT 1; DROP TABLE orders` are blocked and covered by tests. No model run has produced one yet.
+- **Row limit.** `MAX_ROWS` (default 1000, env `MAX_ROWS`). `run_sql` fetches `limit + 1` rows, keeps `limit` and sets `truncated=True`; `SqlResult.notice` describes the cut. The Data agent passes `truncated` into the state, and the Reporter is told to mention that the result was cut off.
+- **Timeout.** `QUERY_TIMEOUT_S` (default 10 s, env `QUERY_TIMEOUT_S`). A timer calls `con.interrupt()` when the time runs out, and `run_sql` returns `Timeout: query cancelled after Ns ...` as a normal error the agent can react to. Tested with a deliberately slow cross join.
+- **No sandbox needed.** The LLM writes only SQL, and only the checked, read-only, limited path above runs it. No generated Python is executed. The Viz agent is deterministic: it picks a Plotly chart type from the result's column types in code, and no model is involved.
 
 ## Streamlit app (step 6)
 

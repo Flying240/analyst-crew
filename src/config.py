@@ -10,6 +10,9 @@ load_dotenv(ROOT / ".env")
 DATA_DIR = ROOT / "data"
 DB_PATH = Path(os.getenv("OLIST_DB_PATH", ROOT / "db" / "olist.duckdb"))
 SCHEMA_PATH = ROOT / "schema.md"
+# run_sql safety limits: rows returned per query, and seconds before a query is cancelled.
+MAX_ROWS = int(os.getenv("MAX_ROWS", "1000"))
+QUERY_TIMEOUT_S = float(os.getenv("QUERY_TIMEOUT_S", "10"))
 SCHEMA_COMPACT_PATH = ROOT / "schema_compact.md"
 # Which schema goes into LLM prompts: "compact" (fewer tokens) or "full" (schema.md).
 PROMPT_SCHEMA = os.getenv("PROMPT_SCHEMA", "compact").lower()

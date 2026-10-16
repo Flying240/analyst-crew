@@ -60,4 +60,5 @@ def use_sql(sql: str, error: str | None = None) -> CrewState:
         "error": error if result is None else result.error,
         "columns": result.columns if result else [],
         "rows": result.rows if result else [],
+        "truncated": bool(result and result.truncated),
     }
