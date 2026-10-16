@@ -18,3 +18,7 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq").lower()
 # Groq gpt-oss reasoning effort: "low" (frozen eval default) | "medium" | "high"; "none" = don't send it.
 _effort = os.getenv("REASONING_EFFORT", "").lower() or "low"
 REASONING_EFFORT = None if _effort == "none" else _effort
+# Per-agent Groq models (Gemini always uses GEMINI_MODEL).
+PLANNER_MODEL = os.getenv("PLANNER_MODEL", "openai/gpt-oss-20b")
+DATA_MODEL = os.getenv("DATA_MODEL", "openai/gpt-oss-120b")
+REPORTER_MODEL = os.getenv("REPORTER_MODEL", "openai/gpt-oss-20b")

@@ -5,3 +5,5 @@ kaggle>=1.6
 pytest>=8.0
 groq>=0.11
 google-genai>=1.0
+langgraph>=1.0
+plotly>=6.0
