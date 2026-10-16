@@ -223,14 +223,14 @@ def answerer_slug(answerer: str, retries: int = 0) -> str:
     src.agents.baseline:answer_with_tips, retries 2 -> baseline-answer_with_tips-r2;
     src.graph:answer+critic, retries 2 -> graph-critic-r2 (the default function `answer` is left out).
     """
-    spec = answerer.removesuffix("+critic")
+    flags = [f for f in ("gate", "critic") if f"+{f}" in answerer]
+    spec = answerer.split("+")[0]
     module, _, func = spec.partition(":")
     clean = lambda t: re.sub(r"[^a-z0-9_]+", "-", t.lower()).strip("-")
     parts = [clean(module.split(".")[-1]) or "unknown"]
     if func and func != "answer":
         parts.append(clean(func))
-    if answerer.endswith("+critic"):
-        parts.append("critic")
+    parts += flags
     if retries:
         parts.append(f"r{retries}")
     return "-".join(parts)
@@ -387,6 +387,10 @@ def main() -> None:
         "--critic", action="store_true",
         help="turn on the Critic loop (answerer must accept critic=); results are labelled '<answerer>+critic'",
     )
+    parser.add_argument(
+        "--gate", action="store_true",
+        help="turn on the Planner question gate (answerer must accept gate=); results are labelled '<answerer>+gate'",
+    )
     parser.add_argument("--ids", nargs="*", default=[], metavar="ID", help="only ask these question ids")
     args = parser.parse_args()
 
@@ -396,6 +400,9 @@ def main() -> None:
     answer = load_answerer(args.answerer, questions)
     if args.retries:
         answer = functools.partial(answer, retries=args.retries)
+    if args.gate:
+        answer = functools.partial(answer, gate=True)
+        args.answerer += "+gate"
     if args.critic:
         answer = functools.partial(answer, critic=True)
         args.answerer += "+critic"

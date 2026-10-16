@@ -14,10 +14,16 @@ def build_prompt(state: CrewState) -> str:
         lines = [" | ".join(state.get("columns", []))] + [" | ".join(map(str, r)) for r in rows[:MAX_ROWS]]
         more = f"\n({len(rows) - MAX_ROWS} more rows not shown)" if len(rows) > MAX_ROWS else ""
         result = "\n".join(lines) + more
+    caveat = ""
+    if state.get("answerable") == "partly":
+        caveat = (
+            f"# Caveat\nThe data only partly answers the question: {state.get('gate_reason', '')}\n"
+            "State this caveat in the answer.\n\n"
+        )
     return (
         "Answer the question in 2-4 sentences using only the query result. "
         "Give exact numbers; do not speculate beyond the data.\n\n"
-        f"# Question\n{state['question']}\n\n# Query result\n{result}\n\nAnswer:"
+        f"# Question\n{state['question']}\n\n{caveat}# Query result\n{result}\n\nAnswer:"
     )
 
 

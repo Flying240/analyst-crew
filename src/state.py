@@ -22,6 +22,9 @@ class CrewState(TypedDict, total=False):
     max_retries: int
     skip_report: bool  # evals only need the SQL
     plan: str
+    use_gate: bool  # Planner decides answerable yes|partly|no
+    answerable: str  # "yes" | "partly" | "no" (only with the gate on)
+    gate_reason: str
     sql: str
     columns: list[str]
     rows: list[tuple[Any, ...]]
@@ -34,6 +37,6 @@ class CrewState(TypedDict, total=False):
     critic_rounds: list[CriticRound]
     first_ok_sql: str | None  # first SQL that ran; returned if the Critic never accepts a rewrite
     data_runs: int
-    returned: str  # "no_critic" | "ok" | "first_ok_fallback" | "data_disagreed" | "data_error"
+    returned: str  # "no_critic" | "ok" | "first_ok_fallback" | "data_disagreed" | "data_error" | "unanswerable"
     chart: Any  # plotly Figure or None
     report: str

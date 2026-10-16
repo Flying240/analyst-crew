@@ -8,7 +8,7 @@ from langgraph.graph import END, START, StateGraph
 from src import llm_usage, retry_info, trace_info
 from src.agents import critic, data, planner, reporter, viz
 from src.agents.data import use_sql
-from src.config import MAX_CRITIC_ROUNDS
+from src.config import MAX_CRITIC_ROUNDS, PLANNER_GATE
 from src.state import CrewState
 
 
@@ -16,6 +16,10 @@ def finish(state: CrewState) -> str:
     if state.get("skip_report"):
         return END
     return "viz" if viz.chart_kind(state.get("columns", []), state.get("rows", [])) else "reporter"
+
+
+def after_planner(state: CrewState) -> str:
+    return END if state.get("answerable") == "no" else "data"
 
 
 def after_data(state: CrewState) -> str:
@@ -47,7 +51,7 @@ def build_graph():
     g.add_node("viz", viz.make_chart)
     g.add_node("reporter", reporter.report)
     g.add_edge(START, "planner")
-    g.add_edge("planner", "data")
+    g.add_conditional_edges("planner", after_planner, ["data", END])
     g.add_conditional_edges("data", after_data, ["critic", "viz", "reporter", END])
     g.add_conditional_edges("critic", after_critic, ["data", "viz", "reporter", END])
     g.add_edge("viz", "reporter")
@@ -55,29 +59,36 @@ def build_graph():
     return g.compile()
 
 
-def initial_state(question: str, retries: int, skip_report: bool, critic: bool) -> CrewState:
+def initial_state(question: str, retries: int, skip_report: bool, critic: bool, gate: bool | None = None) -> CrewState:
     return {
         "question": question, "max_retries": retries, "skip_report": skip_report,
         "use_critic": critic, "critic_feedback": None, "critic_rounds": [],
+        "use_gate": PLANNER_GATE if gate is None else gate,
     }
 
 
 def finalize(state: CrewState) -> CrewState:
+    if state.get("answerable") == "no":
+        state.setdefault("returned", "unanswerable")
     critic = state.get("use_critic")
     state.setdefault("returned", "no_critic" if not critic else "data_error" if state.get("error") else "ok")
     return state
 
 
-def run(question: str, retries: int = 0, skip_report: bool = False, critic: bool = False) -> CrewState:
-    return finalize(build_graph().invoke(initial_state(question, retries, skip_report, critic)))
+def run(
+    question: str, retries: int = 0, skip_report: bool = False, critic: bool = False, gate: bool | None = None,
+) -> CrewState:
+    return finalize(build_graph().invoke(initial_state(question, retries, skip_report, critic, gate)))
 
 
-def stream(question: str, retries: int = 0, critic: bool = False) -> Iterator[tuple[str, CrewState, dict[str, Any]]]:
+def stream(
+    question: str, retries: int = 0, critic: bool = False, gate: bool | None = None,
+) -> Iterator[tuple[str, CrewState, dict[str, Any]]]:
     """Yield (node, update, meta) as each node finishes, then ("done", final state, totals).
 
     meta has the node's wall seconds and its LLM calls [{model, prompt, completion}].
     """
-    state = initial_state(question, retries, False, critic)
+    state = initial_state(question, retries, False, critic, gate)
     llm_usage.take_calls()
     start = last = time.perf_counter()
     calls: list[dict[str, Any]] = []
@@ -92,15 +103,16 @@ def stream(question: str, retries: int = 0, critic: bool = False) -> Iterator[tu
     yield "done", finalize(state), {"seconds": round(time.perf_counter() - start, 2), "calls": calls}
 
 
-def answer(question: str, retries: int = 0, critic: bool = False) -> str:
+def answer(question: str, retries: int = 0, critic: bool = False, gate: bool | None = None) -> str:
     """Eval entry point: return the final SQL (Viz and Reporter are skipped); the trace goes to the eval result."""
-    state = run(question, retries, skip_report=True, critic=critic)
+    state = run(question, retries, skip_report=True, critic=critic, gate=gate)
     retry_info.record(state.get("retries_used", 0))  # error retries summed over all Data runs
     trace_info.record({
         "plan": state.get("plan"),
+        **({"answerable": state["answerable"], "gate_reason": state.get("gate_reason")} if "answerable" in state else {}),
         "attempts": state.get("attempts", []),
         "critic_rounds": state.get("critic_rounds", []),
         "critic_feedback": state.get("critic_feedback"),
         "returned": state["returned"],
     })
-    return state["sql"]
+    return state.get("sql", "")
