@@ -129,6 +129,8 @@ def test_eval_labels_false_alarm_and_caught(fake_llm):
 def test_critic_results_get_own_filename():
     assert answerer_slug("src.graph:answer+critic") == "graph-critic"
     assert answerer_slug("src.graph:answer") == "graph"
+    assert answerer_slug("src.graph:answer+critic", retries=2) == "graph-critic-r2"
+    assert answerer_slug("src.agents.baseline:answer_with_tips", retries=2) == "baseline-answer_with_tips-r2"
 
 
 def test_critic_prompt_has_no_plan_and_asks_for_checklist():

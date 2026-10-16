@@ -217,11 +217,23 @@ def fmt(b: dict[str, int]) -> str:
     return f"{b['score']}/{b['total']} ({pct}){infra}"
 
 
-def answerer_slug(answerer: str) -> str:
-    """Short filename-safe name for an answerer, e.g. src.agents.baseline:answer -> baseline."""
-    module = answerer.split(":")[0]
-    slug = re.sub(r"[^a-z0-9]+", "-", module.split(".")[-1].lower()).strip("-") or "unknown"
-    return slug + ("-critic" if answerer.endswith("+critic") else "")
+def answerer_slug(answerer: str, retries: int = 0) -> str:
+    """Filename-safe name for an answerer and its flags.
+
+    src.agents.baseline:answer_with_tips, retries 2 -> baseline-answer_with_tips-r2;
+    src.graph:answer+critic, retries 2 -> graph-critic-r2 (the default function `answer` is left out).
+    """
+    spec = answerer.removesuffix("+critic")
+    module, _, func = spec.partition(":")
+    clean = lambda t: re.sub(r"[^a-z0-9_]+", "-", t.lower()).strip("-")
+    parts = [clean(module.split(".")[-1]) or "unknown"]
+    if func and func != "answer":
+        parts.append(clean(func))
+    if answerer.endswith("+critic"):
+        parts.append("critic")
+    if retries:
+        parts.append(f"r{retries}")
+    return "-".join(parts)
 
 
 def token_totals(results: list[dict]) -> dict:
@@ -251,7 +263,7 @@ def run_questions(questions: list[dict], answer: Answerer) -> tuple[list[dict], 
     return results, True
 
 
-def run_once(questions: list[dict], answer: Answerer, answerer: str) -> dict:
+def run_once(questions: list[dict], answer: Answerer, answerer: str, slug: str | None = None) -> dict:
     results, complete = run_questions(questions, answer)
     overall = tally(results)
     levels = by_difficulty(results)
@@ -273,7 +285,7 @@ def run_once(questions: list[dict], answer: Answerer, answerer: str) -> dict:
         "answerer": answerer, "complete": complete, **overall,
         "by_difficulty": levels, "by_split": splits, "tokens": tokens, "critic": critic, "round1": round1, "results": results,
     }
-    save(report, answerer_slug(answerer) + ("" if complete else "_incomplete"))
+    save(report, (slug or answerer_slug(answerer)) + ("" if complete else "_incomplete"))
     return report
 
 
@@ -387,18 +399,19 @@ def main() -> None:
     if args.critic:
         answer = functools.partial(answer, critic=True)
         args.answerer += "+critic"
+    slug = answerer_slug(args.answerer, args.retries)
     reports = [json.loads(Path(p).read_text(encoding="utf-8")) for p in args.include]
     for i in range(args.runs):
         if args.runs > 1:
             print(f"\n=== Run {i + 1}/{args.runs} ===")
-        reports.append(run_once(questions, answer, args.answerer))
+        reports.append(run_once(questions, answer, args.answerer, slug))
         if not reports[-1]["complete"]:
             print("Skipping remaining runs: the daily quota will not reset within this invocation.")
             break
     if len(reports) > 1:
         summary = summarize(reports)
         print_summary(summary)
-        save(summary, f"{answerer_slug(args.answerer)}_summary{len(reports)}")
+        save(summary, f"{slug}_summary{len(reports)}")
 
 
 if __name__ == "__main__":
