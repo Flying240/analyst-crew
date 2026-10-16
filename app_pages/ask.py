@@ -82,17 +82,12 @@ def sidebar() -> bool:
         pick = st.selectbox("All 50 eval questions", [e["question"] for e in examples()], index=None, placeholder="Choose a question")
         if pick:
             st.button("Show this example", on_click=ask, args=(pick,), icon=":material/play_arrow:")
-        st.subheader("Models")
-        for node, (label, icon, _) in AGENTS.items():
-            if node != "critic" or critic:
-                st.markdown(f"{icon} {label}: `{GEMINI if LLM_PROVIDER == 'gemini' and node != 'viz' else AGENTS[node][2] or 'rules, no LLM'}`")
         st.subheader("Token usage today")
         for model in dict.fromkeys(run_models(True)):
             b = quota.budget(model)
             st.markdown(f"`{model}`", help=usage_help(model, b))
             st.progress(b.fraction, text=f"~{b.used:,} / {b.budget:,} (estimate)")
-        with st.expander("About the data"):
-            st.markdown(DATASET_SUMMARY)
+        st.caption("Counts calls made since tracking started; estimate")
     return critic
 
 

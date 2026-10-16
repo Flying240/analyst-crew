@@ -95,7 +95,8 @@ streamlit run app.py
 ```
 
 Pages:
-- **Ask:** type a question or click an example. Each agent's card appears live as the agent finishes: model, tokens, time, every SQL attempt with its error, and every Critic round with its checklist, verdict and feedback. Then come the result table, the Plotly chart and the Reporter's answer. The sidebar has the Critic toggle, the model per agent, and a per-model token bar for today. The bar is a local estimate; hover for exact numbers and for Groq's request and token headers.
+- **Ask:** type a question or click an example. Each agent's card appears live as the agent finishes: model, tokens, time, every SQL attempt with its error, and every Critic round with its checklist, verdict and feedback. Then come the result table, the Plotly chart and the Reporter's answer. The sidebar has the examples, the Critic toggle, the live questions left this hour, and a per-model token bar for today. The bar is a local estimate; hover for exact numbers and for Groq's request and token headers.
+- **About:** the dataset (tables, date range, CC BY-NC-SA 4.0 license), the agent pipeline diagram, the model per agent and why, and the frozen eval setup.
 - **Eval dashboard:** charts and per-question pass/fail from `evals/summaries/`. This folder is committed; refresh it with `python scripts/export_eval_summaries.py`.
 - **Schema explorer:** tables, columns, row counts and sample rows, read-only.
 

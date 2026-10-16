@@ -74,3 +74,16 @@ def test_live_run_streams_cards_saves_and_then_hits_cache(monkeypatch, tmp_path)
 def test_other_pages_render(page):
     at = AppTest.from_file(f"../app_pages/{page}.py", default_timeout=30).run()
     assert not at.exception and at.dataframe
+
+
+def test_about_page_renders_via_navigation():
+    at = AppTest.from_file("../app.py", default_timeout=30).run()
+    assert not at.exception
+    at.switch_page("app_pages/about.py").run()
+    assert not at.exception and any(s.value == "How it works" for s in at.subheader)
+
+
+def test_sidebar_has_no_models_or_about():
+    at = ask_page()
+    assert not any(s.value in ("Models",) for s in at.sidebar.subheader) and not at.sidebar.expander
+    assert any("since tracking started" in c.value for c in at.sidebar.caption)
