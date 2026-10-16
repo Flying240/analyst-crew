@@ -1,4 +1,8 @@
-"""Schema explorer: tables, columns with types and descriptions, row counts and sample rows (read-only)."""
+"""Schema explorer: table overview, ER diagram, keys, known traps, column stats and sample rows (read-only).
+
+Keys and traps come from schema_meta.json; column stats are precomputed in schema_stats.json
+(scripts/export_schema_stats.py), so only the sample rows query the database.
+"""
 import re
 
 import pandas as pd
@@ -6,32 +10,13 @@ import streamlit as st
 
 from src.config import SCHEMA_PATH
 from src.tools.sql_tool import run_sql
+from src.ui import schema_info
 
 
 @st.cache_data(ttl=3600)
-def tables() -> list[str]:
-    r = run_sql("SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' ORDER BY table_name")
-    return [row[0] for row in r.rows]
-
-
-@st.cache_data(ttl=3600)
-def columns(table: str) -> pd.DataFrame:
-    r = run_sql(
-        "SELECT column_name, data_type FROM information_schema.columns "
-        f"WHERE table_schema = 'main' AND table_name = '{table}' ORDER BY ordinal_position"
-    )
-    return pd.DataFrame(r.rows, columns=["column", "type"])
-
-
-@st.cache_data(ttl=3600)
-def row_count(table: str) -> int:
-    return run_sql(f'SELECT COUNT(*) FROM "{table}"').rows[0][0]
-
-
-@st.cache_data(ttl=3600)
-def sample(table: str) -> pd.DataFrame:
+def sample(table: str) -> pd.DataFrame | None:
     r = run_sql(f'SELECT * FROM "{table}" LIMIT 10')
-    return pd.DataFrame(r.rows, columns=r.columns)
+    return pd.DataFrame(r.rows, columns=r.columns) if r.ok else None
 
 
 @st.cache_data(ttl=3600)
@@ -42,17 +27,52 @@ def schema_section(table: str) -> str:
     return m.group(1).strip() if m else ""
 
 
-names = tables()
-if not names:
-    st.error("The DuckDB database isn't available. Build it with `python scripts/build_db.py`.")
-    st.stop()
+st.subheader("Tables")
+st.dataframe(pd.DataFrame(schema_info.overview()), hide_index=True, column_config={
+    "rows": st.column_config.NumberColumn(format="localized"),
+    "description": st.column_config.TextColumn(width="large"),
+})
 
-table = st.selectbox("Table", names)
-st.metric("Rows", f"{row_count(table):,}", border=True, width="content")
-st.subheader("Columns")
-st.dataframe(columns(table), hide_index=True)
-st.subheader("Sample rows")
-st.dataframe(sample(table), hide_index=True)
+st.subheader("How the tables join")
+st.caption("Arrows point from the referenced key (one) to the table that holds the foreign key (many). "
+           "Dashed: zip-prefix links to geolocation, which has many rows per prefix. "
+           "Keys are defined in schema_meta.json, because the CSV-loaded DuckDB has none declared.")
+st.graphviz_chart(schema_info.er_dot())
+
+st.subheader("Table details")
+table = st.selectbox("Table", sorted(schema_info.meta()))
+info, stats = schema_info.meta()[table], schema_info.stats()[table]
+st.markdown(info["description"])
+with st.container(horizontal=True):
+    st.metric("Rows", f"{stats['rows']:,}", border=True)
+    st.metric("Columns", len(stats["columns"]), border=True)
+    st.metric("Primary key", ", ".join(info["primary_key"]) or "none", border=True)
+
+relations = schema_info.links(table)
+if relations:
+    st.markdown("**Relationships**")
+    st.markdown("\n".join(
+        f"- `{child}` → `{parent}`" + (" (approximate: zip prefix, many-to-many)" if soft else "")
+        for child, parent, soft in relations
+    ))
+if info["traps"]:
+    st.markdown("**Known traps**")
+    for trap in info["traps"]:
+        st.warning(trap, icon=":material/warning:")
+
+st.markdown("**Columns**")
+st.dataframe(pd.DataFrame(schema_info.column_table(table)), hide_index=True, column_config={
+    "% NULL": st.column_config.NumberColumn(format="%.2f%%"),
+    "distinct": st.column_config.NumberColumn(format="localized"),
+})
+st.caption("Examples are the most frequent values. Stats are precomputed by scripts/export_schema_stats.py.")
+
+st.markdown("**Sample rows**")
+rows = sample(table)
+if rows is None:
+    st.info("The database isn't available, so sample rows can't be shown.")
+else:
+    st.dataframe(rows, hide_index=True)
 section = schema_section(table)
 if section:
     with st.expander("From schema.md", icon=":material/description:"):

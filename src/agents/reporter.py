@@ -20,7 +20,7 @@ def build_prompt(state: CrewState) -> str:
     if state.get("answerable") == "partly":
         caveat = (
             f"# Caveat\nThe data only partly answers the question: {state.get('gate_reason', '')}\n"
-            "State this caveat in the answer.\n\n"
+            "The app shows this caveat next to the answer, so do not repeat it; just answer what the data covers.\n\n"
         )
     return (
         "Answer the question in 2-4 sentences using only the query result. "

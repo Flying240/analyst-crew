@@ -33,8 +33,10 @@ First decide whether this database can answer the question.
   Use an empty plan.
 Prefer "yes" when the question is a normal analysis of orders, revenue, deliveries, reviews, customers, sellers,
 products, payments or locations, even if it is phrased casually.
+For "partly", also suggest a closely related question that this database can answer fully.
 Reply with JSON only:
-{{"answerable": "yes" | "partly" | "no" | "meta", "reason": "<one sentence>", "plan": "<the bullet-point plan; empty if no>"}}"""
+{{"answerable": "yes" | "partly" | "no" | "meta", "reason": "<one sentence>", "plan": "<the bullet-point plan; empty if no>",
+"suggestion": "<for partly: a related fully answerable question; otherwise empty>"}}"""
 
 ANSWERABLE = ("yes", "partly", "no", "meta")
 
@@ -60,6 +62,16 @@ def parse_gate(text: str) -> tuple[str, str, str]:
     return data["answerable"], str(data.get("reason") or ""), str(data.get("plan") or "").strip()
 
 
+def parse_suggestion(text: str) -> str:
+    """The gate reply's suggested related question, or "" if missing or unparseable."""
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    try:
+        data = json.loads(match.group(0)) if match else None
+    except json.JSONDecodeError:
+        return ""
+    return str(data.get("suggestion") or "").strip() if isinstance(data, dict) else ""
+
+
 def plan(state: CrewState) -> CrewState:
     gate = state.get("use_gate", PLANNER_GATE)
     reply = llm.complete(build_prompt(state["question"], gate), PLANNER_MODEL)
@@ -68,7 +80,10 @@ def plan(state: CrewState) -> CrewState:
     answerable, reason, plan_text = parse_gate(reply)
     if answerable == "meta":
         return {"plan": "", "answerable": "meta", "gate_reason": reason, "report": meta_answer()}
-    return {"plan": plan_text, "answerable": answerable, "gate_reason": reason}
+    update: CrewState = {"plan": plan_text, "answerable": answerable, "gate_reason": reason}
+    if answerable == "partly" and (suggestion := parse_suggestion(reply)):
+        update["suggestion"] = suggestion
+    return update
 
 
 def meta_answer() -> str:

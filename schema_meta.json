@@ -1,0 +1,87 @@
+{
+  "description": "Hand-written keys, relationships and traps for the Olist tables. DuckDB has no declared keys (data loaded from CSV); keys were checked for uniqueness against the data. Join keys match schema_compact.md.",
+  "tables": {
+    "orders": {
+      "description": "One row per order: customer, status and purchase/approval/carrier/delivery/estimated timestamps.",
+      "primary_key": ["order_id"],
+      "foreign_keys": [{"column": "customer_id", "references": "customers.customer_id"}],
+      "traps": [
+        "Revenue counts delivered orders only (order_status = 'delivered').",
+        "Late = order_delivered_customer_date > order_estimated_delivery_date, compared as timestamps.",
+        "2016 and Sept-Oct 2018 are incomplete; leave them out of trends.",
+        "775 orders have no items and 768 have no review."
+      ]
+    },
+    "order_items": {
+      "description": "One row per item in an order: product, seller, price and freight. The source of revenue.",
+      "primary_key": ["order_id", "order_item_id"],
+      "foreign_keys": [
+        {"column": "order_id", "references": "orders.order_id"},
+        {"column": "product_id", "references": "products.product_id"},
+        {"column": "seller_id", "references": "sellers.seller_id"}
+      ],
+      "traps": [
+        "Revenue = price + freight_value, summed per item (an order with 3 items has 3 rows).",
+        "order_item_id is the item's position in the order (1, 2, 3...), not a unique id on its own."
+      ]
+    },
+    "customers": {
+      "description": "One row per order's customer record: zip prefix, city and state.",
+      "primary_key": ["customer_id"],
+      "foreign_keys": [],
+      "soft_links": [{"column": "customer_zip_code_prefix", "references": "geolocation.geolocation_zip_code_prefix"}],
+      "traps": [
+        "customer_id is per order; the same person has one customer_unique_id. Count customers with customer_unique_id."
+      ]
+    },
+    "payments": {
+      "description": "Payments per order: type, installments and value. An order can be paid in several parts.",
+      "primary_key": ["order_id", "payment_sequential"],
+      "foreign_keys": [{"column": "order_id", "references": "orders.order_id"}],
+      "traps": [
+        "Sum payment_value per order before joining to items, or the totals get multiplied.",
+        "payment_value includes freight and is not the revenue definition (use order_items)."
+      ]
+    },
+    "reviews": {
+      "description": "Customer reviews: 1-5 score, optional title and comment (mostly Portuguese), dates.",
+      "primary_key": ["review_id", "order_id"],
+      "foreign_keys": [{"column": "order_id", "references": "orders.order_id"}],
+      "traps": [
+        "Some orders have more than one review (547 orders), and review_id alone is not unique.",
+        "Most comment fields are NULL; comments are in Portuguese."
+      ]
+    },
+    "products": {
+      "description": "Product attributes: category (Portuguese), name/description lengths, photo count, weight and size.",
+      "primary_key": ["product_id"],
+      "foreign_keys": [{"column": "product_category_name", "references": "category_translation.product_category_name"}],
+      "traps": [
+        "There are no product names, only ids and name lengths.",
+        "610 products have a NULL category, and 2 categories have no English translation; use a LEFT JOIN to category_translation.",
+        "Columns are spelled 'lenght' as in the source data."
+      ]
+    },
+    "sellers": {
+      "description": "One row per seller: zip prefix, city and state.",
+      "primary_key": ["seller_id"],
+      "foreign_keys": [],
+      "soft_links": [{"column": "seller_zip_code_prefix", "references": "geolocation.geolocation_zip_code_prefix"}],
+      "traps": ["Sellers have ids and locations only, with no names."]
+    },
+    "category_translation": {
+      "description": "Portuguese product category name to English.",
+      "primary_key": ["product_category_name"],
+      "foreign_keys": [],
+      "traps": []
+    },
+    "geolocation": {
+      "description": "Latitude/longitude samples per zip code prefix, with city and state.",
+      "primary_key": [],
+      "foreign_keys": [],
+      "traps": [
+        "No key: about 1M rows for about 19k zip prefixes. Aggregate per prefix (e.g. AVG lat/lng) before joining, or the rows multiply."
+      ]
+    }
+  }
+}

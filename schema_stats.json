@@ -1,0 +1,621 @@
+{
+ "tables": {
+  "category_translation": {
+   "rows": 71,
+   "columns": [
+    {
+     "column": "product_category_name",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 71,
+     "examples": [
+      "agro_industria_e_comercio",
+      "alimentos",
+      "alimentos_bebidas"
+     ]
+    },
+    {
+     "column": "product_category_name_english",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 71,
+     "examples": [
+      "agro_industry_and_commerce",
+      "air_conditioning",
+      "art"
+     ]
+    }
+   ]
+  },
+  "customers": {
+   "rows": 99441,
+   "columns": [
+    {
+     "column": "customer_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 99441,
+     "examples": [
+      "00012a2ce6f8dcda20d059ce98491703",
+      "000161a058600d5901f007fab4c27140",
+      "0001fd6190edaaf884bcaf3d49edf079"
+     ]
+    },
+    {
+     "column": "customer_unique_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 96096,
+     "examples": [
+      "8d50f5eadf50201ccdcedfb9e2ac8455",
+      "3e43e6105506432c953e165fb2acf44c",
+      "1b6c7548a2a1f9037c1fd3ddfed95f33"
+     ]
+    },
+    {
+     "column": "customer_zip_code_prefix",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 14994,
+     "examples": [
+      "22790",
+      "24220",
+      "22793"
+     ]
+    },
+    {
+     "column": "customer_city",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 4119,
+     "examples": [
+      "sao paulo",
+      "rio de janeiro",
+      "belo horizonte"
+     ]
+    },
+    {
+     "column": "customer_state",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 27,
+     "examples": [
+      "SP",
+      "RJ",
+      "MG"
+     ]
+    }
+   ]
+  },
+  "geolocation": {
+   "rows": 1000163,
+   "columns": [
+    {
+     "column": "geolocation_zip_code_prefix",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 19015,
+     "examples": [
+      "24220",
+      "24230",
+      "38400"
+     ]
+    },
+    {
+     "column": "geolocation_lat",
+     "type": "DOUBLE",
+     "null_pct": 0.0,
+     "distinct": 717372,
+     "examples": [
+      "-27.102098999999946",
+      "-23.495901469908656",
+      "-23.506049208479613"
+     ]
+    },
+    {
+     "column": "geolocation_lng",
+     "type": "DOUBLE",
+     "null_pct": 0.0,
+     "distinct": 717615,
+     "examples": [
+      "-48.62961349999995",
+      "-46.87468669635919",
+      "-46.71737739541604"
+     ]
+    },
+    {
+     "column": "geolocation_city",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 8011,
+     "examples": [
+      "sao paulo",
+      "rio de janeiro",
+      "belo horizonte"
+     ]
+    },
+    {
+     "column": "geolocation_state",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 27,
+     "examples": [
+      "SP",
+      "MG",
+      "RJ"
+     ]
+    }
+   ]
+  },
+  "order_items": {
+   "rows": 112650,
+   "columns": [
+    {
+     "column": "order_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 98666,
+     "examples": [
+      "8272b63d03f5f79c56e9e4120aec44ef",
+      "1b15974a0141d54e36626dca3fdc731a",
+      "ab14fdcfbe524636d65ee38360e22ce8"
+     ]
+    },
+    {
+     "column": "order_item_id",
+     "type": "BIGINT",
+     "null_pct": 0.0,
+     "distinct": 21,
+     "examples": [
+      "1",
+      "2",
+      "3"
+     ]
+    },
+    {
+     "column": "product_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 32951,
+     "examples": [
+      "aca2eb7d00ea1a7b8ebd4e68314663af",
+      "99a4788cb24856965c36a24e339b6058",
+      "422879e10f46682990de24d770e7f83d"
+     ]
+    },
+    {
+     "column": "seller_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 3095,
+     "examples": [
+      "6560211a19b47992c3666cc44a7e94c0",
+      "4a3ca9315b744ce9f8e9374361493884",
+      "1f50f920176fa81dab994f9023523100"
+     ]
+    },
+    {
+     "column": "shipping_limit_date",
+     "type": "TIMESTAMP",
+     "null_pct": 0.0,
+     "distinct": 93318,
+     "examples": [
+      "2017-07-21 18:25:23",
+      "2018-03-01 02:50:48",
+      "2017-08-30 14:30:23"
+     ]
+    },
+    {
+     "column": "price",
+     "type": "DOUBLE",
+     "null_pct": 0.0,
+     "distinct": 5968,
+     "examples": [
+      "59.9",
+      "69.9",
+      "49.9"
+     ]
+    },
+    {
+     "column": "freight_value",
+     "type": "DOUBLE",
+     "null_pct": 0.0,
+     "distinct": 6999,
+     "examples": [
+      "15.1",
+      "7.78",
+      "14.1"
+     ]
+    }
+   ]
+  },
+  "orders": {
+   "rows": 99441,
+   "columns": [
+    {
+     "column": "order_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 99441,
+     "examples": [
+      "00010242fe8c5a6d1ba2dd792cb16214",
+      "00018f77f2f0320c557190d7a144bdd3",
+      "000229ec398224ef6ca0657da4fc703e"
+     ]
+    },
+    {
+     "column": "customer_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 99441,
+     "examples": [
+      "00012a2ce6f8dcda20d059ce98491703",
+      "000161a058600d5901f007fab4c27140",
+      "0001fd6190edaaf884bcaf3d49edf079"
+     ]
+    },
+    {
+     "column": "order_status",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 8,
+     "examples": [
+      "delivered",
+      "shipped",
+      "canceled"
+     ]
+    },
+    {
+     "column": "order_purchase_timestamp",
+     "type": "TIMESTAMP",
+     "null_pct": 0.0,
+     "distinct": 98875,
+     "examples": [
+      "2017-11-20 10:59:08",
+      "2017-11-20 11:46:30",
+      "2018-02-19 15:37:47"
+     ]
+    },
+    {
+     "column": "order_approved_at",
+     "type": "TIMESTAMP",
+     "null_pct": 0.16,
+     "distinct": 90733,
+     "examples": [
+      "2018-02-27 04:31:10",
+      "2017-11-07 07:30:29",
+      "2017-11-07 07:30:38"
+     ]
+    },
+    {
+     "column": "order_delivered_carrier_date",
+     "type": "TIMESTAMP",
+     "null_pct": 1.79,
+     "distinct": 81018,
+     "examples": [
+      "2018-05-09 15:48:00",
+      "2018-05-10 18:29:00",
+      "2018-05-07 12:31:00"
+     ]
+    },
+    {
+     "column": "order_delivered_customer_date",
+     "type": "TIMESTAMP",
+     "null_pct": 2.98,
+     "distinct": 95664,
+     "examples": [
+      "2016-10-27 17:32:07",
+      "2017-06-19 18:47:51",
+      "2017-12-02 00:26:45"
+     ]
+    },
+    {
+     "column": "order_estimated_delivery_date",
+     "type": "TIMESTAMP",
+     "null_pct": 0.0,
+     "distinct": 459,
+     "examples": [
+      "2017-12-20 00:00:00",
+      "2018-03-12 00:00:00",
+      "2018-03-13 00:00:00"
+     ]
+    }
+   ]
+  },
+  "payments": {
+   "rows": 103886,
+   "columns": [
+    {
+     "column": "order_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 99440,
+     "examples": [
+      "fa65dad1b0e818e3ccc5cb0e39231352",
+      "ccf804e764ed5650cd8759557269dc13",
+      "285c2e15bebd4ac83635ccc563dc71f4"
+     ]
+    },
+    {
+     "column": "payment_sequential",
+     "type": "BIGINT",
+     "null_pct": 0.0,
+     "distinct": 29,
+     "examples": [
+      "1",
+      "2",
+      "3"
+     ]
+    },
+    {
+     "column": "payment_type",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 5,
+     "examples": [
+      "credit_card",
+      "boleto",
+      "voucher"
+     ]
+    },
+    {
+     "column": "payment_installments",
+     "type": "BIGINT",
+     "null_pct": 0.0,
+     "distinct": 24,
+     "examples": [
+      "1",
+      "2",
+      "3"
+     ]
+    },
+    {
+     "column": "payment_value",
+     "type": "DOUBLE",
+     "null_pct": 0.0,
+     "distinct": 29077,
+     "examples": [
+      "50.0",
+      "20.0",
+      "100.0"
+     ]
+    }
+   ]
+  },
+  "products": {
+   "rows": 32951,
+   "columns": [
+    {
+     "column": "product_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 32951,
+     "examples": [
+      "00066f42aeeb9f3007548bb9d3f33c38",
+      "00088930e925c41fd95ebfe695fd2655",
+      "0009406fd7479715e4bef61dd91f2462"
+     ]
+    },
+    {
+     "column": "product_category_name",
+     "type": "VARCHAR",
+     "null_pct": 1.85,
+     "distinct": 73,
+     "examples": [
+      "cama_mesa_banho",
+      "esporte_lazer",
+      "moveis_decoracao"
+     ]
+    },
+    {
+     "column": "product_name_lenght",
+     "type": "BIGINT",
+     "null_pct": 1.85,
+     "distinct": 66,
+     "examples": [
+      "60",
+      "59",
+      "58"
+     ]
+    },
+    {
+     "column": "product_description_lenght",
+     "type": "BIGINT",
+     "null_pct": 1.85,
+     "distinct": 2960,
+     "examples": [
+      "404",
+      "729",
+      "651"
+     ]
+    },
+    {
+     "column": "product_photos_qty",
+     "type": "BIGINT",
+     "null_pct": 1.85,
+     "distinct": 19,
+     "examples": [
+      "1",
+      "2",
+      "3"
+     ]
+    },
+    {
+     "column": "product_weight_g",
+     "type": "BIGINT",
+     "null_pct": 0.01,
+     "distinct": 2204,
+     "examples": [
+      "200",
+      "300",
+      "150"
+     ]
+    },
+    {
+     "column": "product_length_cm",
+     "type": "BIGINT",
+     "null_pct": 0.01,
+     "distinct": 99,
+     "examples": [
+      "16",
+      "20",
+      "30"
+     ]
+    },
+    {
+     "column": "product_height_cm",
+     "type": "BIGINT",
+     "null_pct": 0.01,
+     "distinct": 102,
+     "examples": [
+      "10",
+      "15",
+      "20"
+     ]
+    },
+    {
+     "column": "product_width_cm",
+     "type": "BIGINT",
+     "null_pct": 0.01,
+     "distinct": 95,
+     "examples": [
+      "11",
+      "20",
+      "16"
+     ]
+    }
+   ]
+  },
+  "reviews": {
+   "rows": 99224,
+   "columns": [
+    {
+     "column": "review_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 98410,
+     "examples": [
+      "08528f70f579f0c830189efc523d2182",
+      "0c76e7a547a531e7bf9f0b99cba071c1",
+      "1fb4ddc969e6bea80e38deec00393a6f"
+     ]
+    },
+    {
+     "column": "order_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 98673,
+     "examples": [
+      "03c939fd7fd3b38f8485a0f95798f1f6",
+      "8e17072ec97ce29f0e1f111e598b0c85",
+      "c88b1d1b157a9999ce368f218a407141"
+     ]
+    },
+    {
+     "column": "review_score",
+     "type": "BIGINT",
+     "null_pct": 0.0,
+     "distinct": 5,
+     "examples": [
+      "5",
+      "4",
+      "1"
+     ]
+    },
+    {
+     "column": "review_comment_title",
+     "type": "VARCHAR",
+     "null_pct": 88.34,
+     "distinct": 4527,
+     "examples": [
+      "Recomendo",
+      "recomendo",
+      "Bom"
+     ]
+    },
+    {
+     "column": "review_comment_message",
+     "type": "VARCHAR",
+     "null_pct": 58.7,
+     "distinct": 36159,
+     "examples": [
+      "Muito bom",
+      "Bom",
+      "muito bom"
+     ]
+    },
+    {
+     "column": "review_creation_date",
+     "type": "TIMESTAMP",
+     "null_pct": 0.0,
+     "distinct": 636,
+     "examples": [
+      "2017-12-19 00:00:00",
+      "2018-08-28 00:00:00",
+      "2017-12-20 00:00:00"
+     ]
+    },
+    {
+     "column": "review_answer_timestamp",
+     "type": "TIMESTAMP",
+     "null_pct": 0.0,
+     "distinct": 98248,
+     "examples": [
+      "2017-06-15 23:21:05",
+      "2017-02-14 13:58:48",
+      "2017-02-21 23:30:22"
+     ]
+    }
+   ]
+  },
+  "sellers": {
+   "rows": 3095,
+   "columns": [
+    {
+     "column": "seller_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 3095,
+     "examples": [
+      "0015a82c2db000af6aaaf3ae2ecb0532",
+      "001cca7ae9ae17fb1caed9dfb1094831",
+      "001e6ad469a905060d959994f1b41e4f"
+     ]
+    },
+    {
+     "column": "seller_zip_code_prefix",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 2246,
+     "examples": [
+      "14940",
+      "13660",
+      "13920"
+     ]
+    },
+    {
+     "column": "seller_city",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 611,
+     "examples": [
+      "sao paulo",
+      "curitiba",
+      "rio de janeiro"
+     ]
+    },
+    {
+     "column": "seller_state",
+     "type": "VARCHAR",
+     "null_pct": 0.0,
+     "distinct": 23,
+     "examples": [
+      "SP",
+      "PR",
+      "MG"
+     ]
+    }
+   ]
+  }
+ }
+}

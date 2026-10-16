@@ -139,6 +139,8 @@ Live-question quotas live in Streamlit session state and are lost on restart too
 
 Refresh the Parquet files after rebuilding the database with `python scripts/export_parquet.py`. The script fails if any file passes 50 MB, where GitHub starts warning; GitHub blocks files over 100 MB.
 
+The Schema explorer reads keys, relationships and known traps from the hand-written `schema_meta.json`, and column stats (type, % NULL, distinct count, example values) from `schema_stats.json`. Regenerate the stats after rebuilding the database with `python scripts/export_schema_stats.py`.
+
 ## Dataset license and attribution
 
 The data is the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), published by Olist on Kaggle under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).

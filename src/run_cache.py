@@ -15,7 +15,7 @@ from src.config import CRITIC_MODEL, DATA_MODEL, PLANNER_MODEL, REPORTER_MODEL
 
 RUNS_DIR = CACHE_DIR / "runs"
 TRACE_FIELDS = (
-    "sql", "error", "plan", "answerable", "gate_reason", "attempts", "critic_rounds", "returned", "report",
+    "sql", "error", "plan", "answerable", "gate_reason", "suggestion", "attempts", "critic_rounds", "returned", "report",
 )
 
 

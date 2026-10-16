@@ -87,3 +87,39 @@ def test_sidebar_has_no_models_or_about():
     at = ask_page()
     assert not any(s.value in ("Models",) for s in at.sidebar.subheader) and not at.sidebar.expander
     assert any("since tracking started" in c.value for c in at.sidebar.caption)
+
+
+def test_partly_shows_caveat_once_and_suggestion(monkeypatch):
+    import json
+
+    from src.config import PLANNER_MODEL
+
+    caveat = "There is no cost data, so profit can't be computed."
+    suggestion = "What is the revenue per product category?"
+
+    def complete(prompt, model=None):
+        if model == PLANNER_MODEL:
+            return json.dumps({"answerable": "partly", "reason": caveat, "plan": "- sum revenue", "suggestion": suggestion})
+        return "Revenue by category is shown above."
+
+    monkeypatch.setattr(llm, "complete", complete)
+    monkeypatch.setattr(llm, "ask", lambda p, m=None: "SELECT COUNT(*) AS n FROM orders")
+    at = ask_page()
+    at.text_area[0].input("What is the profit per category?")
+    next(b for b in at.button if b.label == "Ask").click().run()
+    assert not at.exception
+    assert [i.value for i in at.info].count(caveat) == 1
+    assert any(b.label == f"Try instead: {suggestion}" for b in at.button)
+
+
+def test_schema_explorer_shows_overview_er_keys_traps_and_stats():
+    at = AppTest.from_file("../app_pages/schema_explorer.py", default_timeout=30).run()
+    assert not at.exception
+    overview, columns = at.dataframe[0].value, at.dataframe[1].value
+    assert len(overview) == 9 and {"rows", "columns", "description"} <= set(overview.columns)
+    assert {"type", "% NULL", "distinct", "examples"} <= set(columns.columns)
+    assert len(at.get("graphviz_chart")) == 1
+    at.selectbox[0].select("customers").run()
+    assert any("customer_unique_id" in w.value for w in at.warning)
+    assert any("`orders.customer_id` → `customers.customer_id`" in m.value for m in at.markdown)
+    assert len(at.dataframe) == 3  # overview, columns, sample rows

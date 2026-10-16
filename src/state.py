@@ -25,6 +25,7 @@ class CrewState(TypedDict, total=False):
     use_gate: bool  # Planner decides answerable yes|partly|no|meta
     answerable: str  # "yes" | "partly" | "no" | "meta" (only with the gate on)
     gate_reason: str
+    suggestion: str  # with answerable=partly: a related question the data answers fully
     sql: str
     columns: list[str]
     rows: list[tuple[Any, ...]]

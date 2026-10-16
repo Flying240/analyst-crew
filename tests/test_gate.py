@@ -109,3 +109,24 @@ def test_gate_eval_scores_meta_cases():
     assert sum(c["expect"] == "meta" for c in load_cases()) == 3
     assert is_correct("meta", "meta") and not is_correct("meta", "yes")
     assert is_correct("yes", "partly") and not is_correct("yes", "meta")
+
+
+def test_partly_keeps_suggestion_and_reporter_does_not_repeat_caveat(monkeypatch):
+    from src.agents import reporter
+
+    def complete(prompt, model=None):
+        if model == PLANNER_MODEL:
+            return json.dumps({"answerable": "partly", "reason": "no costs", "plan": "- p", "suggestion": "Revenue per category?"})
+        return "a report"
+
+    monkeypatch.setattr(llm, "complete", complete)
+    update = planner.plan({"question": "profit?", "use_gate": True})
+    assert update["suggestion"] == "Revenue per category?"
+    prompt = reporter.build_prompt({"question": "q", "columns": ["n"], "rows": [(1,)], **update})
+    assert "do not repeat it" in prompt and "State this caveat" not in prompt
+
+
+def test_suggestion_only_for_partly(monkeypatch):
+    monkeypatch.setattr(llm, "complete", lambda p, m=None: json.dumps({"answerable": "yes", "reason": "", "plan": "- p", "suggestion": "x"}))
+    assert "suggestion" not in planner.plan({"question": "q", "use_gate": True})
+    assert planner.parse_suggestion("not json") == ""

@@ -14,6 +14,9 @@ SCHEMA_PATH = ROOT / "schema.md"
 MAX_ROWS = int(os.getenv("MAX_ROWS", "1000"))
 QUERY_TIMEOUT_S = float(os.getenv("QUERY_TIMEOUT_S", "10"))
 SCHEMA_COMPACT_PATH = ROOT / "schema_compact.md"
+# Schema explorer: hand-written keys/traps, and precomputed column stats (scripts/export_schema_stats.py).
+SCHEMA_META_PATH = ROOT / "schema_meta.json"
+SCHEMA_STATS_PATH = ROOT / "schema_stats.json"
 # Which schema goes into LLM prompts: "compact" (fewer tokens) or "full" (schema.md).
 PROMPT_SCHEMA = os.getenv("PROMPT_SCHEMA", "compact").lower()
 

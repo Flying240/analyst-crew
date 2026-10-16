@@ -26,7 +26,7 @@ Agents: Planner, Data (SQL), Viz (Plotly), Critic, Reporter. Orchestrated with L
 
 ## Commands
 - Setup: `pip install -r requirements.txt`, copy `.env.example` to `.env`
-- Data: `python scripts/download_data.py` → `python scripts/build_db.py` → `python scripts/gen_schema.py` → `python scripts/export_parquet.py`
+- Data: `python scripts/download_data.py` → `python scripts/build_db.py` → `python scripts/gen_schema.py` → `python scripts/export_parquet.py` → `python scripts/export_schema_stats.py`
 - Tests: `pytest`
 - Eval: `python evals/run_eval.py [--answerer module:function]` (default `oracle` = gold SQL)
 

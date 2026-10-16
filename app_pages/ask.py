@@ -139,6 +139,13 @@ def run_live(question: str, critic: bool, run_settings: dict[str, Any]) -> dict[
     return None
 
 
+def partly_note(record: dict[str, Any]) -> None:
+    """The Planner's caveat, shown once, plus its suggested fully answerable question if it gave one."""
+    st.info(record.get("gate_reason") or "The data only partly answers this question.", title="Partly answerable", icon=":material/info:")
+    if record.get("suggestion"):
+        st.button(f"Try instead: {record['suggestion']}", icon=":material/lightbulb:", on_click=ask, args=(record["suggestion"],))
+
+
 def show_answer(record: dict[str, Any]) -> None:
     if record.get("returned") == "unanswerable":
         not_answerable(record.get("gate_reason") or "The dataset doesn't hold this data.")
@@ -161,7 +168,7 @@ def show_answer(record: dict[str, Any]) -> None:
         st.plotly_chart(chart)
     st.subheader("Answer")
     if record.get("answerable") == "partly":
-        st.info(record.get("gate_reason", ""), title="Partly answerable", icon=":material/info:")
+        partly_note(record)
     if record.get("report"):
         st.markdown(record["report"])
     elif st.button("Generate summary (1 small Reporter call)", icon=":material/edit_note:"):
