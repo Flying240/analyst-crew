@@ -141,6 +141,8 @@ def evaluate(q: dict, answer: Answerer) -> dict:
     if trace is not None:
         label_critic_rounds(trace, gold, q["check"])
         result["trace"] = trace
+        if trace.get("returned", "no_critic") != "no_critic" and not infra_error:
+            result["round1_passed"] = round1_passed(trace, result["passed"])
     return result
 
 
@@ -153,6 +155,20 @@ def label_critic_rounds(trace: dict, gold: SqlResult, check: dict) -> None:
             (True, True): "false_alarm", (True, False): "caught",
             (False, True): "confirmed", (False, False): "missed",
         }[(flagged, rnd["correct"])]
+
+
+def round1_passed(trace: dict, final_passed: bool) -> bool:
+    """Whether the Data agent's first SQL (before any Critic rewrite) was correct: the plain "graph" score."""
+    rounds = trace.get("critic_rounds", [])
+    return rounds[0]["correct"] if rounds else final_passed  # no rounds: the SQL errored, so first == final
+
+
+def round1_tally(results: list[dict]) -> dict[str, int] | None:
+    """Score round-1 SQL in a --critic run, so one run gives both the graph and graph + critic rows."""
+    if not any("round1_passed" in r for r in results):
+        return None
+    infra = sum(r.get("infra_error", False) for r in results)
+    return {"score": sum(r.get("round1_passed", False) for r in results), "total": len(results) - infra, "infra_errors": infra}
 
 
 CRITIC_OUTCOMES = ("caught", "false_alarm", "missed", "confirmed")
@@ -242,6 +258,7 @@ def run_once(questions: list[dict], answer: Answerer, answerer: str) -> dict:
     splits = by_split(results)
     tokens = token_totals(results)
     critic = critic_totals(results)
+    round1 = round1_tally(results)
     print()
     for name, b in [*levels.items(), *splits.items()]:
         print(f"{name:<8} {fmt(b)}")
@@ -249,10 +266,12 @@ def run_once(questions: list[dict], answer: Answerer, answerer: str) -> dict:
         print(f"tokens   prompt {tokens['mean_prompt']}/q, completion {tokens['mean_completion']}/q, total {tokens['prompt'] + tokens['completion']}")
     if critic["rounds"]:
         print("critic   " + ", ".join(f"{k} {critic[k]}" for k in ("rounds", *CRITIC_OUTCOMES)) + f"; returned {critic['returned']}")
+    if round1:
+        print(f"round-1  {fmt(round1)}  (first SQL, before Critic rewrites = the plain graph row)")
     print(f"\nScore: {fmt(overall)}  answerer={answerer}{'' if complete else '  [INCOMPLETE]'}")
     report = {
         "answerer": answerer, "complete": complete, **overall,
-        "by_difficulty": levels, "by_split": splits, "tokens": tokens, "critic": critic, "results": results,
+        "by_difficulty": levels, "by_split": splits, "tokens": tokens, "critic": critic, "round1": round1, "results": results,
     }
     save(report, answerer_slug(answerer) + ("" if complete else "_incomplete"))
     return report
@@ -311,6 +330,7 @@ def summarize(reports: list[dict]) -> dict:
         "flipped": {qid: runs for qid, runs in outcomes.items() if len(set(runs)) > 1},
         "always_failed": [qid for qid, runs in outcomes.items() if not any(runs)],
         "infra_errors": infra,
+        "round1": spread([r["round1"] for r in reports]) if all(r.get("round1") for r in reports) else None,
         "critic": {o: sum(r.get("critic", {}).get(o, 0) for r in reports) for o in ("rounds", *CRITIC_OUTCOMES)},
     }
 
@@ -323,6 +343,9 @@ def print_summary(s: dict) -> None:
     for name, b in [("overall", s["overall"]), *s["by_difficulty"].items(), *s["by_split"].items()]:
         infra = f"  ({b['infra_errors']} infra_error, not scored)" if b["infra_errors"] else ""
         print(f"{name:<8} mean {b['mean_pct']}%  range {b['min_pct']}-{b['max_pct']}%  runs {', '.join(b['scores'])}{infra}")
+    if s.get("round1"):
+        b = s["round1"]
+        print(f"round-1  mean {b['mean_pct']}%  range {b['min_pct']}-{b['max_pct']}%  runs {', '.join(b['scores'])}  (graph row, same runs)")
     print("Flipped between runs:")
     for qid, runs in s["flipped"].items():
         print(f"  {qid:<30} {' '.join('P' if p else 'F' for p in runs)}")

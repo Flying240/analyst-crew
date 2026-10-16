@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "evals"))
-from run_eval import answerer_slug, critic_totals, evaluate  # noqa: E402
+from run_eval import answerer_slug, critic_totals, evaluate, round1_tally  # noqa: E402
 from src import graph, llm  # noqa: E402
 from src.agents import critic  # noqa: E402
 from src.config import CRITIC_MODEL  # noqa: E402
@@ -122,6 +122,8 @@ def test_eval_labels_false_alarm_and_caught(fake_llm):
     totals = critic_totals([r])
     assert totals["false_alarm"] == 1 and totals["caught"] == 1 and totals["missed"] == 1
     assert totals["returned"] == {"ok": 1}
+    # the same run also scores the plain graph row: round-1 SQL was correct
+    assert r["round1_passed"] and round1_tally([r]) == {"score": 1, "total": 1, "infra_errors": 0}
 
 
 def test_critic_results_get_own_filename():
