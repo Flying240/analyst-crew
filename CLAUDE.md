@@ -22,7 +22,7 @@ Agents: Planner, Data (SQL), Viz (Plotly), Critic, Reporter. Orchestrated with L
 - [ ] 4. Safety: timeouts, row limits, sandboxed code
 - [ ] 5. MCP server for the database
 - [ ] 6. Streamlit UI + Langfuse tracing
-- [ ] 7. Deploy
+- [ ] 7. Deploy (must get db/olist.duckdb onto the host; it is gitignored)
 
 ## Commands
 - Setup: `pip install -r requirements.txt`, copy `.env.example` to `.env`
@@ -32,4 +32,4 @@ Agents: Planner, Data (SQL), Viz (Plotly), Critic, Reporter. Orchestrated with L
 
 ## Structure
 data/ raw CSVs (gitignored) | db/ olist.duckdb | src/agents/ | src/tools/
-src/graph.py | evals/ | app.py
+src/graph.py | evals/ | app.py + app_pages/ | examples/ (committed eval traces) | .cache/ (live runs, token ledger)

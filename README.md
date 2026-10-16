@@ -13,8 +13,8 @@ The planned agents are Planner, Data (SQL), Viz (Plotly), Critic and Reporter, o
 | 3 | Critic loop with max 3 retries | ⬜ |
 | 4 | Safety: timeouts, row limits, sandboxed code | ⬜ |
 | 5 | MCP server for the database | ⬜ |
-| 6 | Streamlit UI + Langfuse tracing | ⬜ |
-| 7 | Deploy | ⬜ |
+| 6 | Streamlit UI + Langfuse tracing | 🟨 Streamlit app built (see below); Langfuse not started |
+| 7 | Deploy | ⬜ Must get `db/olist.duckdb` onto the deployed app (it is gitignored and built from the Kaggle CSVs): e.g. build it at startup, download it from a release/bucket, or ship a smaller read-only copy. Set `APP_MODE=deployed` there |
 
 ### Eval setup (frozen 2026-10-15)
 
@@ -88,6 +88,29 @@ Treat a change in the h09 or h08 result as a change in the question, not as evid
 - Gemini's free tier (5 requests/min) hits rate limits during a full eval run, so Groq is the default.
 - The eval set has 40 questions, each with a `difficulty` field (10 easy, 15 medium, 15 hard), and `run_eval.py` reports scores per difficulty.
 
+## Streamlit app (step 6)
+
+```bash
+streamlit run app.py
+```
+
+Pages:
+- **Ask:** type a question or click an example. Each agent's card appears live as the agent finishes: model, tokens, time, every SQL attempt with its error, and every Critic round with its checklist, verdict and feedback. Then come the result table, the Plotly chart and the Reporter's answer. The sidebar has the Critic toggle, the model per agent, and a per-model token bar for today. The bar is a local estimate; hover for exact numbers and for Groq's request and token headers.
+- **Eval dashboard:** charts and per-question pass/fail from `evals/summaries/`. This folder is committed; refresh it with `python scripts/export_eval_summaries.py`.
+- **Schema explorer:** tables, columns, row counts and sample rows, read-only.
+
+Tokens and limits:
+- Every run's trace is cached in `.cache/runs/` (gitignored), keyed by the normalized question plus the settings. Cached runs show a "cached from <date>" label and a Re-run button.
+- The 50 eval questions are zero-token examples in `examples/` (committed), built by `python scripts/build_example_cache.py`. Today 5 have full graph + critic traces and 45 have baseline SQL only. Rebuild after the full graph + critic runs.
+- Tokens per model per UTC day are summed in `.cache/usage_<date>.json`. Groq's headers give requests per day and tokens per minute, but there is no tokens-per-day header, so daily tokens are an estimate.
+- Live runs stop at 90% of `DAILY_TOKEN_BUDGET` (200K per model) locally, or of `APP_DAILY_TOKEN_BUDGET` (100K) with `APP_MODE=deployed`. Each session gets 5 live questions per rolling hour (`APP_LIVE_PER_HOUR`). Cached examples are unlimited.
+
+Question gate:
+- A free pre-check rejects empty input, single words and clear off-topic requests (weather, poems, code requests, "who is <person>").
+- In the app, the Planner then answers in JSON `{answerable: yes|partly|no, reason, plan}`. "no" stops before the Data agent. "partly" continues, and the Reporter states the caveat.
+- For evals the gate is off by default (`PLANNER_GATE=0`). `--gate` turns it on for a run.
+- `python evals/gate_eval.py` measures wrong and missed rejections on 6 answerable and 6 unanswerable cases.
+
 ## Business rules
 - Revenue = `price + freight_value` from `order_items`, delivered orders only.
 - Count customers with `customer_unique_id`, not `customer_id`.
@@ -118,7 +141,10 @@ scripts/         download, build DB, generate schema
 src/config.py    paths + env settings
 src/tools/       sql_tool.py (read-only SQL)
 src/agents/      baseline.py (single-agent SQL)
-evals/           questions.json, run_eval.py, results/
+evals/           questions.json, run_eval.py, gate_eval.py, summaries/ (committed), results/ (gitignored)
+examples/        zero-token example traces for the app
+app.py           Streamlit entry; app_pages/ ask, eval_dashboard, schema_explorer
+src/ui/          trace cards; src/run_cache.py, src/quota.py, src/usage_ledger.py
 tests/           pytest suite
 schema.md        generated schema doc for agents
 CLAUDE.md        project rules + roadmap
