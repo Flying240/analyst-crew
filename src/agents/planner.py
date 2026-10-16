@@ -1,7 +1,7 @@
 """Planner: turns the question into a short plan of the logic (no SQL).
 
 With the question gate on, it also decides whether the dataset can answer the question and replies with JSON
-{answerable: yes|partly|no, reason, plan}.
+{answerable: yes|partly|no|meta, reason, plan}.
 """
 import json
 import re
@@ -11,6 +11,7 @@ from src.agents.baseline import RULES, load_schema
 from src.agents.gate import DATASET_SUMMARY
 from src.config import PLANNER_GATE, PLANNER_MODEL
 from src.state import CrewState
+from src.tools.sql_tool import table_names
 
 INSTRUCTIONS = """\
 Write a short plan (at most 6 bullet points) describing only the logic needed to answer the question:
@@ -28,12 +29,14 @@ First decide whether this database can answer the question.
 - "yes": the tables above hold the data the question needs.
 - "partly": part of the question can be answered, or only with a stated approximation; say what is missing.
 - "no": the question needs data the database does not have, or is not about this data.
+- "meta": the question is about the dataset itself: what data or tables it has, its schema, or what can be asked.
+  Use an empty plan.
 Prefer "yes" when the question is a normal analysis of orders, revenue, deliveries, reviews, customers, sellers,
 products, payments or locations, even if it is phrased casually.
 Reply with JSON only:
-{{"answerable": "yes" | "partly" | "no", "reason": "<one sentence>", "plan": "<the bullet-point plan; empty if no>"}}"""
+{{"answerable": "yes" | "partly" | "no" | "meta", "reason": "<one sentence>", "plan": "<the bullet-point plan; empty if no>"}}"""
 
-ANSWERABLE = ("yes", "partly", "no")
+ANSWERABLE = ("yes", "partly", "no", "meta")
 
 
 def build_prompt(question: str, gate: bool = False) -> str:
@@ -63,4 +66,12 @@ def plan(state: CrewState) -> CrewState:
     if not gate:
         return {"plan": reply.strip()}
     answerable, reason, plan_text = parse_gate(reply)
+    if answerable == "meta":
+        return {"plan": "", "answerable": "meta", "gate_reason": reason, "report": meta_answer()}
     return {"plan": plan_text, "answerable": answerable, "gate_reason": reason}
+
+
+def meta_answer() -> str:
+    """Answer to questions about the dataset itself, from the fixed summary and table list (no Data agent)."""
+    tables = ", ".join(f"`{t}`" for t in sorted(table_names()))
+    return f"{DATASET_SUMMARY}\n\nTables in the Olist DuckDB database: {tables}."

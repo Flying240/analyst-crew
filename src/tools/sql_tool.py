@@ -1,6 +1,7 @@
 """Read-only SQL execution against the Olist DuckDB database."""
 import re
 import threading
+from functools import lru_cache
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -51,6 +52,27 @@ def is_read_only(sql: str) -> bool:
     if not re.match(r"^(SELECT|WITH)\b", clean, re.IGNORECASE):
         return False
     return _FORBIDDEN_RE.search(clean) is None
+
+
+@lru_cache(maxsize=1)
+def table_names() -> frozenset[str]:
+    """Lower-case names of the database's tables."""
+    r = run_sql("SELECT table_name FROM information_schema.tables WHERE table_schema = 'main'")
+    return frozenset(row[0].lower() for row in r.rows)
+
+
+def references_table(sql: str) -> bool:
+    """True if the query names at least one real table (outside comments and string literals; quoted names count)."""
+    sql = re.sub(r"/\*.*?\*/|--[^\n]*|'(?:[^']|'')*'", " ", sql, flags=re.DOTALL)
+    words = set(re.findall(r"\w+", sql.lower()))
+    return bool(words & table_names())
+
+
+def check_sql(sql: str) -> str | None:
+    """Error for SQL that cannot answer a data question (no real table), else None."""
+    if not references_table(sql):
+        return "SQL must query at least one table of the database (" + ", ".join(sorted(table_names())) + ")."
+    return None
 
 
 def run_sql(sql: str, limit: int | None = None, timeout_s: float | None = None) -> SqlResult:

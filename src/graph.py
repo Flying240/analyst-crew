@@ -19,7 +19,7 @@ def finish(state: CrewState) -> str:
 
 
 def after_planner(state: CrewState) -> str:
-    return END if state.get("answerable") == "no" else "data"
+    return END if state.get("answerable") in ("no", "meta") else "data"
 
 
 def after_data(state: CrewState) -> str:
@@ -70,6 +70,8 @@ def initial_state(question: str, retries: int, skip_report: bool, critic: bool, 
 def finalize(state: CrewState) -> CrewState:
     if state.get("answerable") == "no":
         state.setdefault("returned", "unanswerable")
+    if state.get("answerable") == "meta":
+        state.setdefault("returned", "meta")
     critic = state.get("use_critic")
     state.setdefault("returned", "no_critic" if not critic else "data_error" if state.get("error") else "ok")
     return state

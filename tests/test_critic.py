@@ -10,9 +10,9 @@ from src import graph, llm  # noqa: E402
 from src.agents import critic  # noqa: E402
 from src.config import CRITIC_MODEL  # noqa: E402
 
-FIRST = "SELECT 1 AS x"
-SECOND = "SELECT 2 AS x"
-THIRD = "SELECT 3 AS x"
+FIRST = "SELECT 1 AS x FROM (SELECT 1 FROM orders LIMIT 1)"
+SECOND = "SELECT 2 AS x FROM (SELECT 1 FROM orders LIMIT 1)"
+THIRD = "SELECT 3 AS x FROM (SELECT 1 FROM orders LIMIT 1)"
 BAD = "SELECT nope FROM orders"
 OK = json.dumps({"verdict": "ok", "feedback": ""})
 
@@ -89,7 +89,7 @@ def test_three_flags_fall_back_to_first_ok_sql(fake_llm):
 
 
 def test_same_sql_after_feedback_stops_as_data_disagreed(fake_llm):
-    calls = fake_llm([FIRST, "  select 1   AS x\n"], [revise()])
+    calls = fake_llm([FIRST, "  " + FIRST.lower().replace(" as x", "   AS x\n")], [revise()])
     state = graph.run("q", skip_report=True, critic=True)
     assert kinds(calls).count("critic") == 1
     assert state["returned"] == "data_disagreed" and state["sql"] == FIRST

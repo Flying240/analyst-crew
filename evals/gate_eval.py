@@ -24,7 +24,15 @@ CASES_PATH = ROOT / "evals" / "gate_cases.json"
 
 def load_cases() -> list[dict]:
     raw = json.loads(CASES_PATH.read_text(encoding="utf-8"))
-    return [{**c, "expect": "no"} for c in raw["unanswerable"]] + [{**c, "expect": "yes"} for c in raw["answerable"]]
+    return (
+        [{**c, "expect": "no"} for c in raw["unanswerable"]] + [{**c, "expect": "yes"} for c in raw["answerable"]]
+        + [{**c, "expect": "meta"} for c in raw.get("meta", [])]
+    )
+
+
+def is_correct(expect: str, answerable: str) -> bool:
+    """no -> rejected; meta -> answered from the description; yes -> sent on to the Data agent (yes or partly)."""
+    return answerable in ("yes", "partly") if expect == "yes" else answerable == expect
 
 
 def judge(case: dict, offline: bool = False) -> dict:
@@ -41,10 +49,9 @@ def judge(case: dict, offline: bool = False) -> dict:
         update = planner.plan({"question": case["question"], "use_gate": True})
         answerable, reason = update["answerable"], update["gate_reason"]
         rejected_by = "planner" if answerable == "no" else None
-    rejected = answerable == "no"
     return {
         "id": case["id"], "expect": case["expect"], "answerable": answerable, "reason": reason,
-        "rejected_by": rejected_by, "correct": None if answerable is None else rejected == (case["expect"] == "no"),
+        "rejected_by": rejected_by, "correct": None if answerable is None else is_correct(case["expect"], answerable),
         "tokens": llm_usage.take(), "seconds": round(time.perf_counter() - start, 2),
     }
 
@@ -60,6 +67,7 @@ def summarize(results: list[dict]) -> dict:
         "wrong_rejections": f"{len(wrong_rejections)}/{n_yes}", "wrong_rejection_ids": wrong_rejections,
         "missed_rejections": f"{len(missed)}/{n_no}", "missed_rejection_ids": missed,
         "partly": [r["id"] for r in judged if r["answerable"] == "partly"],
+        "meta_correct": f"{sum(r['correct'] for r in judged if r['expect'] == 'meta')}/{sum(r['expect'] == 'meta' for r in judged)}",
         "tokens": sum((r["tokens"] or {}).get("prompt", 0) + (r["tokens"] or {}).get("completion", 0) for r in judged),
     }
 

@@ -39,7 +39,7 @@ def test_gate_prompt_only_when_on():
     assert "JSON only" in planner.build_prompt("q", gate=True)
 
 
-def gate_llm(monkeypatch, answerable: str, sql: str = "SELECT 1 AS x") -> list:
+def gate_llm(monkeypatch, answerable: str, sql: str = "SELECT 1 AS x FROM (SELECT 1 FROM orders LIMIT 1)") -> list:
     calls = []
 
     def complete(prompt, model=None):
@@ -62,7 +62,7 @@ def test_gate_no_stops_before_data(monkeypatch):
 def test_gate_partly_continues_with_caveat(monkeypatch):
     calls = gate_llm(monkeypatch, "partly")
     state = graph.run("q", gate=True)
-    assert state["sql"] == "SELECT 1 AS x" and state["plan"] == "- a plan"
+    assert state["sql"] == "SELECT 1 AS x FROM (SELECT 1 FROM orders LIMIT 1)" and state["plan"] == "- a plan"
     reporter_prompt = [p for m, p in calls if m == REPORTER_MODEL][0]
     assert "only partly answers" in reporter_prompt and "no cost data" in reporter_prompt
 
@@ -86,3 +86,26 @@ def test_slug_marks_gate():
     from run_eval import answerer_slug
 
     assert answerer_slug("src.graph:answer+gate+critic", 2) == "graph-gate-critic-r2"
+
+
+def test_parse_gate_accepts_meta():
+    assert planner.parse_gate('{"answerable": "meta", "reason": "about the dataset", "plan": ""}')[0] == "meta"
+
+
+def test_gate_meta_answers_from_description_without_data_agent(monkeypatch):
+    calls = gate_llm(monkeypatch, "meta")
+    state = graph.run("Which dataset am I using?", gate=True)
+    assert len(calls) == 1 and "sql" not in state and state["returned"] == "meta"
+    assert "Olist" in state["report"] and "`order_items`" in state["report"]
+
+
+def test_gate_eval_scores_meta_cases():
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "evals"))
+    from gate_eval import is_correct, load_cases
+
+    assert sum(c["expect"] == "meta" for c in load_cases()) == 3
+    assert is_correct("meta", "meta") and not is_correct("meta", "yes")
+    assert is_correct("yes", "partly") and not is_correct("yes", "meta")

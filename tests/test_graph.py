@@ -6,8 +6,8 @@ from src.agents.duckdb_tips import DUCKDB_TIPS
 from src.config import DATA_MODEL, PLANNER_MODEL, REPORTER_MODEL
 
 BAD = "SELECT nope FROM orders"
-GOOD = "SELECT 1 AS x"
-MONTHS = "SELECT '2017-01' AS month, 1 AS n UNION ALL SELECT '2017-02', 2 ORDER BY 1"
+GOOD = "SELECT 1 AS x FROM (SELECT 1 FROM orders LIMIT 1)"
+MONTHS = "SELECT * FROM (VALUES ('2017-01', 1), ('2017-02', 2)) v(month, n) WHERE EXISTS (FROM orders) ORDER BY 1"
 
 
 @pytest.fixture
@@ -135,7 +135,7 @@ def test_baseline_eval_result_has_no_trace(monkeypatch):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "evals"))
     from run_eval import evaluate
 
-    monkeypatch.setattr(baseline, "ask", lambda p: "SELECT 1")
+    monkeypatch.setattr(baseline, "ask", lambda p: "SELECT 1 FROM (SELECT 1 FROM orders LIMIT 1)")
     r = evaluate({"id": "x", "question": "q", "gold_sql": "SELECT 1", "check": {"type": "scalar"}}, baseline.answer)
     assert "trace" not in r
 
@@ -155,6 +155,6 @@ def test_stream_with_critic_shows_each_round(fake_llm, monkeypatch):
     verdicts = iter([{"verdict": "revise", "feedback": "fix", "checklist": [], "parse_error": False},
                      {"verdict": "ok", "feedback": "", "checklist": [], "parse_error": False}])
     monkeypatch.setattr(critic, "review_sql", lambda *a: next(verdicts))
-    fake_llm(GOOD, "SELECT 2 AS x")
+    fake_llm(GOOD, "SELECT 2 AS x FROM (SELECT 1 FROM orders LIMIT 1)")
     nodes = [n for n, _, _ in graph.stream("q", critic=True)]
     assert nodes == ["planner", "data", "critic", "data", "critic", "reporter", "done"]

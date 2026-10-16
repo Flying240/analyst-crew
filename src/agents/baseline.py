@@ -4,7 +4,7 @@ from typing import Callable
 from src import llm, retry_info
 from src.agents.duckdb_tips import DUCKDB_TIPS
 from src.config import PROMPT_SCHEMA, SCHEMA_COMPACT_PATH, SCHEMA_PATH
-from src.tools.sql_tool import run_sql
+from src.tools.sql_tool import check_sql, run_sql
 
 AskFn = Callable[[str], str]
 
@@ -43,6 +43,14 @@ def ask(prompt: str) -> str:
     return llm.ask(prompt)
 
 
+def try_ask(ask_fn: AskFn, prompt: str) -> tuple[str, str | None]:
+    """(sql, None), or (the model's prose, error) when the reply holds no SQL query."""
+    try:
+        return ask_fn(prompt), None
+    except llm.NotSqlError as exc:
+        return exc.text, str(exc)
+
+
 def answer_from_prompt(
     prompt: str, retries: int, attempts: list[dict] | None = None, ask_fn: AskFn | None = None
 ) -> str:
@@ -51,16 +59,17 @@ def answer_from_prompt(
     If `attempts` is given, every SQL tried is appended with its error (None if it ran).
     """
     ask_fn = ask_fn or ask
-    sql = ask_fn(prompt)
+    sql, error = try_ask(ask_fn, prompt)
     used = 0
     while True:
-        error = run_sql(sql).error if (retries or attempts is not None) else None
+        if error is None and (retries or attempts is not None):
+            error = check_sql(sql) or run_sql(sql).error
         if attempts is not None:
             attempts.append({"sql": sql, "error": error})
         if error is None or used >= retries:
             break
         used += 1
-        sql = ask_fn(build_retry_prompt(prompt, sql, error))
+        sql, error = try_ask(ask_fn, build_retry_prompt(prompt, sql, error))
     retry_info.record(used)
     return sql
 

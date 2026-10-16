@@ -1,5 +1,5 @@
 {
-  "description": "Question-gate cases: the Planner (gate on) should reject 'unanswerable' (answerable=no) and must not reject 'answerable' (yes or partly). Phrased to reach the Planner, not the free pre-check.",
+  "description": "Question-gate cases: the Planner (gate on) should reject 'unanswerable' (answerable=no) and must not reject 'answerable' (yes or partly). Phrased to reach the Planner, not the free pre-check. 'meta' questions are about the dataset itself and should get answerable=meta (answered from the dataset description, no SQL).",
   "unanswerable": [
     {"id": "u01_profit_margin", "question": "What is the profit margin for each product category?", "why": "no cost data"},
     {"id": "u02_customer_age", "question": "What is the average age of customers who leave 5-star reviews?", "why": "no demographics"},
@@ -15,5 +15,10 @@
     {"id": "a04_late_vs_score", "question": "Do late deliveries get worse review scores than on-time ones?"},
     {"id": "a05_heaviest_category", "question": "Which product category has the heaviest products on average?"},
     {"id": "a06_revenue_2017", "question": "How did monthly revenue change during 2017?"}
+  ],
+  "meta": [
+    {"id": "m01_which_dataset", "question": "Which dataset am I using here?"},
+    {"id": "m02_what_tables", "question": "What tables and columns does this database have?"},
+    {"id": "m03_what_can_i_ask", "question": "What kinds of questions can I ask about this data?"}
   ]
 }

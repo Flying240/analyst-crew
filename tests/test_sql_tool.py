@@ -1,6 +1,6 @@
 import pytest
 
-from src.tools.sql_tool import is_read_only, run_sql
+from src.tools.sql_tool import check_sql, is_read_only, references_table, run_sql
 
 ALLOWED = [
     "SELECT 1",
@@ -80,3 +80,23 @@ def test_connection_is_read_only_even_without_sql_check() -> None:
     with duckdb.connect(str(DB_PATH), read_only=True) as con:
         with pytest.raises(duckdb.Error, match="read-only"):
             con.execute("CREATE TABLE should_fail (x INT)")
+
+
+@pytest.mark.parametrize("sql", [
+    "SELECT COUNT(*) FROM orders",
+    'SELECT * FROM "Order_Items" LIMIT 1',
+    "WITH t AS (SELECT * FROM sellers) SELECT COUNT(*) FROM t",
+])
+def test_references_real_table(sql: str) -> None:
+    assert references_table(sql) and check_sql(sql) is None
+
+
+@pytest.mark.parametrize("sql", [
+    "SELECT 'Olist e-commerce DuckDB' AS dataset",
+    "SELECT 1 -- FROM orders",
+    "SELECT 'orders' AS t",
+    "WITH t AS (SELECT 1 AS x) SELECT x FROM t",
+])
+def test_no_real_table_is_an_error(sql: str) -> None:
+    assert not references_table(sql)
+    assert "at least one table" in check_sql(sql)

@@ -57,9 +57,20 @@ def complete(prompt: str, model: str | None = None) -> str:
     return with_backoff(lambda: call(prompt, model))
 
 
+class NotSqlError(ValueError):
+    """The model replied without a SELECT/WITH query; `text` is what it said."""
+
+    def __init__(self, text: str):
+        super().__init__("Return only a single SQL query, no prose")
+        self.text = text
+
+
 def extract_sql(text: str) -> str:
     match = re.search(r"```(?:sql)?\s*(.*?)```", text, re.DOTALL | re.IGNORECASE)
-    return (match.group(1) if match else text).strip().rstrip(";").strip()
+    sql = (match.group(1) if match else text).strip().rstrip(";").strip()
+    if not re.search(r"\b(SELECT|WITH)\b", sql, re.IGNORECASE):
+        raise NotSqlError(sql)
+    return sql
 
 
 def ask(prompt: str, model: str | None = None) -> str:

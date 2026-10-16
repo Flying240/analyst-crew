@@ -17,10 +17,12 @@ AGENTS = {
     "reporter": ("Reporter", ":material/edit_note:", REPORTER_MODEL),
 }
 VERDICT = {"ok": ":green-badge[ok]", "revise": ":orange-badge[revise]"}
-ANSWERABLE = {"yes": ":green-badge[answerable]", "partly": ":orange-badge[partly answerable]", "no": ":red-badge[not answerable]"}
+ANSWERABLE = {"yes": ":green-badge[answerable]", "partly": ":orange-badge[partly answerable]", "no": ":red-badge[not answerable]",
+              "meta": ":blue-badge[about the dataset]"}
 RETURNED = {
     "no_critic": "Critic off", "ok": "Critic accepted the SQL", "first_ok_fallback": "fell back to the first SQL that ran",
     "data_disagreed": "Data agent kept its SQL after Critic feedback", "data_error": "SQL failed", "unanswerable": "stopped: not answerable",
+    "meta": "answered from the dataset description (no SQL)",
 }
 
 

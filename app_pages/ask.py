@@ -143,6 +143,10 @@ def show_answer(record: dict[str, Any]) -> None:
     if record.get("returned") == "unanswerable":
         not_answerable(record.get("gate_reason") or "The dataset doesn't hold this data.")
         return
+    if record.get("returned") == "meta":
+        st.subheader("Answer")
+        st.markdown(record.get("report", ""))
+        return
     if not record.get("sql"):
         st.error("No SQL was produced.")
         return
