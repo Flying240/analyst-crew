@@ -13,6 +13,7 @@ This assistant answers questions about the Olist Brazilian e-commerce dataset (a
 - customers and sellers: city, state, zip code prefix (repeat customers via customer_unique_id)
 - products: category (Portuguese, with English translation), weight, size, photo count
 - geolocation: latitude/longitude per zip code prefix
+
 It has no product names, customer demographics (age, gender), costs or profit, marketing data, or data after 2018."""
 
 OFF_TOPIC = [

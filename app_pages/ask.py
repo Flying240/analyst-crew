@@ -210,7 +210,7 @@ def show_result(columns: list[str], rows: list[tuple]) -> None:
 
 
 def show_trace(record: dict[str, Any], steps: list[dict[str, Any]]) -> None:
-    with st.expander("How the agents got here", icon=":material/account_tree:"):
+    with st.expander("How the agents got here", icon=":material/account_tree:", expanded=True):
         for step in steps:
             render_step(step, expanded=False)
         render_totals(steps, record.get("seconds"), record.get("returned"))

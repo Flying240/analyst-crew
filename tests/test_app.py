@@ -80,7 +80,21 @@ def test_about_page_renders_via_navigation():
     at = AppTest.from_file("../app.py", default_timeout=30).run()
     assert not at.exception
     at.switch_page("app_pages/about.py").run()
-    assert not at.exception and any(s.value == "How it works" for s in at.subheader)
+    assert not at.exception
+    assert [t.label for t in at.tabs] == ["Why this app", "How it works", "How well it works", "Limits & FAQ"]
+    assert any(s.value == "Why not just ask a general chatbot?" for s in at.subheader)
+    assert any("m19_avg_freight_per_order" in m.value for m in at.markdown)  # computed from evals/summaries
+    assert len(at.get("graphviz_chart")) == 1 and len(at.expander) == 7  # pipeline diagram, 7 FAQ answers
+
+
+@pytest.mark.parametrize("page", ["app_pages/about.py", "app_pages/schema_explorer.py", "app_pages/eval_dashboard.py"])
+def test_footer_on_every_page(page):
+    from src.ui.footer import footer_text
+
+    at = AppTest.from_file("../app.py", default_timeout=30).run()
+    assert any(c.value == footer_text() for c in at.caption)  # Ask (default page)
+    at.switch_page(page).run()
+    assert not at.exception and any(c.value == footer_text() for c in at.caption)
 
 
 def test_sidebar_has_no_models_or_about():
@@ -152,6 +166,6 @@ def test_record_order_answer_summary_sql_chart_table_trace():
     labels = [e.label for e in at.main.expander]
     assert labels[0] == "Final SQL" and labels[1] == "How the agents got here"  # agent cards are nested after it
     trace = at.main.expander[1]
-    assert not trace.proto.expanded and all("**" in e.label for e in trace.expander)
+    assert trace.proto.expanded and all("**" in e.label for e in trace.expander)
     assert any(c.value.startswith("Data (SQL) · ") and "tokens in the eval" in c.value for c in at.main.caption)
     assert len(at.get("download_button")) == 1 and len(at.get("plotly_chart")) == 1

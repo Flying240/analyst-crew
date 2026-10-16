@@ -1,6 +1,8 @@
 """Streamlit entry point: `streamlit run app.py`."""
 import streamlit as st
 
+from src.ui import footer
+
 st.set_page_config(page_title="Analyst crew", page_icon=":material/query_stats:", layout="wide")
 
 
@@ -25,3 +27,4 @@ page = st.navigation(
 )
 st.title(page.title, anchor=False)
 page.run()
+footer.render()
