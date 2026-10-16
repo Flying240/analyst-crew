@@ -12,6 +12,7 @@ class CriticRound(TypedDict, total=False):
     sql: str
     verdict: str  # "ok" | "revise"
     feedback: str
+    checklist: list[dict]  # [{requirement, sql, status: match|mismatch}]
     parse_error: bool
     attempts: list[Attempt]  # the Data agent's tries (SQL + error) that produced this SQL
 

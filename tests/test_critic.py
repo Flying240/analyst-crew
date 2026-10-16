@@ -127,3 +127,15 @@ def test_eval_labels_false_alarm_and_caught(fake_llm):
 def test_critic_results_get_own_filename():
     assert answerer_slug("src.graph:answer+critic") == "graph-critic"
     assert answerer_slug("src.graph:answer") == "graph"
+
+
+def test_critic_prompt_has_no_plan_and_asks_for_checklist():
+    prompt = critic.build_prompt("How many?", "SELECT 1", ["n"], [(1,)])
+    assert "# Plan" not in prompt and '"checklist"' in prompt
+
+
+def test_checklist_is_parsed():
+    reply = json.dumps({"checklist": [{"requirement": "count products", "sql": "COUNT(*)", "status": "match"}],
+                        "verdict": "ok", "feedback": ""})
+    verdict, _, checklist, parse_error = critic.parse(reply)
+    assert verdict == "ok" and checklist[0]["status"] == "match" and not parse_error

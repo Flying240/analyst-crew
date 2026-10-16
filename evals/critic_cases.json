@@ -1,0 +1,30 @@
+{
+  "dev_wrong": [
+    {"id": "m11_null_category_products", "mistake": "missing translation instead of NULL category", "source": "evals/results/20261016_173643_graph-critic.json",
+     "sql": "SELECT COUNT(DISTINCT p.product_id) AS products_without_category\nFROM products p\nLEFT JOIN category_translation ct\n  ON p.product_category_name = ct.product_category_name\nWHERE ct.product_category_name IS NULL"},
+    {"id": "m19_avg_freight_per_order", "mistake": "per-item instead of per-order average", "source": "evals/results/20261016_165258_baseline.json",
+     "sql": "SELECT AVG(oi.freight_value) AS avg_freight_per_delivered_order\nFROM order_items AS oi\nJOIN orders AS o ON oi.order_id = o.order_id\nWHERE o.order_status = 'delivered'"},
+    {"id": "m09_revenue_by_state", "mistake": "join to payments double-counts items", "source": "constructed (no saved SQL)",
+     "sql": "SELECT c.customer_state, SUM(oi.price + oi.freight_value) AS revenue\nFROM order_items oi\nJOIN orders o ON oi.order_id = o.order_id\nJOIN customers c ON o.customer_id = c.customer_id\nJOIN payments p ON p.order_id = o.order_id\nWHERE o.order_status = 'delivered'\nGROUP BY c.customer_state\nORDER BY revenue DESC\nLIMIT 5"},
+    {"id": "m10_untranslated_categories", "mistake": "NULL counted as a category", "source": "evals/results/20261014_215216_baseline.json",
+     "sql": "WITH distinct_categories AS (\n    SELECT DISTINCT product_category_name\n    FROM products\n)\nSELECT COUNT(*) AS missing_translation_count\nFROM distinct_categories dc\nLEFT JOIN category_translation ct\n    ON dc.product_category_name = ct.product_category_name\nWHERE ct.product_category_name IS NULL"},
+    {"id": "e10_avg_delivery_days", "mistake": "measured from estimated date, not purchase", "source": "evals/results/20261016_165326_graph-logged.json",
+     "sql": "WITH delivered AS (\n    SELECT o.order_delivered_customer_date, o.order_estimated_delivery_date\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT AVG(DATEDIFF('day', order_estimated_delivery_date, order_delivered_customer_date)) AS average_delivery_time_days\nFROM delivered"}
+  ],
+  "dev_correct": [
+    "m11_null_category_products", "m19_avg_freight_per_order", "m09_revenue_by_state", "m10_untranslated_categories",
+    "e10_avg_delivery_days", "e04_avg_order_value", "m07_late_pct", "m12_items_per_order", "h01_review_late", "m21_revenue_per_customer"
+  ],
+  "heldout_wrong": [
+    {"id": "e01_total_revenue", "mistake": "dropped delivered filter", "source": "constructed",
+     "sql": "SELECT SUM(oi.price + oi.freight_value) AS revenue FROM order_items oi"},
+    {"id": "m03_sp_customers", "mistake": "customer_id instead of customer_unique_id", "source": "constructed",
+     "sql": "SELECT COUNT(DISTINCT customer_id) AS customers FROM customers WHERE customer_state = 'SP'"},
+    {"id": "m20_avg_payment_per_order", "mistake": "per-payment-row instead of per-order average", "source": "constructed",
+     "sql": "SELECT AVG(payment_value) AS avg_paid FROM payments"},
+    {"id": "h09_best_review_month", "mistake": "extra unrequested delivered filter", "source": "evals/results/20261014_012927_baseline.json",
+     "sql": "WITH monthly_avg AS (\n    SELECT strftime(o.order_purchase_timestamp, '%Y-%m') AS purchase_month, AVG(r.review_score) AS avg_score\n    FROM orders AS o\n    JOIN reviews AS r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n    GROUP BY purchase_month\n)\nSELECT purchase_month, avg_score FROM monthly_avg ORDER BY avg_score DESC LIMIT 1"},
+    {"id": "h19_health_beauty_payments", "mistake": "join to order_items double-counts payments", "source": "constructed",
+     "sql": "SELECT SUM(p.payment_value) AS total_paid\nFROM payments p\nJOIN orders o ON p.order_id = o.order_id\nJOIN order_items oi ON oi.order_id = o.order_id\nJOIN products pr ON pr.product_id = oi.product_id\nWHERE o.order_status = 'delivered' AND pr.product_category_name = 'beleza_saude'"}
+  ]
+}
