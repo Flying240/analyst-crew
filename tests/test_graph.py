@@ -138,3 +138,23 @@ def test_baseline_eval_result_has_no_trace(monkeypatch):
     monkeypatch.setattr(baseline, "ask", lambda p: "SELECT 1")
     r = evaluate({"id": "x", "question": "q", "gold_sql": "SELECT 1", "check": {"type": "scalar"}}, baseline.answer)
     assert "trace" not in r
+
+
+def test_stream_yields_each_node_then_done(fake_llm):
+    fake_llm(MONTHS)
+    events = list(graph.stream("q", retries=2))
+    assert [n for n, _, _ in events] == ["planner", "data", "viz", "reporter", "done"]
+    final = events[-1][1]
+    assert final["report"] == "a report" and final["chart"] is not None and final["returned"] == "no_critic"
+    assert all("seconds" in meta and "calls" in meta for _, _, meta in events)
+
+
+def test_stream_with_critic_shows_each_round(fake_llm, monkeypatch):
+    from src.agents import critic
+
+    verdicts = iter([{"verdict": "revise", "feedback": "fix", "checklist": [], "parse_error": False},
+                     {"verdict": "ok", "feedback": "", "checklist": [], "parse_error": False}])
+    monkeypatch.setattr(critic, "review_sql", lambda *a: next(verdicts))
+    fake_llm(GOOD, "SELECT 2 AS x")
+    nodes = [n for n, _, _ in graph.stream("q", critic=True)]
+    assert nodes == ["planner", "data", "critic", "data", "critic", "reporter", "done"]

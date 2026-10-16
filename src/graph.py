@@ -1,9 +1,11 @@
 """LangGraph crew: Planner -> Data -> [Critic loop] -> Viz -> Reporter."""
+import time
 from functools import lru_cache
+from typing import Any, Iterator
 
 from langgraph.graph import END, START, StateGraph
 
-from src import retry_info, trace_info
+from src import llm_usage, retry_info, trace_info
 from src.agents import critic, data, planner, reporter, viz
 from src.agents.data import use_sql
 from src.config import MAX_CRITIC_ROUNDS
@@ -53,14 +55,41 @@ def build_graph():
     return g.compile()
 
 
-def run(question: str, retries: int = 0, skip_report: bool = False, critic: bool = False) -> CrewState:
-    state: CrewState = {
+def initial_state(question: str, retries: int, skip_report: bool, critic: bool) -> CrewState:
+    return {
         "question": question, "max_retries": retries, "skip_report": skip_report,
         "use_critic": critic, "critic_feedback": None, "critic_rounds": [],
     }
-    final = build_graph().invoke(state)
-    final.setdefault("returned", "no_critic" if not critic else "data_error" if final.get("error") else "ok")
-    return final
+
+
+def finalize(state: CrewState) -> CrewState:
+    critic = state.get("use_critic")
+    state.setdefault("returned", "no_critic" if not critic else "data_error" if state.get("error") else "ok")
+    return state
+
+
+def run(question: str, retries: int = 0, skip_report: bool = False, critic: bool = False) -> CrewState:
+    return finalize(build_graph().invoke(initial_state(question, retries, skip_report, critic)))
+
+
+def stream(question: str, retries: int = 0, critic: bool = False) -> Iterator[tuple[str, CrewState, dict[str, Any]]]:
+    """Yield (node, update, meta) as each node finishes, then ("done", final state, totals).
+
+    meta has the node's wall seconds and its LLM calls [{model, prompt, completion}].
+    """
+    state = initial_state(question, retries, False, critic)
+    llm_usage.take_calls()
+    start = last = time.perf_counter()
+    calls: list[dict[str, Any]] = []
+    for chunk in build_graph().stream(state, stream_mode="updates"):
+        for node, update in chunk.items():
+            now = time.perf_counter()
+            meta = {"seconds": round(now - last, 2), "calls": llm_usage.take_calls()}
+            last = now
+            calls += meta["calls"]
+            state = {**state, **(update or {})}
+            yield node, update or {}, meta
+    yield "done", finalize(state), {"seconds": round(time.perf_counter() - start, 2), "calls": calls}
 
 
 def answer(question: str, retries: int = 0, critic: bool = False) -> str:
