@@ -24,3 +24,14 @@ DATA_MODEL = os.getenv("DATA_MODEL", "openai/gpt-oss-120b")
 REPORTER_MODEL = os.getenv("REPORTER_MODEL", "openai/gpt-oss-20b")
 CRITIC_MODEL = os.getenv("CRITIC_MODEL", "openai/gpt-oss-120b")
 MAX_CRITIC_ROUNDS = 3
+
+# Local caches (gitignored): daily token ledger and live-run traces.
+CACHE_DIR = Path(os.getenv("ANALYST_CACHE_DIR", ROOT / ".cache"))
+# Committed zero-token example traces shown in the app.
+EXAMPLES_DIR = ROOT / "examples"
+# Daily token budgets per model: local/eval use, and a smaller one for the deployed app.
+DAILY_TOKEN_BUDGET = int(os.getenv("DAILY_TOKEN_BUDGET", "200000"))
+APP_DAILY_TOKEN_BUDGET = int(os.getenv("APP_DAILY_TOKEN_BUDGET", "100000"))
+BUDGET_STOP_FRACTION = 0.9
+# Planner question gate (JSON {answerable, reason, plan}); off by default so evals are unchanged.
+PLANNER_GATE = os.getenv("PLANNER_GATE", "0").lower() in ("1", "true", "yes")

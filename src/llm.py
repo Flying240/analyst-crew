@@ -1,10 +1,17 @@
 """Shared LLM calls (Groq or Gemini) used by every agent."""
 import os
 import re
+from typing import Mapping
 
-from src import llm_usage
+from src import llm_usage, usage_ledger
 from src.config import LLM_PROVIDER, REASONING_EFFORT
 from src.llm_retry import with_backoff
+
+
+def track(model: str, prompt_tokens: int, completion_tokens: int, headers: Mapping[str, str] | None = None) -> None:
+    """Record usage for the current question and in the local daily ledger."""
+    llm_usage.record(prompt_tokens, completion_tokens, model)
+    usage_ledger.add(model, prompt_tokens, completion_tokens, headers)
 
 
 def call_groq(prompt: str, model: str | None = None) -> str:
@@ -12,14 +19,17 @@ def call_groq(prompt: str, model: str | None = None) -> str:
 
     client = Groq(api_key=os.environ["GROQ_API_KEY"])
     extra = {"reasoning_effort": REASONING_EFFORT} if REASONING_EFFORT else {}
-    resp = client.chat.completions.create(
-        model=model or os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
+    model = model or os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+    # with_raw_response returns the rate-limit headers of this same call (no extra request).
+    raw = client.chat.completions.with_raw_response.create(
+        model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0,
         **extra,
     )
+    resp = raw.parse()
     if resp.usage:
-        llm_usage.record(resp.usage.prompt_tokens, resp.usage.completion_tokens)
+        track(model, resp.usage.prompt_tokens, resp.usage.completion_tokens, raw.headers)
     return resp.choices[0].message.content or ""
 
 
@@ -29,14 +39,15 @@ def call_gemini(prompt: str, model: str | None = None) -> str:
     from google.genai import types
 
     client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
+    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     resp = client.models.generate_content(
-        model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+        model=model,
         contents=prompt,
         config=types.GenerateContentConfig(temperature=0),
     )
     meta = resp.usage_metadata
     if meta:
-        llm_usage.record(meta.prompt_token_count, (meta.candidates_token_count or 0) + (meta.thoughts_token_count or 0))
+        track(model, meta.prompt_token_count, (meta.candidates_token_count or 0) + (meta.thoughts_token_count or 0))
     return resp.text or ""
 
 

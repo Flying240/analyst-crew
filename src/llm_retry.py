@@ -9,6 +9,8 @@ BACKOFF_SECONDS = (2, 4, 8)
 class InfraError(Exception):
     """The LLM provider failed for reasons unrelated to the answer (e.g. rate limits)."""
 
+    retry_after: float | None = None
+
 
 class DailyLimitError(InfraError):
     """A per-day quota is used up; retrying within this run cannot succeed."""
@@ -24,6 +26,15 @@ def is_rate_limit(exc: Exception) -> bool:
         return True
     text = str(exc).lower()
     return "429" in text or "rate limit" in text or "resource_exhausted" in text
+
+
+def retry_after(exc: Exception) -> float | None:
+    """Seconds from a 429's retry-after header, if the provider sent one."""
+    headers = getattr(getattr(exc, "response", None), "headers", None) or {}
+    try:
+        return float(headers.get("retry-after"))
+    except (TypeError, ValueError):
+        return None
 
 
 def with_backoff(
@@ -44,6 +55,8 @@ def with_backoff(
             if is_daily_limit(exc):
                 raise DailyLimitError(f"daily quota exhausted: {exc}") from exc
             if delay is None:
-                raise InfraError(f"rate limited after {len(delays) + 1} attempts: {exc}") from exc
+                err = InfraError(f"rate limited after {len(delays) + 1} attempts: {exc}")
+                err.retry_after = retry_after(exc)
+                raise err from exc
             sleep(delay)
     raise AssertionError("unreachable")
