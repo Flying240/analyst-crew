@@ -37,3 +37,22 @@ def test_committed_examples_cover_all_questions():
     questions = json.loads((ROOT / "evals" / "questions.json").read_text(encoding="utf-8"))
     assert {e["id"] for e in run_cache.load_examples()} <= {q["id"] for q in questions}
     assert all(e["source"] == "eval" and e["sql"] for e in run_cache.load_examples())
+
+
+def test_replay_rebuilds_rounds_from_eval_trace():
+    a1, a2, a3 = ({"sql": f"S{i}", "error": None} for i in range(3))
+    rec = {"plan": "- p", "sql": "S2", "attempts": [a1, a2, a3],
+           "critic_rounds": [{"verdict": "revise", "attempts": [a1]}, {"verdict": "ok", "attempts": [a2]}]}
+    steps = run_cache.replay_steps(rec)
+    assert [s["node"] for s in steps] == ["planner", "data", "critic", "data", "critic", "data"]
+    assert steps[-1]["update"]["round_attempts"] == [a3]
+
+
+def test_replay_sql_only_example():
+    steps = run_cache.replay_steps({"sql": "SELECT 1"})
+    assert [s["node"] for s in steps] == ["data"] and steps[0]["update"]["round_attempts"][0]["sql"] == "SELECT 1"
+
+
+def test_replay_uses_stored_live_steps():
+    nodes = [{"node": "planner", "update": {"plan": "x"}, "seconds": 1, "calls": []}]
+    assert run_cache.replay_steps({"nodes": nodes}) == nodes

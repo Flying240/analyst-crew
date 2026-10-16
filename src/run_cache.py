@@ -53,8 +53,8 @@ def write_json(path: Path, data: dict[str, Any]) -> None:
     os.replace(tmp, path)
 
 
-def save(record: dict[str, Any], root: Path = RUNS_DIR) -> Path:
-    path = root / f"{key(record['question'], record['settings'])}.json"
+def save(record: dict[str, Any], root: Path | None = None) -> Path:
+    path = (root or RUNS_DIR) / f"{key(record['question'], record['settings'])}.json"
     write_json(path, record)
     return path
 
@@ -66,8 +66,8 @@ def read(path: Path) -> dict[str, Any] | None:
         return None
 
 
-def load_live(question: str, run_settings: dict[str, Any], root: Path = RUNS_DIR) -> dict[str, Any] | None:
-    return read(root / f"{key(question, run_settings)}.json")
+def load_live(question: str, run_settings: dict[str, Any], root: Path | None = None) -> dict[str, Any] | None:
+    return read((root or RUNS_DIR) / f"{key(question, run_settings)}.json")
 
 
 def load_examples(root: Path = EXAMPLES_DIR) -> list[dict[str, Any]]:
@@ -86,3 +86,31 @@ def lookup(question: str, run_settings: dict[str, Any]) -> dict[str, Any] | None
 
 def total_tokens(record: dict[str, Any]) -> int:
     return sum(c["prompt"] + c["completion"] for n in record.get("nodes", []) for c in n.get("calls", []))
+
+
+DROP_FROM_UPDATES = ("rows", "columns", "chart")
+
+
+def safe_update(update: dict[str, Any]) -> dict[str, Any]:
+    """A node's update without result rows and the chart (rebuilt from the SQL when shown)."""
+    return {k: v for k, v in update.items() if k not in DROP_FROM_UPDATES}
+
+
+def replay_steps(record: dict[str, Any]) -> list[dict[str, Any]]:
+    """The run's steps [{node, update, seconds, calls}]: stored for live runs, rebuilt from the trace for eval examples."""
+    if any("update" in n for n in record.get("nodes", [])):
+        return record["nodes"]
+    steps: list[dict[str, Any]] = []
+    step = lambda node, update: steps.append({"node": node, "update": update, "seconds": None, "calls": []})
+    if record.get("plan"):
+        step("planner", {"plan": record["plan"]})
+    attempts = record.get("attempts") or ([{"sql": record["sql"], "error": record.get("error")}] if record.get("sql") else [])
+    rounds = record.get("critic_rounds", [])
+    used = 0
+    for i, rnd in enumerate(rounds):
+        step("data", {"round_attempts": rnd.get("attempts", [])})
+        step("critic", {"critic_rounds": rounds[: i + 1]})
+        used += len(rnd.get("attempts", []))
+    if attempts[used:] or not rounds:
+        step("data", {"round_attempts": attempts[used:]})
+    return steps
