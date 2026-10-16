@@ -131,8 +131,10 @@ def score_tab() -> None:
     st.page_link("app_pages/eval_dashboard.py", label="See every run on the Eval dashboard", icon=":material/monitoring:")
 
     st.subheader("Why several agents, if one already scores well?")
+    retry = next(r for r in eval_story.ladder(runs) if r["step"] == "+ retry")["mean score %"]
+    retry_text = f"about {retry:.0f}% of questions" if retry is not None else "most questions"
     st.markdown(
-        "A single model call with an error retry already gets most questions right. The extra agents are not mainly "
+        f"A single model call with an error retry already gets {retry_text} right. The extra agents are not mainly "
         "about that score. The Planner checks whether a question can be answered at all, and plans the logic first. "
         "The Critic can catch SQL that runs fine but answers the wrong thing, which an error retry never sees. "
         "The Viz and Reporter agents turn the result into a chart and a plain answer. Each of these is measured "

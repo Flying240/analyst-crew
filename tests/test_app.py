@@ -84,6 +84,7 @@ def test_about_page_renders_via_navigation():
     assert [t.label for t in at.tabs] == ["Why this app", "How it works", "How well it works", "Limits & FAQ"]
     assert any(s.value == "Why not just ask a general chatbot?" for s in at.subheader)
     assert any("m19_avg_freight_per_order" in m.value for m in at.markdown)  # computed from evals/summaries
+    assert any("already gets about 94% of questions right" in m.value for m in at.markdown)
     assert len(at.get("graphviz_chart")) == 1 and len(at.expander) == 7  # pipeline diagram, 7 FAQ answers
 
 
