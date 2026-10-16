@@ -59,6 +59,215 @@
     "h15_median_out_of_state_days",
     "m19_avg_freight_per_order"
    ]
+  },
+  {
+   "file": "evals/results/20261016_164842_baseline.json",
+   "date": "2026-10-16",
+   "complete": true,
+   "score": 46,
+   "total": 50,
+   "by_difficulty": {
+    "easy": {
+     "score": 10,
+     "total": 10,
+     "infra_errors": 0
+    },
+    "medium": {
+     "score": 18,
+     "total": 21,
+     "infra_errors": 0
+    },
+    "hard": {
+     "score": 18,
+     "total": 19,
+     "infra_errors": 0
+    }
+   },
+   "by_split": {
+    "heldout": {
+     "score": 15,
+     "total": 15,
+     "infra_errors": 0
+    },
+    "dev": {
+     "score": 31,
+     "total": 35,
+     "infra_errors": 0
+    }
+   },
+   "tokens": {
+    "questions": 50,
+    "prompt": 40842,
+    "completion": 9937,
+    "mean_prompt": 816.8,
+    "mean_completion": 198.7
+   },
+   "used_retries": {
+    "m09_revenue_by_state": 1,
+    "h05_same_state_days": 2,
+    "h06_state_gap_days": 1,
+    "h10_corr_days_review": 1,
+    "h15_median_out_of_state_days": 2
+   },
+   "failed": [
+    "m10_untranslated_categories",
+    "m11_null_category_products",
+    "h15_median_out_of_state_days",
+    "m19_avg_freight_per_order"
+   ]
+  },
+  {
+   "file": "evals/results/20261016_165151_baseline.json",
+   "date": "2026-10-16",
+   "complete": true,
+   "score": 48,
+   "total": 50,
+   "by_difficulty": {
+    "easy": {
+     "score": 10,
+     "total": 10,
+     "infra_errors": 0
+    },
+    "medium": {
+     "score": 20,
+     "total": 21,
+     "infra_errors": 0
+    },
+    "hard": {
+     "score": 18,
+     "total": 19,
+     "infra_errors": 0
+    }
+   },
+   "by_split": {
+    "heldout": {
+     "score": 15,
+     "total": 15,
+     "infra_errors": 0
+    },
+    "dev": {
+     "score": 33,
+     "total": 35,
+     "infra_errors": 0
+    }
+   },
+   "tokens": {
+    "questions": 50,
+    "prompt": 40364,
+    "completion": 9995,
+    "mean_prompt": 807.3,
+    "mean_completion": 199.9
+   },
+   "used_retries": {
+    "m09_revenue_by_state": 1,
+    "h05_same_state_days": 2,
+    "h06_state_gap_days": 1,
+    "h10_corr_days_review": 2,
+    "h15_median_out_of_state_days": 1
+   },
+   "failed": [
+    "h05_same_state_days",
+    "m19_avg_freight_per_order"
+   ]
   }
- ]
+ ],
+ "summary_file": "evals/results/20261016_165151_baseline_summary3.json",
+ "summary": {
+  "overall": {
+   "mean_pct": 94.0,
+   "min_pct": 92.0,
+   "max_pct": 96.0,
+   "scores": [
+    "47/50",
+    "46/50",
+    "48/50"
+   ],
+   "infra_errors": 0
+  },
+  "by_difficulty": {
+   "easy": {
+    "mean_pct": 100.0,
+    "min_pct": 100.0,
+    "max_pct": 100.0,
+    "scores": [
+     "10/10",
+     "10/10",
+     "10/10"
+    ],
+    "infra_errors": 0
+   },
+   "medium": {
+    "mean_pct": 90.5,
+    "min_pct": 85.7,
+    "max_pct": 95.2,
+    "scores": [
+     "19/21",
+     "18/21",
+     "20/21"
+    ],
+    "infra_errors": 0
+   },
+   "hard": {
+    "mean_pct": 94.7,
+    "min_pct": 94.7,
+    "max_pct": 94.7,
+    "scores": [
+     "18/19",
+     "18/19",
+     "18/19"
+    ],
+    "infra_errors": 0
+   }
+  },
+  "by_split": {
+   "heldout": {
+    "mean_pct": 100.0,
+    "min_pct": 100.0,
+    "max_pct": 100.0,
+    "scores": [
+     "15/15",
+     "15/15",
+     "15/15"
+    ],
+    "infra_errors": 0
+   },
+   "dev": {
+    "mean_pct": 91.4,
+    "min_pct": 88.6,
+    "max_pct": 94.3,
+    "scores": [
+     "32/35",
+     "31/35",
+     "33/35"
+    ],
+    "infra_errors": 0
+   }
+  },
+  "flipped": {
+   "m10_untranslated_categories": [
+    true,
+    false,
+    true
+   ],
+   "m11_null_category_products": [
+    false,
+    false,
+    true
+   ],
+   "h05_same_state_days": [
+    true,
+    true,
+    false
+   ],
+   "h15_median_out_of_state_days": [
+    false,
+    false,
+    true
+   ]
+  },
+  "always_failed": [
+   "m19_avg_freight_per_order"
+  ],
+  "infra_errors": {}
+ }
 }
