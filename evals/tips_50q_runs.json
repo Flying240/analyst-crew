@@ -1,0 +1,139 @@
+{
+  "description": "Baseline + DuckDB tips + error-feedback retry on the 50-question set, frozen eval setup, 3 complete runs on 2026-10-18. Combine with: python evals/run_eval.py --answerer src.agents.baseline:answer_with_tips --retries 2 --include <files>",
+  "answerer": "src.agents.baseline:answer_with_tips",
+  "retries": 2,
+  "model": "groq openai/gpt-oss-120b, temperature 0, reasoning_effort low",
+  "prompt_schema": "compact",
+  "compare_with": "evals/retry_50q_runs.json",
+  "runs": [
+    {
+      "file": "evals/results/20261018_181356_baseline-answer_with_tips-r2.json",
+      "date": "2026-10-18",
+      "complete": true,
+      "score": 47,
+      "total": 50,
+      "by_difficulty": {
+        "easy": {
+          "score": 10,
+          "total": 10,
+          "infra_errors": 0
+        },
+        "medium": {
+          "score": 20,
+          "total": 21,
+          "infra_errors": 0
+        },
+        "hard": {
+          "score": 17,
+          "total": 19,
+          "infra_errors": 0
+        }
+      },
+      "by_split": {
+        "heldout": {
+          "score": 15,
+          "total": 15,
+          "infra_errors": 0
+        },
+        "dev": {
+          "score": 32,
+          "total": 35,
+          "infra_errors": 0
+        }
+      },
+      "tokens": {
+        "questions": 50,
+        "prompt": 45880,
+        "completion": 11274,
+        "mean_prompt": 917.6,
+        "mean_completion": 225.5
+      }
+    },
+    {
+      "file": "evals/results/20261018_181804_baseline-answer_with_tips-r2.json",
+      "date": "2026-10-18",
+      "complete": true,
+      "score": 46,
+      "total": 50,
+      "by_difficulty": {
+        "easy": {
+          "score": 10,
+          "total": 10,
+          "infra_errors": 0
+        },
+        "medium": {
+          "score": 20,
+          "total": 21,
+          "infra_errors": 0
+        },
+        "hard": {
+          "score": 16,
+          "total": 19,
+          "infra_errors": 0
+        }
+      },
+      "by_split": {
+        "heldout": {
+          "score": 15,
+          "total": 15,
+          "infra_errors": 0
+        },
+        "dev": {
+          "score": 31,
+          "total": 35,
+          "infra_errors": 0
+        }
+      },
+      "tokens": {
+        "questions": 50,
+        "prompt": 49292,
+        "completion": 11297,
+        "mean_prompt": 985.8,
+        "mean_completion": 225.9
+      }
+    },
+    {
+      "file": "evals/results/20261018_182133_baseline-answer_with_tips-r2.json",
+      "date": "2026-10-18",
+      "complete": true,
+      "score": 47,
+      "total": 50,
+      "by_difficulty": {
+        "easy": {
+          "score": 10,
+          "total": 10,
+          "infra_errors": 0
+        },
+        "medium": {
+          "score": 20,
+          "total": 21,
+          "infra_errors": 0
+        },
+        "hard": {
+          "score": 17,
+          "total": 19,
+          "infra_errors": 0
+        }
+      },
+      "by_split": {
+        "heldout": {
+          "score": 15,
+          "total": 15,
+          "infra_errors": 0
+        },
+        "dev": {
+          "score": 32,
+          "total": 35,
+          "infra_errors": 0
+        }
+      },
+      "tokens": {
+        "questions": 50,
+        "prompt": 42735,
+        "completion": 9380,
+        "mean_prompt": 854.7,
+        "mean_completion": 187.6
+      }
+    }
+  ]
+}
