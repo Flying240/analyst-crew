@@ -13,6 +13,7 @@ Agents: Planner, Data (SQL), Viz (Plotly), Critic, Reporter. Orchestrated with L
 - Late = order_delivered_customer_date > order_estimated_delivery_date (timestamp comparison, not calendar date)
 - Every new feature must be measurable with evals/run_eval.py
 - Eval scalar check is strict: agent prompts must say "For questions asking for one value, return exactly one row with one numeric column" (text labels OK)
+- On Windows, never edit files with PowerShell Set-Content/Out-File (encoding issues). Use the Edit tool or Python with UTF-8.
 
 ## Roadmap
 - [x] 0. Foundation: scaffold, DuckDB loader, schema.md, read-only SQL tool, eval harness

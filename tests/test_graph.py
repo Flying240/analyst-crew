@@ -94,7 +94,8 @@ def test_answer_with_tips_adds_tips(monkeypatch):
 
 
 def test_tips_have_no_date_trunc():
-    assert "date_trunc" not in DUCKDB_TIPS and "strftime(ts, '%Y-%m')" in DUCKDB_TIPS
+    assert "date_trunc" not in DUCKDB_TIPS and "strftime only for output labels" in DUCKDB_TIPS
+    assert "no add_months" in DUCKDB_TIPS and "parenthesize OR" in DUCKDB_TIPS
 
 
 def test_planner_on_120b_reporter_on_20b():
