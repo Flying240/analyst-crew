@@ -7,9 +7,12 @@ from src import llm
 
 @pytest.fixture(autouse=True)
 def no_llm(monkeypatch, tmp_path):
-    from src import run_cache
+    from src import run_cache, usage_ledger
 
     monkeypatch.setattr(run_cache, "RUNS_DIR", tmp_path)
+    ledger_root = tmp_path / "ledger"  # empty ledger, so the real daily budget never blocks live runs
+    real_path = usage_ledger.ledger_path
+    monkeypatch.setattr(usage_ledger, "ledger_path", lambda day, root=None: real_path(day, ledger_root))
 
     def fail(*a, **k):
         raise AssertionError("LLM called")
