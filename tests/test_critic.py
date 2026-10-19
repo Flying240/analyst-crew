@@ -29,7 +29,7 @@ def fake_llm(monkeypatch):
     def install(sql_replies: list[str], critic_replies: list[str]) -> list[tuple[str, str | None, str]]:
         sqls, verdicts = list(sql_replies), list(critic_replies)
 
-        def complete(prompt: str, model: str | None = None) -> str:
+        def complete(prompt: str, model: str | None = None, **_: object) -> str:
             if prompt.endswith("JSON:") and not prompt.startswith("You are planning"):
                 calls.append(("critic", model, prompt))
                 return verdicts.pop(0)
@@ -143,3 +143,26 @@ def test_checklist_is_parsed():
                         "verdict": "ok", "feedback": ""})
     verdict, _, checklist, parse_error = critic.parse(reply)
     assert verdict == "ok" and checklist[0]["status"] == "match" and not parse_error
+
+
+def test_critic_call_caps_output_and_sets_reasoning(monkeypatch):
+    seen = {}
+
+    def complete(prompt, model=None, **options):
+        seen.update(options, model=model)
+        return OK
+
+    monkeypatch.setattr(llm, "complete", complete)
+    critic.review_sql("q", FIRST, ["x"], [(1,)])
+    assert seen == {"model": CRITIC_MODEL, "max_tokens": critic.CRITIC_MAX_TOKENS,
+                    "reasoning_effort": critic.CRITIC_REASONING_EFFORT}
+
+
+def test_truncated_reply_counts_as_ok_with_parse_error():
+    cut = '{"checklist": [{"requirement": "per order", "sql": "GROUP BY o.order_id", "status": "mat'
+    assert critic.parse(cut) == ("ok", "", [], True)
+
+
+def test_critic_totals_count_parse_errors():
+    rounds = [{"outcome": "confirmed", "parse_error": True}, {"outcome": "caught", "parse_error": False}]
+    assert critic_totals([{"trace": {"critic_rounds": rounds, "returned": "ok"}}])["parse_errors"] == 1

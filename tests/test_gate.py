@@ -42,7 +42,7 @@ def test_gate_prompt_only_when_on():
 def gate_llm(monkeypatch, answerable: str, sql: str = "SELECT 1 AS x FROM (SELECT 1 FROM orders LIMIT 1)") -> list:
     calls = []
 
-    def complete(prompt, model=None):
+    def complete(prompt, model=None, **_):
         calls.append((model, prompt))
         if model == PLANNER_MODEL:
             return json.dumps({"answerable": answerable, "reason": "no cost data", "plan": "- a plan"})
@@ -120,7 +120,7 @@ def test_gate_eval_scores_meta_cases():
 def test_partly_keeps_suggestion_and_reporter_does_not_repeat_caveat(monkeypatch):
     from src.agents import reporter
 
-    def complete(prompt, model=None):
+    def complete(prompt, model=None, **_):
         if model == PLANNER_MODEL:
             return json.dumps({"answerable": "partly", "reason": "no costs", "plan": "- p", "suggestion": "Revenue per category?"})
         return "a report"

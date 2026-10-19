@@ -30,6 +30,12 @@ DATA_MODEL = os.getenv("DATA_MODEL", "openai/gpt-oss-120b")
 REPORTER_MODEL = os.getenv("REPORTER_MODEL", "openai/gpt-oss-20b")
 CRITIC_MODEL = os.getenv("CRITIC_MODEL", "qwen/qwen3.8-27b")
 MAX_CRITIC_ROUNDS = 3
+# Critic output cap: qwen on Groq's free tier allows 1,000 output tokens per minute, and a request whose
+# max tokens exceed that is rejected outright. Its reasoning setting is separate from REASONING_EFFORT
+# (qwen accepts none|default|low|medium|high; "unset" = don't send it).
+CRITIC_MAX_TOKENS = int(os.getenv("CRITIC_MAX_TOKENS", "700"))
+_critic_effort = os.getenv("CRITIC_REASONING_EFFORT", "none").lower()
+CRITIC_REASONING_EFFORT = None if _critic_effort == "unset" else _critic_effort
 
 # Local caches (gitignored): daily token ledger and live-run traces.
 CACHE_DIR = Path(os.getenv("ANALYST_CACHE_DIR", ROOT / ".cache"))

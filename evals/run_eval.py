@@ -187,6 +187,7 @@ def critic_totals(results: list[dict]) -> dict:
     return {
         "rounds": len(rounds),
         **{o: sum(r["outcome"] == o for r in rounds) for o in CRITIC_OUTCOMES},
+        "parse_errors": sum(bool(r.get("parse_error")) for r in rounds),
         "returned": returned,
     }
 
@@ -301,7 +302,7 @@ def run_once(
     if tokens["questions"]:
         print(f"tokens   prompt {tokens['mean_prompt']}/q, completion {tokens['mean_completion']}/q, total {tokens['prompt'] + tokens['completion']}")
     if critic["rounds"]:
-        print("critic   " + ", ".join(f"{k} {critic[k]}" for k in ("rounds", *CRITIC_OUTCOMES)) + f"; returned {critic['returned']}")
+        print("critic   " + ", ".join(f"{k} {critic[k]}" for k in ("rounds", *CRITIC_OUTCOMES, "parse_errors")) + f"; returned {critic['returned']}")
     if round1:
         print(f"round-1  {fmt(round1)}  (first SQL, before Critic rewrites = the plain graph row)")
     print(f"\nScore: {fmt(report)}  answerer={answerer}{'' if complete else '  [INCOMPLETE]'}")
@@ -398,7 +399,7 @@ def summarize(reports: list[dict]) -> dict:
         "always_failed": [qid for qid, runs in outcomes.items() if not any(runs)],
         "infra_errors": infra,
         "round1": spread([r["round1"] for r in reports]) if all(r.get("round1") for r in reports) else None,
-        "critic": {o: sum(r.get("critic", {}).get(o, 0) for r in reports) for o in ("rounds", *CRITIC_OUTCOMES)},
+        "critic": {o: sum(r.get("critic", {}).get(o, 0) for r in reports) for o in ("rounds", *CRITIC_OUTCOMES, "parse_errors")},
     }
 
 

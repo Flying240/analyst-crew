@@ -22,6 +22,7 @@ Every eval row from 2026-10-15 on uses this setup, which is the default in `src/
 
 - Model: Groq `openai/gpt-oss-120b`, temperature 0
 - Critic (since 2026-10-19): Groq `qwen/qwen3.8-27b`, a different model family from the agents it reviews (Planner and Data on gpt-oss-120b), so it is less likely to share their blind spots, and its tokens count against a separate daily quota. In the Critic-only eval it matched gpt-oss-120b (dev 3/5 caught, 0/10 false alarms, held-out 5/5) at ≈1.3x tokens per case. Earlier Critic rows used gpt-oss-120b
+- Critic call settings (since 2026-10-19): `CRITIC_MAX_TOKENS=700`, `CRITIC_REASONING_EFFORT=none`, compact checklist (at most 6 items, short SQL fragments, feedback of at most 3 sentences). On Groq's free tier qwen allows 1,000 output tokens per minute, and a request asking for more is rejected outright; that turned 9 of 50 questions of the first full graph + critic run into infra errors. Reasoning stays off because with `low` and the 700 cap, reasoning tokens count toward the cap: 6 of 15 dev replies were cut off, unparseable replies count as ok, and dev catches fell to 1/5. A reply that can't be parsed still counts as ok, and eval reports count these as `parse_errors`
 - Schema: `PROMPT_SCHEMA=compact` (`schema_compact.md`)
 - Reasoning effort: `REASONING_EFFORT=low`
 
@@ -50,6 +51,7 @@ Why: about 900 tokens per question (≈680 prompt + ≈220 completion) against �
 | 2026-10-18 | *Spot check, not an official score:* DuckDB tips v2, `answer_with_tips --retries 2`, ids h04, h13, m11, 1 run | **2/3**: h13 and m11 pass; h04 still fails (it joins to the drop month before `LAG`, so the result is empty). Tips v2 removes the duplicate month-label tip and adds: filter date ranges on raw timestamps (strftime only for labels and GROUP BY); previous/next month via LAG/LEAD over the full series before filtering, or `ts - INTERVAL 1 MONTH` (no `add_months`); parenthesize OR mixed with AND. `src/agents/duckdb_tips.py` is shared, so the graph's Data agent now also uses tips v2; the graph spot checks above used v1. ≈1,150 tokens/q |
 | 2026-10-16 | *Critic-only eval* (`evals/critic_eval.py`): the Critic judges fixed (question, SQL, result) triples with no Planner or Data agent; checklist prompt, no plan | dev: caught **3/5** known-wrong SQL, **0/10** false alarms on gold SQL. Held-out: caught **5/5** hand-written mistakes (dropped delivered filter, `customer_id` for customers, per-row average, extra filter, join double-counting); likely optimistic, since they are textbook errors. Limitation: it catches structural mistakes (grain, extra filters, double-counting) but misses term-meaning mistakes such as m11 ("no category" read as "no translation") and m10 (NULL counted as a category) |
 | 2026-10-19 | *Critic-only eval, other Critic models* (`CRITIC_MODEL=...`), to move the Critic off gpt-oss-120b's daily budget | gpt-oss-20b: dev **2/5** caught (also missed e10), 0/10 false alarms, held-out **5/5**, ≈1,290 tokens/case. qwen3.8-27b: dev **3/5** (same misses as 120b: m11, m10), 0/10 false alarms, held-out **5/5**, ≈1,775 tokens/case (longer replies) vs ≈1,350 for 120b |
+| 2026-10-19 | *Critic-only eval, qwen3.8-27b with output cap* (`CRITIC_MAX_TOKENS=700`, reasoning `none`, compact checklist) | dev **3/5** caught (m11, m10 missed as before), **1/10** false alarms (m10's gold SQL, flagged in 2 of 2 runs: its `NOT IN (SELECT ... FROM category_translation)` would return nothing if that column held a NULL, but it holds none), held-out **5/5**, 0 parse errors. ≈220 output tokens per call, max 307 (was ≈750, max 1,464). With reasoning `low` and the same cap: dev 1/5, 6/15 replies cut off |
 
 Every new feature must be measured with `evals/run_eval.py`. Add a row here after each run.
 
@@ -131,6 +133,10 @@ Question gate:
 - The gate is on by default for `src.graph:answer` (`PLANNER_GATE=1`); eval results are labelled `+gate`. `--no-gate` turns it off for a run.
 - Cost: the gate instructions add about 270 prompt tokens per question to the Planner call (tiktoken o200k estimate; the Planner prompt goes from ~720 to ~990). The Planner sees only what the data lacks; the full dataset summary is used only for the meta answer. In a 5-question spot check, accuracy was unchanged (5/5).
 - `python evals/gate_eval.py` measures wrong and missed rejections on 6 answerable and 6 unanswerable cases.
+
+## Future improvements
+
+- Give the Critic per-column NULL facts from `schema_stats.json`, so it doesn't flag `NOT IN` on columns that have no NULLs (the m10 false alarm).
 
 ## Deployment storage
 

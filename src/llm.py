@@ -14,11 +14,16 @@ def track(model: str, prompt_tokens: int, completion_tokens: int, headers: Mappi
     usage_ledger.add(model, prompt_tokens, completion_tokens, headers)
 
 
-def call_groq(prompt: str, model: str | None = None) -> str:
+def call_groq(
+    prompt: str, model: str | None = None, max_tokens: int | None = None, reasoning_effort: str | None = None,
+) -> str:
     from groq import Groq
 
     client = Groq(api_key=os.environ["GROQ_API_KEY"])
-    extra = {"reasoning_effort": REASONING_EFFORT} if REASONING_EFFORT else {}
+    effort = reasoning_effort or REASONING_EFFORT
+    extra = {"reasoning_effort": effort} if effort else {}
+    if max_tokens:
+        extra["max_completion_tokens"] = max_tokens
     model = model or os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
     # with_raw_response returns the rate-limit headers of this same call (no extra request).
     raw = client.chat.completions.with_raw_response.create(
@@ -33,7 +38,7 @@ def call_groq(prompt: str, model: str | None = None) -> str:
     return resp.choices[0].message.content or ""
 
 
-def call_gemini(prompt: str, model: str | None = None) -> str:
+def call_gemini(prompt: str, model: str | None = None, **_: object) -> str:
     """Gemini ignores per-agent Groq model names and always uses GEMINI_MODEL."""
     from google import genai
     from google.genai import types
@@ -51,10 +56,13 @@ def call_gemini(prompt: str, model: str | None = None) -> str:
     return resp.text or ""
 
 
-def complete(prompt: str, model: str | None = None) -> str:
-    """Return the model's raw text reply, retrying on rate limits."""
+def complete(prompt: str, model: str | None = None, **options: object) -> str:
+    """Return the model's raw text reply, retrying on rate limits.
+
+    Options (Groq only): max_tokens, reasoning_effort (overrides REASONING_EFFORT for this call).
+    """
     call = call_gemini if LLM_PROVIDER == "gemini" else call_groq
-    return with_backoff(lambda: call(prompt, model))
+    return with_backoff(lambda: call(prompt, model, **options))
 
 
 class NotSqlError(ValueError):

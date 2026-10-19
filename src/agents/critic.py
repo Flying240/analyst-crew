@@ -5,7 +5,7 @@ from typing import Any
 
 from src import llm
 from src.agents.baseline import RULES
-from src.config import CRITIC_MODEL, SCHEMA_COMPACT_PATH
+from src.config import CRITIC_MAX_TOKENS, CRITIC_MODEL, CRITIC_REASONING_EFFORT, SCHEMA_COMPACT_PATH
 from src.state import CrewState, CriticRound
 
 SHOW_ROWS = 10
@@ -20,6 +20,8 @@ CHECKS = """Check the SQL against the question as a checklist:
    and inflates sums or counts is a mismatch. Check how NULL or missing values are treated: a join or
    NOT IN / IS NULL test can count, drop or include NULLs differently from what the question means.
 The verdict is "revise" only if at least one item is a concrete mismatch; otherwise "ok".
+Keep it short: at most 6 checklist items, each requirement in a few words, the SQL part as a short
+fragment (not the whole query), and feedback of at most 3 sentences.
 Reply with JSON only:
 {"checklist": [{"requirement": "...", "sql": "...", "status": "match" | "mismatch"}],
  "verdict": "ok" | "revise",
@@ -64,7 +66,10 @@ def parse(text: str) -> tuple[str, str, list[dict], bool]:
 def review_sql(question: str, sql: str, columns: list[str], rows: list[tuple[Any, ...]]) -> dict:
     """One Critic call on a (question, SQL, result) triple; used by the graph and evals/critic_eval.py."""
     verdict, feedback, checklist, parse_error = parse(
-        llm.complete(build_prompt(question, sql, columns, rows), CRITIC_MODEL)
+        llm.complete(
+            build_prompt(question, sql, columns, rows), CRITIC_MODEL,
+            max_tokens=CRITIC_MAX_TOKENS, reasoning_effort=CRITIC_REASONING_EFFORT,
+        )
     )
     return {"verdict": verdict, "feedback": feedback, "checklist": checklist, "parse_error": parse_error}
 

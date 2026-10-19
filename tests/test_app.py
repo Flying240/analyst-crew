@@ -54,7 +54,7 @@ def test_live_run_streams_cards_saves_and_then_hits_cache(monkeypatch, tmp_path)
 
     calls = []
 
-    def complete(prompt, model=None):
+    def complete(prompt, model=None, **_):
         calls.append(model)
         if model == PLANNER_MODEL:
             return json.dumps({"answerable": "yes", "reason": "orders table", "plan": "- count orders"})
@@ -115,7 +115,7 @@ def test_partly_shows_caveat_once_and_suggestion(monkeypatch):
     caveat = "There is no cost data, so profit can't be computed."
     suggestion = "What is the revenue per product category?"
 
-    def complete(prompt, model=None):
+    def complete(prompt, model=None, **_):
         if model == PLANNER_MODEL:
             return json.dumps({"answerable": "partly", "reason": caveat, "plan": "- sum revenue", "suggestion": suggestion})
         return "Revenue by category is shown above."
