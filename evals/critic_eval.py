@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 from evals.run_eval import QUESTIONS_PATH, RESULTS_DIR, score  # noqa: E402
 from src import llm_usage  # noqa: E402
 from src.agents.critic import review_sql  # noqa: E402
+from src.config import CRITIC_MODEL  # noqa: E402
 from src.tools.sql_tool import run_sql  # noqa: E402
 
 CASES_PATH = ROOT / "evals" / "critic_cases.json"
@@ -86,11 +87,11 @@ def main() -> None:
     results = [run_case(c) for c in cases]
     caught, wrong = rate(results, "revise")
     alarms, right = rate(results, "ok")
-    summary = {"set": args.set, "caught": caught, "wrong": wrong, "false_alarms": alarms, "correct": right,
+    summary = {"set": args.set, "model": CRITIC_MODEL, "caught": caught, "wrong": wrong, "false_alarms": alarms, "correct": right,
                "parse_errors": sum(r["parse_error"] for r in results),
                "tokens": sum(sum((r["tokens"] or {}).values()) for r in results)}
     RESULTS_DIR.mkdir(exist_ok=True)
-    path = RESULTS_DIR / f"{datetime.now():%Y%m%d_%H%M%S}_critic-eval-{args.set}.json"
+    path = RESULTS_DIR / f"{datetime.now():%Y%m%d_%H%M%S}_critic-eval-{args.set}-{CRITIC_MODEL.split('/')[-1]}.json"
     path.write_text(json.dumps({**summary, "results": results}, indent=2, default=str), encoding="utf-8")
     for r in results:
         print_case(r)
