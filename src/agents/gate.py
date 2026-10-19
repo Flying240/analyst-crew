@@ -4,6 +4,12 @@ Everything else goes to the Planner, which decides answerable yes|partly|no.
 """
 import re
 
+# What the data lacks; the Planner's gate needs only this, since the schema already shows what it covers.
+DATASET_LIMITS = (
+    "It covers Sept 2016 to Oct 2018 and has no product names, customer demographics (age, gender), "
+    "costs or profit, marketing data, or data after 2018."
+)
+
 DATASET_SUMMARY = """\
 This assistant answers questions about the Olist Brazilian e-commerce dataset (about 100k orders, Sept 2016 to Oct 2018):
 - orders: status, purchase, approval, carrier, delivery and estimated delivery timestamps (late deliveries)

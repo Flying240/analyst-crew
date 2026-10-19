@@ -25,6 +25,7 @@ from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+from src.config import PLANNER_GATE  # noqa: E402
 from src import llm_usage, retry_info, trace_info  # noqa: E402
 from src.llm_retry import DailyLimitError, InfraError  # noqa: E402
 from src.tools.sql_tool import SqlResult, run_sql  # noqa: E402
@@ -391,6 +392,10 @@ def main() -> None:
         "--gate", action="store_true",
         help="turn on the Planner question gate (answerer must accept gate=); results are labelled '<answerer>+gate'",
     )
+    parser.add_argument(
+        "--no-gate", action="store_true",
+        help="turn the gate off for src.graph:answer, which has it on by default (PLANNER_GATE=1)",
+    )
     parser.add_argument("--ids", nargs="*", default=[], metavar="ID", help="only ask these question ids")
     args = parser.parse_args()
 
@@ -400,7 +405,9 @@ def main() -> None:
     answer = load_answerer(args.answerer, questions)
     if args.retries:
         answer = functools.partial(answer, retries=args.retries)
-    if args.gate:
+    if args.no_gate:
+        answer = functools.partial(answer, gate=False)
+    elif args.gate or (PLANNER_GATE and args.answerer.startswith("src.graph:")):
         answer = functools.partial(answer, gate=True)
         args.answerer += "+gate"
     if args.critic:

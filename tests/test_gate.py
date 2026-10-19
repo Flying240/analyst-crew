@@ -67,9 +67,15 @@ def test_gate_partly_continues_with_caveat(monkeypatch):
     assert "only partly answers" in reporter_prompt and "no cost data" in reporter_prompt
 
 
-def test_gate_off_by_default(monkeypatch):
+def test_gate_on_by_default(monkeypatch):
     calls = gate_llm(monkeypatch, "no")
-    graph.run("q", skip_report=True)
+    state = graph.run("q", skip_report=True)
+    assert "JSON only" in calls[0][1] and len(calls) == 1 and state["answerable"] == "no"
+
+
+def test_gate_can_be_turned_off(monkeypatch):
+    calls = gate_llm(monkeypatch, "no")
+    graph.run("q", skip_report=True, gate=False)
     assert "JSON only" not in calls[0][1] and len(calls) == 2
 
 

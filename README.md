@@ -124,7 +124,8 @@ Tokens and limits:
 Question gate:
 - A free pre-check rejects empty input, single words and clear off-topic requests (weather, poems, code requests, "who is <person>").
 - In the app, the Planner then answers in JSON `{answerable: yes|partly|no, reason, plan}`. "no" stops before the Data agent. "partly" continues, and the Reporter states the caveat.
-- For evals the gate is off by default (`PLANNER_GATE=0`). `--gate` turns it on for a run.
+- The gate is on by default for `src.graph:answer` (`PLANNER_GATE=1`); eval results are labelled `+gate`. `--no-gate` turns it off for a run.
+- Cost: the gate instructions add about 270 prompt tokens per question to the Planner call (tiktoken o200k estimate; the Planner prompt goes from ~720 to ~990). The Planner sees only what the data lacks; the full dataset summary is used only for the meta answer. In a 5-question spot check, accuracy was unchanged (5/5).
 - `python evals/gate_eval.py` measures wrong and missed rejections on 6 answerable and 6 unanswerable cases.
 
 ## Deployment storage

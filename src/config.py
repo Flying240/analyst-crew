@@ -40,4 +40,4 @@ DAILY_TOKEN_BUDGET = int(os.getenv("DAILY_TOKEN_BUDGET", "200000"))
 APP_DAILY_TOKEN_BUDGET = int(os.getenv("APP_DAILY_TOKEN_BUDGET", "100000"))
 BUDGET_STOP_FRACTION = 0.9
 # Planner question gate (JSON {answerable, reason, plan}); off by default so evals are unchanged.
-PLANNER_GATE = os.getenv("PLANNER_GATE", "0").lower() in ("1", "true", "yes")
+PLANNER_GATE = os.getenv("PLANNER_GATE", "1").lower() in ("1", "true", "yes")

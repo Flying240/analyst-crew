@@ -23,14 +23,14 @@ def revise(text: str = "wrong grain") -> str:
 
 @pytest.fixture
 def fake_llm(monkeypatch):
-    """Script SQL replies (llm.ask) and Critic replies (llm.complete on CRITIC_MODEL with a JSON prompt)."""
+    """Script SQL replies (llm.ask) and Critic replies (llm.complete with a JSON prompt that isn't the gate Planner's)."""
     calls: list[tuple[str, str | None, str]] = []
 
     def install(sql_replies: list[str], critic_replies: list[str]) -> list[tuple[str, str | None, str]]:
         sqls, verdicts = list(sql_replies), list(critic_replies)
 
         def complete(prompt: str, model: str | None = None) -> str:
-            if prompt.endswith("JSON:"):
+            if prompt.endswith("JSON:") and not prompt.startswith("You are planning"):
                 calls.append(("critic", model, prompt))
                 return verdicts.pop(0)
             calls.append(("planner", model, prompt))

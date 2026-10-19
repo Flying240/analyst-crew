@@ -8,7 +8,7 @@ import re
 
 from src import llm
 from src.agents.baseline import RULES, load_schema
-from src.agents.gate import DATASET_SUMMARY
+from src.agents.gate import DATASET_LIMITS, DATASET_SUMMARY
 from src.config import PLANNER_GATE, PLANNER_MODEL
 from src.state import CrewState
 from src.tools.sql_tool import table_names
@@ -24,8 +24,7 @@ Never name SQL functions or write SQL."""
 
 GATE = f"""\
 First decide whether this database can answer the question.
-# What the dataset covers
-{DATASET_SUMMARY}
+The tables are listed in the schema above. {DATASET_LIMITS}
 - "yes": the tables above hold the data the question needs.
 - "partly": part of the question can be answered, or only with a stated approximation; say what is missing.
 - "no": the question needs data the database does not have, or is not about this data.
