@@ -21,6 +21,7 @@ The planned agents are Planner, Data (SQL), Viz (Plotly), Critic and Reporter, o
 Every eval row from 2026-10-15 on uses this setup, which is the default in `src/config.py` and `.env.example`:
 
 - Model: Groq `openai/gpt-oss-120b`, temperature 0
+- Critic (since 2026-10-19): Groq `qwen/qwen3.8-27b`, a different model family from the agents it reviews (Planner and Data on gpt-oss-120b), so it is less likely to share their blind spots, and its tokens count against a separate daily quota. In the Critic-only eval it matched gpt-oss-120b (dev 3/5 caught, 0/10 false alarms, held-out 5/5) at ≈1.3x tokens per case. Earlier Critic rows used gpt-oss-120b
 - Schema: `PROMPT_SCHEMA=compact` (`schema_compact.md`)
 - Reasoning effort: `REASONING_EFFORT=low`
 
@@ -121,6 +122,8 @@ Tokens and limits:
 - The 50 eval questions are zero-token examples in `examples/` (committed), built by `python scripts/build_example_cache.py`. Today 5 have full graph + critic traces and 45 have baseline SQL only. Rebuild after the full graph + critic runs.
 - Tokens per model per UTC day are summed in `.cache/usage_<date>.json`. Groq's headers give requests per day and tokens per minute, but there is no tokens-per-day header, so daily tokens are an estimate.
 - Live runs stop at 90% of `DAILY_TOKEN_BUDGET` (200K per model) locally, or of `APP_DAILY_TOKEN_BUDGET` (100K) with `APP_MODE=deployed`. Each session gets 5 live questions per rolling hour (`APP_LIVE_PER_HOUR`). Cached examples are unlimited.
+- Eval runs (`evals/run_eval.py`) don't use the 90% stop; they stop only when Groq returns its real daily-limit error, and that run is saved as `*_incomplete.json`.
+- To spread a full run over days, run disjoint `--ids` parts with the same flags, then `python evals/run_eval.py --merge PART.json PART.json ...`. It writes one complete `*_merged.json` (marked `merged: true`). It refuses parts whose ids overlap or miss any of the 50 questions, or that differ in answerer and flags, retries, models (Planner, Data, Critic) or code version (git commit; `-dirty` if there were uncommitted changes). Each run file now records these.
 
 Question gate:
 - A free pre-check rejects empty input, single words and clear off-topic requests (weather, poems, code requests, "who is <person>").

@@ -16,6 +16,7 @@ import importlib
 import json
 import math
 import re
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -25,7 +26,7 @@ from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from src.config import PLANNER_GATE  # noqa: E402
+from src.config import CRITIC_MODEL, DATA_MODEL, PLANNER_GATE, PLANNER_MODEL  # noqa: E402
 from src import llm_usage, retry_info, trace_info  # noqa: E402
 from src.llm_retry import DailyLimitError, InfraError  # noqa: E402
 from src.tools.sql_tool import SqlResult, run_sql  # noqa: E402
@@ -264,16 +265,38 @@ def run_questions(questions: list[dict], answer: Answerer) -> tuple[list[dict], 
     return results, True
 
 
-def run_once(questions: list[dict], answer: Answerer, answerer: str, slug: str | None = None) -> dict:
+def code_version() -> str:
+    """Git commit of the code that ran, with "-dirty" if there were uncommitted changes."""
+    git = lambda *a: subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+    commit = git("rev-parse", "--short", "HEAD") or "unknown"
+    return commit + ("-dirty" if git("status", "--porcelain", "--untracked-files=no") else "")
+
+
+def run_meta(retries: int = 0) -> dict:
+    """What a run's score depends on besides the answerer name; merged parts must agree on all of it."""
+    return {
+        "retries": retries,
+        "models": {"planner": PLANNER_MODEL, "data": DATA_MODEL, "critic": CRITIC_MODEL},
+        "code_version": code_version(),
+    }
+
+
+def build_report(results: list[dict], answerer: str, complete: bool, meta: dict | None = None) -> dict:
+    return {
+        "answerer": answerer, "complete": complete, **(meta or {}), **tally(results),
+        "by_difficulty": by_difficulty(results), "by_split": by_split(results), "tokens": token_totals(results),
+        "critic": critic_totals(results), "round1": round1_tally(results), "results": results,
+    }
+
+
+def run_once(
+    questions: list[dict], answer: Answerer, answerer: str, slug: str | None = None, meta: dict | None = None,
+) -> dict:
     results, complete = run_questions(questions, answer)
-    overall = tally(results)
-    levels = by_difficulty(results)
-    splits = by_split(results)
-    tokens = token_totals(results)
-    critic = critic_totals(results)
-    round1 = round1_tally(results)
+    report = build_report(results, answerer, complete, meta)
+    tokens, critic, round1 = report["tokens"], report["critic"], report["round1"]
     print()
-    for name, b in [*levels.items(), *splits.items()]:
+    for name, b in [*report["by_difficulty"].items(), *report["by_split"].items()]:
         print(f"{name:<8} {fmt(b)}")
     if tokens["questions"]:
         print(f"tokens   prompt {tokens['mean_prompt']}/q, completion {tokens['mean_completion']}/q, total {tokens['prompt'] + tokens['completion']}")
@@ -281,13 +304,44 @@ def run_once(questions: list[dict], answer: Answerer, answerer: str, slug: str |
         print("critic   " + ", ".join(f"{k} {critic[k]}" for k in ("rounds", *CRITIC_OUTCOMES)) + f"; returned {critic['returned']}")
     if round1:
         print(f"round-1  {fmt(round1)}  (first SQL, before Critic rewrites = the plain graph row)")
-    print(f"\nScore: {fmt(overall)}  answerer={answerer}{'' if complete else '  [INCOMPLETE]'}")
-    report = {
-        "answerer": answerer, "complete": complete, **overall,
-        "by_difficulty": levels, "by_split": splits, "tokens": tokens, "critic": critic, "round1": round1, "results": results,
-    }
+    print(f"\nScore: {fmt(report)}  answerer={answerer}{'' if complete else '  [INCOMPLETE]'}")
     save(report, (slug or answerer_slug(answerer)) + ("" if complete else "_incomplete"))
     return report
+
+
+MERGE_KEYS = ("answerer", "retries", "models", "code_version")
+
+
+def merge_reports(parts: list[dict], all_ids: list[str]) -> dict:
+    """One complete run from part runs with disjoint --ids that together cover every question.
+
+    Raises ValueError if a part is incomplete, ids overlap or are missing, or the parts differ in
+    answerer (with flags), retries, models or code version.
+    """
+    if len(parts) < 2:
+        raise ValueError("--merge needs at least two part files")
+    for key in MERGE_KEYS:
+        values = [p.get(key) for p in parts]
+        if any(v is None for v in values):
+            raise ValueError(f"a part file has no '{key}' (saved before merging was supported)")
+        if any(v != values[0] for v in values):
+            raise ValueError(f"parts differ in {key}: {values}")
+    if not all(p.get("complete", True) for p in parts):
+        raise ValueError("a part run is incomplete (stopped by a daily quota); rerun its ids first")
+    seen: dict[str, int] = {}
+    for i, p in enumerate(parts):
+        for r in p["results"]:
+            if r["id"] in seen:
+                raise ValueError(f"{r['id']} is in part {seen[r['id']] + 1} and part {i + 1}")
+            seen[r["id"]] = i
+    missing = [q for q in all_ids if q not in seen]
+    extra = [q for q in seen if q not in set(all_ids)]
+    if missing or extra:
+        raise ValueError(f"parts must cover exactly the {len(all_ids)} questions; missing {missing}, unknown {extra}")
+    order = {q: i for i, q in enumerate(all_ids)}
+    results = sorted((r for p in parts for r in p["results"]), key=lambda r: order[r["id"]])
+    meta = {k: parts[0][k] for k in MERGE_KEYS if k != "answerer"}
+    return {**build_report(results, parts[0]["answerer"], True, meta), "merged": True, "parts": len(parts)}
 
 
 def save(report: dict, name: str) -> None:
@@ -396,10 +450,23 @@ def main() -> None:
         "--no-gate", action="store_true",
         help="turn the gate off for src.graph:answer, which has it on by default (PLANNER_GATE=1)",
     )
+    parser.add_argument(
+        "--merge", nargs="*", default=[], metavar="RESULT_JSON",
+        help="combine part runs with disjoint --ids covering all questions into one complete run; no LLM calls",
+    )
     parser.add_argument("--ids", nargs="*", default=[], metavar="ID", help="only ask these question ids")
     args = parser.parse_args()
 
     questions = json.loads(QUESTIONS_PATH.read_text(encoding="utf-8"))
+    if args.merge:
+        parts = [json.loads(Path(p).read_text(encoding="utf-8")) for p in args.merge]
+        try:
+            report = merge_reports(parts, [q["id"] for q in questions])
+        except ValueError as exc:
+            sys.exit(f"Cannot merge: {exc}")
+        print(f"Merged {len(parts)} parts: {fmt(report)}  answerer={report['answerer']}")
+        save(report, answerer_slug(report["answerer"], report["retries"]) + "_merged")
+        return
     if args.ids:
         questions = [q for q in questions if q["id"] in set(args.ids)]
     answer = load_answerer(args.answerer, questions)
@@ -418,7 +485,7 @@ def main() -> None:
     for i in range(args.runs):
         if args.runs > 1:
             print(f"\n=== Run {i + 1}/{args.runs} ===")
-        reports.append(run_once(questions, answer, args.answerer, slug))
+        reports.append(run_once(questions, answer, args.answerer, slug, run_meta(args.retries)))
         if not reports[-1]["complete"]:
             print("Skipping remaining runs: the daily quota will not reset within this invocation.")
             break

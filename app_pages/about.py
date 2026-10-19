@@ -29,7 +29,7 @@ STEPS = {
 WHY = {
     "planner": "Larger model: understanding the question and the data is the hard part.",
     "data": "Larger model: correct SQL needs the strongest reasoning.",
-    "critic": "Larger model: it has to spot subtle logic mistakes.",
+    "critic": "A different model family from the agents it checks, so it is less likely to repeat their mistakes; it caught as many wrong queries as the larger model in tests.",
     "viz": "Rules, no AI model: the chart type follows from the result's shape.",
     "reporter": "Smaller model: a few sentences from a small table is easy, so it's faster and cheaper.",
 }
@@ -179,8 +179,8 @@ FAQ = [
      "Yes, in principle. The agents get the table layout and a few business rules (for example, what counts as "
      "revenue) as text. Another database would need its own layout description, rules and test questions."),
     ("Which AI models does it use, and why?",
-     "Open-weight models served by Groq: a larger one for understanding the question, writing SQL and reviewing it, "
-     "and a smaller, faster one for writing the answer. Charts are picked by fixed rules, with no model."),
+     "Open-weight models served by Groq: a larger one for understanding the question and writing SQL, "
+     "a model from a different family for reviewing that SQL, and a smaller, faster one for writing the answer. Charts are picked by fixed rules, with no model."),
 ]
 
 
