@@ -2,26 +2,79 @@
   "id": "h14_late_category",
   "question": "Among product categories (English names) with at least 500 delivered order items, which category has the highest share of late-delivered items (delivered after the estimated date)?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 694,
-    "completion": 304
+    "prompt": 3363,
+    "completion": 757
   },
-  "sql": "WITH delivered AS (\n    SELECT \n        oi.order_id,\n        oi.product_id,\n        o.order_delivered_customer_date,\n        o.order_estimated_delivery_date,\n        p.product_category_name\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    JOIN products p ON oi.product_id = p.product_id\n    WHERE o.order_status = 'delivered'\n),\ncategory_counts AS (\n    SELECT \n        ct.product_category_name_english AS category,\n        COUNT(*) AS total_items,\n        SUM(CASE \n                WHEN d.order_delivered_customer_date > d.order_estimated_delivery_date THEN 1 \n                ELSE 0 \n            END) AS late_items\n    FROM delivered d\n    JOIN category_translation ct \n        ON d.product_category_name = ct.product_category_name\n    GROUP BY ct.product_category_name_english\n    HAVING COUNT(*) >= 500\n)\nSELECT \n    category,\n    CAST(late_items AS DOUBLE) / total_items AS late_share\nFROM category_counts\nORDER BY late_share DESC\nLIMIT 1",
+  "sql": "WITH delivered AS (\n    SELECT \n        oi.order_id,\n        oi.product_id,\n        oi.price,\n        oi.freight_value,\n        o.order_delivered_customer_date,\n        o.order_estimated_delivery_date,\n        p.product_category_name,\n        ct.product_category_name_english\n    FROM order_items oi\n    JOIN orders o USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n),\nagg AS (\n    SELECT\n        product_category_name_english AS category,\n        COUNT(*) AS total_items,\n        SUM(CASE WHEN order_delivered_customer_date > order_estimated_delivery_date THEN 1 ELSE 0 END) AS late_items\n    FROM delivered\n    GROUP BY product_category_name_english\n    HAVING COUNT(*) >= 500\n)\nSELECT\n    category,\n    late_items::DOUBLE / total_items AS late_share\nFROM agg\nORDER BY late_share DESC\nLIMIT 1",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Identify delivered order items by joining order_items to orders where order_status = 'delivered'.\n- Join to products to get product_category_name, then to category_translation for the English name.\n- Determine if each item is late by comparing order_delivered_customer_date to order_estimated_delivery_date.\n- Aggregate per English category: count total delivered items and count late items.\n- Filter categories with total delivered item count >= 500.\n- Compute late share as late count / total count.\n- Select the category with the maximum late share.",
+  "attempts": [
+    {
+      "sql": "WITH delivered AS (\n    SELECT \n        oi.order_id,\n        oi.product_id,\n        oi.price,\n        oi.freight_value,\n        o.order_delivered_customer_date,\n        o.order_estimated_delivery_date,\n        p.product_category_name,\n        ct.product_category_name_english\n    FROM order_items oi\n    JOIN orders o USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n),\nagg AS (\n    SELECT\n        product_category_name_english AS category,\n        COUNT(*) AS total_items,\n        SUM(CASE WHEN order_delivered_customer_date > order_estimated_delivery_date THEN 1 ELSE 0 END) AS late_items\n    FROM delivered\n    GROUP BY product_category_name_english\n    HAVING COUNT(*) >= 500\n)\nSELECT\n    category,\n    late_items::DOUBLE / total_items AS late_share\nFROM agg\nORDER BY late_share DESC\nLIMIT 1",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH delivered AS (\n    SELECT \n        oi.order_id,\n        oi.product_id,\n        oi.price,\n        oi.freight_value,\n        o.order_delivered_customer_date,\n        o.order_estimated_delivery_date,\n        p.product_category_name,\n        ct.product_category_name_english\n    FROM order_items oi\n    JOIN orders o USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n),\nagg AS (\n    SELECT\n        product_category_name_english AS category,\n        COUNT(*) AS total_items,\n        SUM(CASE WHEN order_delivered_customer_date > order_estimated_delivery_date THEN 1 ELSE 0 END) AS late_items\n    FROM delivered\n    GROUP BY product_category_name_english\n    HAVING COUNT(*) >= 500\n)\nSELECT\n    category,\n    late_items::DOUBLE / total_items AS late_share\nFROM agg\nORDER BY late_share DESC\nLIMIT 1",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Count delivered order items per category",
+          "sql": "COUNT(*) ... FROM delivered ... GROUP BY product_category_name_english",
+          "status": "match"
+        },
+        {
+          "requirement": "Filter for categories with at least 500 items",
+          "sql": "HAVING COUNT(*) >= 500",
+          "status": "match"
+        },
+        {
+          "requirement": "Calculate share of late-delivered items",
+          "sql": "SUM(CASE WHEN order_delivered_customer_date > order_estimated_delivery_date THEN 1 ELSE 0 END) / COUNT(*)",
+          "status": "match"
+        },
+        {
+          "requirement": "Use English category names",
+          "sql": "JOIN category_translation ct USING (product_category_name) ... ct.product_category_name_english",
+          "status": "match"
+        },
+        {
+          "requirement": "Identify the category with the highest late share",
+          "sql": "ORDER BY late_share DESC LIMIT 1",
+          "status": "match"
+        },
+        {
+          "requirement": "Ensure only delivered orders are considered",
+          "sql": "WHERE o.order_status = 'delivered'",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH delivered AS (\n    SELECT \n        oi.order_id,\n        oi.product_id,\n        oi.price,\n        oi.freight_value,\n        o.order_delivered_customer_date,\n        o.order_estimated_delivery_date,\n        p.product_category_name,\n        ct.product_category_name_english\n    FROM order_items oi\n    JOIN orders o USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n),\nagg AS (\n    SELECT\n        product_category_name_english AS category,\n        COUNT(*) AS total_items,\n        SUM(CASE WHEN order_delivered_customer_date > order_estimated_delivery_date THEN 1 ELSE 0 END) AS late_items\n    FROM delivered\n    GROUP BY product_category_name_english\n    HAVING COUNT(*) >= 500\n)\nSELECT\n    category,\n    late_items::DOUBLE / total_items AS late_share\nFROM agg\nORDER BY late_share DESC\nLIMIT 1",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 3.89,
+      "seconds": 25.06,
       "calls": []
     }
   ]

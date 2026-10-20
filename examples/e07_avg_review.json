@@ -2,26 +2,64 @@
   "id": "e07_avg_review",
   "question": "What is the average review score?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 666,
-    "completion": 45
+    "prompt": 2964,
+    "completion": 294
   },
-  "sql": "SELECT AVG(review_score) AS average_review_score FROM reviews",
+  "sql": "SELECT AVG(review_score) AS average_review_score\nFROM reviews",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Use the reviews table; column review_score holds the scores.\n- No additional filters are required.\n- Compute the average of review_score across all rows.\n- Return a single numeric value.",
+  "attempts": [
+    {
+      "sql": "SELECT AVG(review_score) AS average_review_score\nFROM reviews",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "SELECT AVG(review_score) AS average_review_score\nFROM reviews",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Calculate average review score",
+          "sql": "AVG(review_score)",
+          "status": "match"
+        },
+        {
+          "requirement": "Source data from reviews table",
+          "sql": "FROM reviews",
+          "status": "match"
+        },
+        {
+          "requirement": "No specific filters requested (e.g., delivered only, date range)",
+          "sql": "None",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "SELECT AVG(review_score) AS average_review_score\nFROM reviews",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 6.12,
+      "seconds": 15.67,
       "calls": []
     }
   ]

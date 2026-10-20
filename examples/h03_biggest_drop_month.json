@@ -2,26 +2,74 @@
   "id": "h03_biggest_drop_month",
   "question": "In the complete months (Jan 2017 to Aug 2018), which month had the biggest month-over-month revenue drop, and how large was the drop?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 692,
-    "completion": 224
+    "prompt": 3342,
+    "completion": 753
   },
-  "sql": "WITH monthly_rev AS (\n    SELECT \n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= TIMESTAMP '2017-01-01'\n      AND o.order_purchase_timestamp < TIMESTAMP '2018-09-01'\n    GROUP BY month\n),\nrev_diff AS (\n    SELECT \n        month,\n        revenue,\n        revenue - LAG(revenue) OVER (ORDER BY month) AS diff\n    FROM monthly_rev\n)\nSELECT \n    month,\n    -diff AS drop_amount\nFROM rev_diff\nWHERE diff < 0\nORDER BY drop_amount DESC\nLIMIT 1",
+  "sql": "WITH monthly_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n    GROUP BY month\n),\nrev_diff AS (\n    SELECT\n        month,\n        revenue,\n        LAG(revenue) OVER (ORDER BY month) AS prev_revenue,\n        revenue - LAG(revenue) OVER (ORDER BY month) AS diff\n    FROM monthly_rev\n)\nSELECT\n    month,\n    (prev_revenue - revenue) AS drop_amount\nFROM rev_diff\nWHERE diff = (\n    SELECT MIN(diff) FROM rev_diff WHERE prev_revenue IS NOT NULL\n)",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Filter orders with order_status = 'delivered' and order_purchase_timestamp between 2017-01-01 and 2018-08-31.\n- Join order_items to orders on order_id.\n- Compute revenue per order item as price + freight_value.\n- Aggregate revenue by month using strftime(order_purchase_timestamp, '%Y-%m').\n- Order months chronologically and calculate month\u2011over\u2011month difference (current month revenue minus previous month revenue).\n- Identify the month with the largest negative difference (biggest drop) and output that month label and the drop amount.",
+  "attempts": [
+    {
+      "sql": "WITH monthly_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n    GROUP BY month\n),\nrev_diff AS (\n    SELECT\n        month,\n        revenue,\n        LAG(revenue) OVER (ORDER BY month) AS prev_revenue,\n        revenue - LAG(revenue) OVER (ORDER BY month) AS diff\n    FROM monthly_rev\n)\nSELECT\n    month,\n    (prev_revenue - revenue) AS drop_amount\nFROM rev_diff\nWHERE diff = (\n    SELECT MIN(diff) FROM rev_diff WHERE prev_revenue IS NOT NULL\n)",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH monthly_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n    GROUP BY month\n),\nrev_diff AS (\n    SELECT\n        month,\n        revenue,\n        LAG(revenue) OVER (ORDER BY month) AS prev_revenue,\n        revenue - LAG(revenue) OVER (ORDER BY month) AS diff\n    FROM monthly_rev\n)\nSELECT\n    month,\n    (prev_revenue - revenue) AS drop_amount\nFROM rev_diff\nWHERE diff = (\n    SELECT MIN(diff) FROM rev_diff WHERE prev_revenue IS NOT NULL\n)",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Revenue definition (price + freight, delivered only)",
+          "sql": "SUM(oi.price + oi.freight_value) ... WHERE o.order_status = 'delivered'",
+          "status": "match"
+        },
+        {
+          "requirement": "Time range (Jan 2017 to Aug 2018)",
+          "sql": "o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01'",
+          "status": "match"
+        },
+        {
+          "requirement": "Month-over-month drop calculation",
+          "sql": "LAG(revenue) OVER (ORDER BY month) ... revenue - LAG(revenue) ...",
+          "status": "match"
+        },
+        {
+          "requirement": "Identify biggest drop",
+          "sql": "WHERE diff = (SELECT MIN(diff) ...)",
+          "status": "match"
+        },
+        {
+          "requirement": "Return month and drop amount",
+          "sql": "SELECT month, (prev_revenue - revenue) AS drop_amount",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH monthly_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n    GROUP BY month\n),\nrev_diff AS (\n    SELECT\n        month,\n        revenue,\n        LAG(revenue) OVER (ORDER BY month) AS prev_revenue,\n        revenue - LAG(revenue) OVER (ORDER BY month) AS diff\n    FROM monthly_rev\n)\nSELECT\n    month,\n    (prev_revenue - revenue) AS drop_amount\nFROM rev_diff\nWHERE diff = (\n    SELECT MIN(diff) FROM rev_diff WHERE prev_revenue IS NOT NULL\n)",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 3.6,
+      "seconds": 19.83,
       "calls": []
     }
   ]

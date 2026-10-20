@@ -2,26 +2,69 @@
   "id": "m03_sp_customers",
   "question": "How many unique customers are in the state of SP?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 670,
-    "completion": 60
+    "prompt": 2991,
+    "completion": 370
   },
   "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers_sp\nFROM customers\nWHERE customer_state = 'SP'",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Identify unique customers using customer_unique_id.\n- Filter customers where customer_state = 'SP'.\n- Count distinct customer_unique_id.\n- No joins needed.\n- No additional grouping; single aggregate result.\n- Return the count as a single numeric column.",
+  "attempts": [
+    {
+      "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers_sp\nFROM customers\nWHERE customer_state = 'SP'",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers_sp\nFROM customers\nWHERE customer_state = 'SP'",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Count unique customers",
+          "sql": "COUNT(DISTINCT customer_unique_id)",
+          "status": "match"
+        },
+        {
+          "requirement": "Filter for state SP",
+          "sql": "WHERE customer_state = 'SP'",
+          "status": "match"
+        },
+        {
+          "requirement": "Use customer_unique_id for counting",
+          "sql": "customer_unique_id",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested filters or joins",
+          "sql": "FROM customers",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers_sp\nFROM customers\nWHERE customer_state = 'SP'",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 1.5,
+      "seconds": 4.35,
       "calls": []
     }
   ]

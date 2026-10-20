@@ -2,26 +2,74 @@
   "id": "e04_avg_order_value",
   "question": "What is the average order value (revenue per delivered order)?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 672,
-    "completion": 130
+    "prompt": 3097,
+    "completion": 480
   },
-  "sql": "WITH delivered_orders AS (\n    SELECT \n        o.order_id,\n        SUM(oi.price + oi.freight_value) AS order_revenue\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n    GROUP BY o.order_id\n)\nSELECT AVG(order_revenue) AS avg_order_value\nFROM delivered_orders",
+  "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        SUM(oi.price + oi.freight_value) AS order_revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n    GROUP BY o.order_id\n)\nSELECT AVG(order_revenue) AS average_order_value\nFROM delivered",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "\u2022 Identify delivered orders where orders.order_status = 'delivered'. \u2022 Join orders to order_items on order_id to get price and freight_value for each item. \u2022 Compute revenue per order by summing price + freight_value across its items. \u2022 Aggregate across all delivered orders to calculate the average of these order revenues. \u2022 No additional filters needed beyond delivered status. \u2022 Return a single numeric value representing the average order value.",
+  "attempts": [
+    {
+      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        SUM(oi.price + oi.freight_value) AS order_revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n    GROUP BY o.order_id\n)\nSELECT AVG(order_revenue) AS average_order_value\nFROM delivered",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        SUM(oi.price + oi.freight_value) AS order_revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n    GROUP BY o.order_id\n)\nSELECT AVG(order_revenue) AS average_order_value\nFROM delivered",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Revenue definition (price + freight_value)",
+          "sql": "SUM(oi.price + oi.freight_value)",
+          "status": "match"
+        },
+        {
+          "requirement": "Delivered orders only",
+          "sql": "WHERE o.order_status = 'delivered'",
+          "status": "match"
+        },
+        {
+          "requirement": "Grain: per order",
+          "sql": "GROUP BY o.order_id",
+          "status": "match"
+        },
+        {
+          "requirement": "Metric: Average order value",
+          "sql": "AVG(order_revenue)",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested filters (e.g., date ranges)",
+          "sql": "None",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        SUM(oi.price + oi.freight_value) AS order_revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n    GROUP BY o.order_id\n)\nSELECT AVG(order_revenue) AS average_order_value\nFROM delivered",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 2.43,
+      "seconds": 3.27,
       "calls": []
     }
   ]

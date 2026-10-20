@@ -2,26 +2,105 @@
   "id": "m10_untranslated_categories",
   "question": "How many distinct Portuguese product categories have no English translation?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-19",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 670,
-    "completion": 146
+    "prompt": 5179,
+    "completion": 2430
   },
-  "sql": "SELECT COUNT(DISTINCT p.product_category_name) AS missing_translation_count\nFROM products AS p\nLEFT JOIN category_translation AS ct\n  ON p.product_category_name = ct.product_category_name\nWHERE ct.product_category_name_english IS NULL",
+  "sql": "WITH cat AS (\n    SELECT DISTINCT p.product_category_name\n    FROM products p\n    LEFT JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name IS NOT NULL\n      AND ct.product_category_name_english IS NULL\n)\nSELECT COUNT(*) AS missing_translation_count\nFROM cat",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Identify all distinct product_category_name values from the products table.\n- Left join these categories to category_translation on product_category_name.\n- Filter for rows where the English translation (product_category_name_english) is NULL, indicating no translation.\n- Count the distinct product_category_name values that meet this condition.\n- No additional filters are required.\n- Return a single numeric result representing the count.",
+  "attempts": [
+    {
+      "sql": "WITH cat AS (\n    SELECT DISTINCT p.product_category_name\n    FROM products p\n    LEFT JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english IS NULL\n)\nSELECT COUNT(*) AS missing_translation_count\nFROM cat",
+      "error": null
+    },
+    {
+      "sql": "WITH cat AS (\n    SELECT DISTINCT p.product_category_name\n    FROM products p\n    LEFT JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name IS NOT NULL\n      AND ct.product_category_name_english IS NULL\n)\nSELECT COUNT(*) AS missing_translation_count\nFROM cat",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH cat AS (\n    SELECT DISTINCT p.product_category_name\n    FROM products p\n    LEFT JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english IS NULL\n)\nSELECT COUNT(*) AS missing_translation_count\nFROM cat",
+      "verdict": "revise",
+      "feedback": "The LEFT JOIN + IS NULL filter will also match rows where p.product_category_name is NULL (NULL never equals any value in the join, so ct columns are NULL, passing the WHERE). NULL is not a 'Portuguese product category' and should not be counted. Add 'AND p.product_category_name IS NOT NULL' to the WHERE clause.",
+      "checklist": [
+        {
+          "requirement": "Count distinct Portuguese product categories",
+          "sql": "SELECT DISTINCT p.product_category_name ... COUNT(*)",
+          "status": "match"
+        },
+        {
+          "requirement": "Filter to categories with no English translation",
+          "sql": "LEFT JOIN category_translation ct ON p.product_category_name = ct.product_category_name WHERE ct.product_category_name_english IS NULL",
+          "status": "match"
+        },
+        {
+          "requirement": "Only actual category names (NULL is not a 'Portuguese product category')",
+          "sql": "missing \u2014 no filter excluding p.product_category_name IS NULL",
+          "status": "mismatch"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH cat AS (\n    SELECT DISTINCT p.product_category_name\n    FROM products p\n    LEFT JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english IS NULL\n)\nSELECT COUNT(*) AS missing_translation_count\nFROM cat",
+          "error": null
+        }
+      ],
+      "correct": false,
+      "outcome": "caught"
+    },
+    {
+      "round": 2,
+      "sql": "WITH cat AS (\n    SELECT DISTINCT p.product_category_name\n    FROM products p\n    LEFT JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name IS NOT NULL\n      AND ct.product_category_name_english IS NULL\n)\nSELECT COUNT(*) AS missing_translation_count\nFROM cat",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Count distinct Portuguese product categories",
+          "sql": "SELECT DISTINCT p.product_category_name FROM products p ... COUNT(*)",
+          "status": "match"
+        },
+        {
+          "requirement": "Categories that have no English translation (not present in category_translation or NULL English name)",
+          "sql": "LEFT JOIN category_translation ct ON p.product_category_name = ct.product_category_name WHERE ct.product_category_name_english IS NULL",
+          "status": "match"
+        },
+        {
+          "requirement": "Exclude NULL product_category_name (not a real category)",
+          "sql": "WHERE p.product_category_name IS NOT NULL",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested filters or joins that inflate counts",
+          "sql": "Only joins products to category_translation; DISTINCT prevents duplication; no other joins",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH cat AS (\n    SELECT DISTINCT p.product_category_name\n    FROM products p\n    LEFT JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name IS NOT NULL\n      AND ct.product_category_name_english IS NULL\n)\nSELECT COUNT(*) AS missing_translation_count\nFROM cat",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 1.94,
+      "seconds": 94.17,
       "calls": []
     }
   ]

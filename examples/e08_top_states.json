@@ -2,26 +2,69 @@
   "id": "e08_top_states",
   "question": "Which 5 states have the most unique customers?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 669,
-    "completion": 93
+    "prompt": 3059,
+    "completion": 391
   },
   "sql": "SELECT\n    c.customer_state,\n    COUNT(DISTINCT c.customer_unique_id) AS unique_customers\nFROM customers AS c\nGROUP BY c.customer_state\nORDER BY unique_customers DESC\nLIMIT 5",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Count distinct customer_unique_id per state to get number of unique customers per state.\n- Use the customers table, selecting customer_state and customer_unique_id.\n- No additional filters needed.\n- Group by customer_state.\n- Order the results by the count descending.\n- Limit the output to the top 5 states.",
+  "attempts": [
+    {
+      "sql": "SELECT\n    c.customer_state,\n    COUNT(DISTINCT c.customer_unique_id) AS unique_customers\nFROM customers AS c\nGROUP BY c.customer_state\nORDER BY unique_customers DESC\nLIMIT 5",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "SELECT\n    c.customer_state,\n    COUNT(DISTINCT c.customer_unique_id) AS unique_customers\nFROM customers AS c\nGROUP BY c.customer_state\nORDER BY unique_customers DESC\nLIMIT 5",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Count unique customers",
+          "sql": "COUNT(DISTINCT c.customer_unique_id)",
+          "status": "match"
+        },
+        {
+          "requirement": "Group by state",
+          "sql": "GROUP BY c.customer_state",
+          "status": "match"
+        },
+        {
+          "requirement": "Return top 5 states",
+          "sql": "ORDER BY unique_customers DESC LIMIT 5",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested filters",
+          "sql": "None",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "SELECT\n    c.customer_state,\n    COUNT(DISTINCT c.customer_unique_id) AS unique_customers\nFROM customers AS c\nGROUP BY c.customer_state\nORDER BY unique_customers DESC\nLIMIT 5",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 5.29,
+      "seconds": 15.97,
       "calls": []
     }
   ]

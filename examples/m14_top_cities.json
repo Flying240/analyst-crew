@@ -2,26 +2,69 @@
   "id": "m14_top_cities",
   "question": "Which 3 customer cities have the most unique customers, and how many?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 674,
-    "completion": 108
+    "prompt": 3095,
+    "completion": 402
   },
-  "sql": "SELECT\n    c.customer_city,\n    COUNT(DISTINCT c.customer_unique_id) AS unique_customers\nFROM customers AS c\nGROUP BY c.customer_city\nORDER BY unique_customers DESC\nLIMIT 3",
+  "sql": "WITH city_counts AS (\n    SELECT\n        c.customer_city,\n        COUNT(DISTINCT c.customer_unique_id) AS unique_customers\n    FROM customers c\n    GROUP BY c.customer_city\n)\nSELECT\n    customer_city,\n    unique_customers\nFROM city_counts\nORDER BY unique_customers DESC\nLIMIT 3",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Count distinct customer_unique_id for each customer_city in the customers table.\n- No joins needed because all required data resides in customers.\n- Filter out any rows with null city if desired (not required by rules).\n- Group by customer_city.\n- Order the results by the count descending.\n- Limit the output to the top 3 rows.",
+  "attempts": [
+    {
+      "sql": "WITH city_counts AS (\n    SELECT\n        c.customer_city,\n        COUNT(DISTINCT c.customer_unique_id) AS unique_customers\n    FROM customers c\n    GROUP BY c.customer_city\n)\nSELECT\n    customer_city,\n    unique_customers\nFROM city_counts\nORDER BY unique_customers DESC\nLIMIT 3",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH city_counts AS (\n    SELECT\n        c.customer_city,\n        COUNT(DISTINCT c.customer_unique_id) AS unique_customers\n    FROM customers c\n    GROUP BY c.customer_city\n)\nSELECT\n    customer_city,\n    unique_customers\nFROM city_counts\nORDER BY unique_customers DESC\nLIMIT 3",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Identify customer cities",
+          "sql": "c.customer_city",
+          "status": "match"
+        },
+        {
+          "requirement": "Count unique customers",
+          "sql": "COUNT(DISTINCT c.customer_unique_id)",
+          "status": "match"
+        },
+        {
+          "requirement": "Return top 3 cities",
+          "sql": "ORDER BY unique_customers DESC LIMIT 3",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested filters",
+          "sql": "FROM customers c",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH city_counts AS (\n    SELECT\n        c.customer_city,\n        COUNT(DISTINCT c.customer_unique_id) AS unique_customers\n    FROM customers c\n    GROUP BY c.customer_city\n)\nSELECT\n    customer_city,\n    unique_customers\nFROM city_counts\nORDER BY unique_customers DESC\nLIMIT 3",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 2.33,
+      "seconds": 5.23,
       "calls": []
     }
   ]

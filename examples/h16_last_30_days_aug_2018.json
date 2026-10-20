@@ -2,26 +2,74 @@
   "id": "h16_last_30_days_aug_2018",
   "question": "How many orders were purchased in the 30 days ending on 2018-08-31, including that day?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 683,
-    "completion": 97
+    "prompt": 3076,
+    "completion": 525
   },
-  "sql": "SELECT COUNT(*) AS orders_last_30_days\nFROM orders\nWHERE order_purchase_timestamp >= TIMESTAMP '2018-08-02 00:00:00'\n  AND order_purchase_timestamp <= TIMESTAMP '2018-08-31 23:59:59'",
+  "sql": "SELECT COUNT(*) AS order_count\nFROM orders\nWHERE order_purchase_timestamp >= TIMESTAMP '2018-08-02'\n  AND order_purchase_timestamp < TIMESTAMP '2018-09-01'",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Count orders from the orders table.\n- Use the order_purchase_timestamp column.\n- Filter timestamps to be >= '2018-08-02' and <= '2018-08-31' (30 days ending on 2018-08-31 inclusive).\n- No additional joins or groupings are required.\n- Return a single numeric count.",
+  "attempts": [
+    {
+      "sql": "SELECT COUNT(*) AS order_count\nFROM orders\nWHERE order_purchase_timestamp >= TIMESTAMP '2018-08-02'\n  AND order_purchase_timestamp < TIMESTAMP '2018-09-01'",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "SELECT COUNT(*) AS order_count\nFROM orders\nWHERE order_purchase_timestamp >= TIMESTAMP '2018-08-02'\n  AND order_purchase_timestamp < TIMESTAMP '2018-09-01'",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Count orders",
+          "sql": "COUNT(*)",
+          "status": "match"
+        },
+        {
+          "requirement": "Purchased in 30 days ending 2018-08-31",
+          "sql": "order_purchase_timestamp >= TIMESTAMP '2018-08-02' AND order_purchase_timestamp < TIMESTAMP '2018-09-01'",
+          "status": "match"
+        },
+        {
+          "requirement": "Include 2018-08-31",
+          "sql": "order_purchase_timestamp < TIMESTAMP '2018-09-01'",
+          "status": "match"
+        },
+        {
+          "requirement": "No status filter (question does not specify delivered)",
+          "sql": "none",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested joins or filters",
+          "sql": "FROM orders",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "SELECT COUNT(*) AS order_count\nFROM orders\nWHERE order_purchase_timestamp >= TIMESTAMP '2018-08-02'\n  AND order_purchase_timestamp < TIMESTAMP '2018-09-01'",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 3.25,
+      "seconds": 7.41,
       "calls": []
     }
   ]

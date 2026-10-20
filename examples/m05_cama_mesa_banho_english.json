@@ -2,26 +2,69 @@
   "id": "m05_cama_mesa_banho_english",
   "question": "What is the English name of the category 'cama_mesa_banho', and how many products does it have?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 683,
-    "completion": 122
+    "prompt": 3113,
+    "completion": 492
   },
-  "sql": "WITH cat AS (\n    SELECT \n        ct.product_category_name_english AS english_name,\n        COUNT(p.product_id) AS product_count\n    FROM category_translation ct\n    JOIN products p\n      ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name = 'cama_mesa_banho'\n    GROUP BY ct.product_category_name_english\n)\nSELECT english_name, product_count FROM cat",
+  "sql": "WITH filtered AS (\n    SELECT\n        ct.product_category_name_english,\n        p.product_id\n    FROM products p\n    JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name = 'cama_mesa_banho'\n)\nSELECT\n    MAX(product_category_name_english) AS category_name_english,\n    COUNT(DISTINCT product_id) AS product_count\nFROM filtered",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "\u2022 Filter products where product_category_name = 'cama_mesa_banho'.\n\u2022 Join to category_translation on product_category_name to get product_category_name_english.\n\u2022 Count distinct product_id to get the number of products.\n\u2022 Select the English category name and the product count.",
+  "attempts": [
+    {
+      "sql": "WITH filtered AS (\n    SELECT\n        ct.product_category_name_english,\n        p.product_id\n    FROM products p\n    JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name = 'cama_mesa_banho'\n)\nSELECT\n    MAX(product_category_name_english) AS category_name_english,\n    COUNT(DISTINCT product_id) AS product_count\nFROM filtered",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH filtered AS (\n    SELECT\n        ct.product_category_name_english,\n        p.product_id\n    FROM products p\n    JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name = 'cama_mesa_banho'\n)\nSELECT\n    MAX(product_category_name_english) AS category_name_english,\n    COUNT(DISTINCT product_id) AS product_count\nFROM filtered",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "English name of category 'cama_mesa_banho'",
+          "sql": "ct.product_category_name_english ... WHERE p.product_category_name = 'cama_mesa_banho'",
+          "status": "match"
+        },
+        {
+          "requirement": "Count of products in that category",
+          "sql": "COUNT(DISTINCT product_id)",
+          "status": "match"
+        },
+        {
+          "requirement": "Correct join to get English name",
+          "sql": "JOIN category_translation ct ON p.product_category_name = ct.product_category_name",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested filters (e.g., delivered status, date ranges)",
+          "sql": "None present",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH filtered AS (\n    SELECT\n        ct.product_category_name_english,\n        p.product_id\n    FROM products p\n    JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name = 'cama_mesa_banho'\n)\nSELECT\n    MAX(product_category_name_english) AS category_name_english,\n    COUNT(DISTINCT product_id) AS product_count\nFROM filtered",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 6.8,
+      "seconds": 17.94,
       "calls": []
     }
   ]

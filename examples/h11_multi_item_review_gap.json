@@ -2,26 +2,79 @@
   "id": "h11_multi_item_review_gap",
   "question": "What is the average review score of orders with exactly one item minus that of orders with more than one item?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 681,
-    "completion": 229
+    "prompt": 3182,
+    "completion": 691
   },
-  "sql": "WITH order_item_counts AS (\n    SELECT\n        oi.order_id,\n        COUNT(*) AS item_cnt\n    FROM order_items oi\n    GROUP BY oi.order_id\n),\nreview_scores AS (\n    SELECT\n        o.order_id,\n        r.review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    JOIN order_item_counts c ON c.order_id = o.order_id\n)\nSELECT\n    AVG(CASE WHEN item_cnt = 1 THEN review_score END) -\n    AVG(CASE WHEN item_cnt > 1 THEN review_score END) AS avg_score_diff\nFROM (\n    SELECT\n        r.order_id,\n        r.review_score,\n        c.item_cnt\n    FROM review_scores r\n    JOIN order_item_counts c ON c.order_id = r.order_id\n) t",
+  "sql": "WITH order_item_counts AS (\n    SELECT\n        oi.order_id,\n        COUNT(*) AS item_cnt\n    FROM order_items oi\n    GROUP BY oi.order_id\n),\nreview_scores AS (\n    SELECT\n        r.order_id,\n        r.review_score\n    FROM reviews r\n    WHERE r.review_score IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN oic.item_cnt = 1 THEN rs.review_score END) -\n    AVG(CASE WHEN oic.item_cnt > 1 THEN rs.review_score END) AS avg_score_diff\nFROM order_item_counts oic\nJOIN review_scores rs ON rs.order_id = oic.order_id",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Join orders to order_items to count items per order; join to reviews to get review_score.\n- Filter to delivered orders only if needed (not required for review score).\n- Compute two aggregates: average review_score for orders where item count = 1, and average for orders where item count > 1.\n- Subtract the second average from the first.\n- Return the result as a single numeric value.",
+  "attempts": [
+    {
+      "sql": "WITH order_item_counts AS (\n    SELECT\n        oi.order_id,\n        COUNT(*) AS item_cnt\n    FROM order_items oi\n    GROUP BY oi.order_id\n),\nreview_scores AS (\n    SELECT\n        r.order_id,\n        r.review_score\n    FROM reviews r\n    WHERE r.review_score IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN oic.item_cnt = 1 THEN rs.review_score END) -\n    AVG(CASE WHEN oic.item_cnt > 1 THEN rs.review_score END) AS avg_score_diff\nFROM order_item_counts oic\nJOIN review_scores rs ON rs.order_id = oic.order_id",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH order_item_counts AS (\n    SELECT\n        oi.order_id,\n        COUNT(*) AS item_cnt\n    FROM order_items oi\n    GROUP BY oi.order_id\n),\nreview_scores AS (\n    SELECT\n        r.order_id,\n        r.review_score\n    FROM reviews r\n    WHERE r.review_score IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN oic.item_cnt = 1 THEN rs.review_score END) -\n    AVG(CASE WHEN oic.item_cnt > 1 THEN rs.review_score END) AS avg_score_diff\nFROM order_item_counts oic\nJOIN review_scores rs ON rs.order_id = oic.order_id",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Identify orders with exactly one item",
+          "sql": "COUNT(*) AS item_cnt ... WHERE oic.item_cnt = 1",
+          "status": "match"
+        },
+        {
+          "requirement": "Identify orders with more than one item",
+          "sql": "COUNT(*) AS item_cnt ... WHERE oic.item_cnt > 1",
+          "status": "match"
+        },
+        {
+          "requirement": "Calculate average review score for single-item orders",
+          "sql": "AVG(CASE WHEN oic.item_cnt = 1 THEN rs.review_score END)",
+          "status": "match"
+        },
+        {
+          "requirement": "Calculate average review score for multi-item orders",
+          "sql": "AVG(CASE WHEN oic.item_cnt > 1 THEN rs.review_score END)",
+          "status": "match"
+        },
+        {
+          "requirement": "Compute the difference between the two averages",
+          "sql": "AVG(...) - AVG(...) AS avg_score_diff",
+          "status": "match"
+        },
+        {
+          "requirement": "Handle NULL review scores appropriately",
+          "sql": "WHERE r.review_score IS NOT NULL",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH order_item_counts AS (\n    SELECT\n        oi.order_id,\n        COUNT(*) AS item_cnt\n    FROM order_items oi\n    GROUP BY oi.order_id\n),\nreview_scores AS (\n    SELECT\n        r.order_id,\n        r.review_score\n    FROM reviews r\n    WHERE r.review_score IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN oic.item_cnt = 1 THEN rs.review_score END) -\n    AVG(CASE WHEN oic.item_cnt > 1 THEN rs.review_score END) AS avg_score_diff\nFROM order_item_counts oic\nJOIN review_scores rs ON rs.order_id = oic.order_id",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 2.78,
+      "seconds": 16.01,
       "calls": []
     }
   ]

@@ -2,31 +2,74 @@
   "id": "m11_null_category_products",
   "question": "How many products have no category?",
   "source": "eval",
-  "eval_run": "graph",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 1691,
-    "completion": 204
+    "prompt": 2961,
+    "completion": 389
   },
-  "sql": "SELECT COUNT(DISTINCT product_id) AS product_count_no_category\nFROM products\nWHERE product_category_name IS NULL\n   OR TRIM(product_category_name) = ''",
+  "sql": "SELECT COUNT(*) AS products_without_category\nFROM products\nWHERE product_category_name IS NULL\n   OR product_category_name = ''",
   "error": null,
-  "plan": "- Count distinct product_id values where the product has no associated category; this is a product\u2011level count.  \n- Use the **products** table for product_id and product_category_name columns.  \n- Identify products with no category by checking where product_category_name is NULL or empty (''), since category information resides only in this column.  \n- No joins are required because the category information is stored directly in the products table; ignore the category_translation table.  \n- Apply no additional filters beyond the requirement that the product lacks a category.  \n- Return a single numeric result representing the count of such products.",
+  "plan": "- Count rows in the products table where product_category_name is NULL or an empty string; - No joins needed; - No additional filters; - Return a single numeric count.",
   "attempts": [
     {
-      "sql": "SELECT COUNT(DISTINCT product_id) AS product_count_no_category\nFROM products\nWHERE product_category_name IS NULL\n   OR TRIM(product_category_name) = ''",
+      "sql": "SELECT COUNT(*) AS products_without_category\nFROM products\nWHERE product_category_name IS NULL\n   OR product_category_name = ''",
       "error": null
     }
   ],
-  "critic_rounds": [],
-  "returned": "no_critic",
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "SELECT COUNT(*) AS products_without_category\nFROM products\nWHERE product_category_name IS NULL\n   OR product_category_name = ''",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Count products",
+          "sql": "COUNT(*)",
+          "status": "match"
+        },
+        {
+          "requirement": "From products table",
+          "sql": "FROM products",
+          "status": "match"
+        },
+        {
+          "requirement": "Filter for no category",
+          "sql": "WHERE product_category_name IS NULL OR product_category_name = ''",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested filters",
+          "sql": "None",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested joins",
+          "sql": "None",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "SELECT COUNT(*) AS products_without_category\nFROM products\nWHERE product_category_name IS NULL\n   OR product_category_name = ''",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 2.31,
+      "seconds": 6.86,
       "calls": []
     }
   ]

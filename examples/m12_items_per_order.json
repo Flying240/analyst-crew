@@ -2,26 +2,69 @@
   "id": "m12_items_per_order",
   "question": "What is the average number of items per delivered order?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 670,
-    "completion": 130
+    "prompt": 3094,
+    "completion": 449
   },
   "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n)\nSELECT AVG(item_cnt) AS avg_items_per_delivered_order\nFROM (\n    SELECT oi.order_id, COUNT(*) AS item_cnt\n    FROM order_items oi\n    JOIN delivered_orders d ON oi.order_id = d.order_id\n    GROUP BY oi.order_id\n) t",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "\u2022 Count order_items rows per order_id to get items per order; \u2022 Join orders to filter where order_status = 'delivered'; \u2022 Aggregate by counting items per delivered order and then compute the average across these orders; \u2022 Use orders.order_id and order_items.order_id columns; \u2022 No additional filters needed; \u2022 Return a single numeric value representing the average items per delivered order.",
+  "attempts": [
+    {
+      "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n)\nSELECT AVG(item_cnt) AS avg_items_per_delivered_order\nFROM (\n    SELECT oi.order_id, COUNT(*) AS item_cnt\n    FROM order_items oi\n    JOIN delivered_orders d ON oi.order_id = d.order_id\n    GROUP BY oi.order_id\n) t",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n)\nSELECT AVG(item_cnt) AS avg_items_per_delivered_order\nFROM (\n    SELECT oi.order_id, COUNT(*) AS item_cnt\n    FROM order_items oi\n    JOIN delivered_orders d ON oi.order_id = d.order_id\n    GROUP BY oi.order_id\n) t",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Filter for delivered orders",
+          "sql": "WHERE o.order_status = 'delivered'",
+          "status": "match"
+        },
+        {
+          "requirement": "Count items per order",
+          "sql": "COUNT(*) AS item_cnt ... GROUP BY oi.order_id",
+          "status": "match"
+        },
+        {
+          "requirement": "Calculate average of item counts",
+          "sql": "AVG(item_cnt)",
+          "status": "match"
+        },
+        {
+          "requirement": "Return single numeric value",
+          "sql": "SELECT AVG(item_cnt) AS avg_items_per_delivered_order",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n)\nSELECT AVG(item_cnt) AS avg_items_per_delivered_order\nFROM (\n    SELECT oi.order_id, COUNT(*) AS item_cnt\n    FROM order_items oi\n    JOIN delivered_orders d ON oi.order_id = d.order_id\n    GROUP BY oi.order_id\n) t",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 2.48,
+      "seconds": 10.96,
       "calls": []
     }
   ]

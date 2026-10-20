@@ -2,35 +2,67 @@
   "id": "m09_revenue_by_state",
   "question": "Which 5 customer states generate the most revenue, and how much?",
   "source": "eval",
-  "eval_run": "graph-critic",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
     "critic": true,
-    "retries": null
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 2873,
-    "completion": 358
+    "prompt": 3200,
+    "completion": 541
   },
-  "sql": "WITH delivered AS (\n    SELECT \n        oi.price + oi.freight_value AS revenue,\n        c.customer_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT \n    customer_state,\n    SUM(revenue) AS total_revenue\nFROM delivered\nGROUP BY customer_state\nORDER BY total_revenue DESC\nLIMIT 5",
+  "sql": "WITH delivered AS (\n    SELECT \n        oi.price + oi.freight_value AS revenue,\n        c.customer_state\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c USING (customer_id)\n    WHERE o.order_status = 'delivered'\n)\nSELECT \n    customer_state,\n    SUM(revenue) AS total_revenue\nFROM delivered\nGROUP BY customer_state\nORDER BY total_revenue DESC\nLIMIT 5",
   "error": null,
-  "plan": "- Count revenue per customer state by summing the revenue of each delivered order item (price\u202f+\u202ffreight_value) for orders whose status is \u201cdelivered\u201d.  \n- Join `orders` \u2192 `customers` (on `customer_id`) \u2192 `order_items` (on `order_id`) to obtain the state and the revenue components; no other tables are needed.  \n- Filter rows to keep only records where `orders.order_status = 'delivered'`.  \n- Group the result by `customers.customer_state` and compute the total revenue per state.  \n- Order the groups by the revenue total in descending order and limit the output to the top\u202f5 states.  \n- Return two columns: the state identifier and the corresponding summed revenue.",
+  "plan": "- Join orders to order_items on order_id and to customers on customer_id.\n- Filter orders where order_status = 'delivered' to define revenue.\n- Compute revenue per order item as price + freight_value.\n- Aggregate revenue by customers.customer_state.\n- Sum the revenue per state.\n- Order the results by summed revenue descending and limit to 5 rows.",
   "attempts": [
     {
-      "sql": "WITH delivered AS (\n    SELECT \n        oi.price + oi.freight_value AS revenue,\n        c.customer_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT \n    customer_state,\n    SUM(revenue) AS total_revenue\nFROM delivered\nGROUP BY customer_state\nORDER BY total_revenue DESC\nLIMIT 5",
+      "sql": "WITH delivered AS (\n    SELECT \n        oi.price + oi.freight_value AS revenue,\n        c.customer_state\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c USING (customer_id)\n    WHERE o.order_status = 'delivered'\n)\nSELECT \n    customer_state,\n    SUM(revenue) AS total_revenue\nFROM delivered\nGROUP BY customer_state\nORDER BY total_revenue DESC\nLIMIT 5",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH delivered AS (\n    SELECT \n        oi.price + oi.freight_value AS revenue,\n        c.customer_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT \n    customer_state,\n    SUM(revenue) AS total_revenue\nFROM delivered\nGROUP BY customer_state\nORDER BY total_revenue DESC\nLIMIT 5",
+      "sql": "WITH delivered AS (\n    SELECT \n        oi.price + oi.freight_value AS revenue,\n        c.customer_state\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c USING (customer_id)\n    WHERE o.order_status = 'delivered'\n)\nSELECT \n    customer_state,\n    SUM(revenue) AS total_revenue\nFROM delivered\nGROUP BY customer_state\nORDER BY total_revenue DESC\nLIMIT 5",
       "verdict": "ok",
       "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Calculate revenue as price + freight_value",
+          "sql": "oi.price + oi.freight_value AS revenue",
+          "status": "match"
+        },
+        {
+          "requirement": "Filter for delivered orders only",
+          "sql": "WHERE o.order_status = 'delivered'",
+          "status": "match"
+        },
+        {
+          "requirement": "Group by customer state",
+          "sql": "GROUP BY customer_state",
+          "status": "match"
+        },
+        {
+          "requirement": "Sum revenue per state",
+          "sql": "SUM(revenue) AS total_revenue",
+          "status": "match"
+        },
+        {
+          "requirement": "Return top 5 states by revenue",
+          "sql": "ORDER BY total_revenue DESC LIMIT 5",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested filters or joins",
+          "sql": "JOIN order_items oi USING (order_id) JOIN customers c USING (customer_id)",
+          "status": "match"
+        }
+      ],
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH delivered AS (\n    SELECT \n        oi.price + oi.freight_value AS revenue,\n        c.customer_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT \n    customer_state,\n    SUM(revenue) AS total_revenue\nFROM delivered\nGROUP BY customer_state\nORDER BY total_revenue DESC\nLIMIT 5",
+          "sql": "WITH delivered AS (\n    SELECT \n        oi.price + oi.freight_value AS revenue,\n        c.customer_state\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c USING (customer_id)\n    WHERE o.order_status = 'delivered'\n)\nSELECT \n    customer_state,\n    SUM(revenue) AS total_revenue\nFROM delivered\nGROUP BY customer_state\nORDER BY total_revenue DESC\nLIMIT 5",
           "error": null
         }
       ],
@@ -42,7 +74,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 19.54,
+      "seconds": 5.7,
       "calls": []
     }
   ]

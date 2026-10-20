@@ -2,26 +2,74 @@
   "id": "m15_avg_review_furniture",
   "question": "What is the average review score for orders containing products in the furniture_decor category?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 676,
-    "completion": 227
+    "prompt": 3125,
+    "completion": 610
   },
   "sql": "WITH furniture_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'furniture_decor'\n)\nSELECT AVG(r.review_score) AS avg_review_score\nFROM reviews r\nJOIN furniture_orders fo ON r.order_id = fo.order_id",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Identify order items whose product belongs to the 'furniture_decor' category by joining products to category_translation on product_category_name and filtering category_translation.product_category_name_english = 'furniture_decor'.\n- Join these order items to orders via order_id.\n- Join orders to reviews via order_id to obtain review_score.\n- Compute the average of review_score across all matching reviews.\n- No additional filters beyond the category condition are needed.",
+  "attempts": [
+    {
+      "sql": "WITH furniture_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'furniture_decor'\n)\nSELECT AVG(r.review_score) AS avg_review_score\nFROM reviews r\nJOIN furniture_orders fo ON r.order_id = fo.order_id",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH furniture_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'furniture_decor'\n)\nSELECT AVG(r.review_score) AS avg_review_score\nFROM reviews r\nJOIN furniture_orders fo ON r.order_id = fo.order_id",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Average review score",
+          "sql": "AVG(r.review_score)",
+          "status": "match"
+        },
+        {
+          "requirement": "Orders containing products in furniture_decor category",
+          "sql": "JOIN category_translation ct ... WHERE ct.product_category_name_english = 'furniture_decor'",
+          "status": "match"
+        },
+        {
+          "requirement": "Grain: per order (reviews linked to orders)",
+          "sql": "JOIN furniture_orders fo ON r.order_id = fo.order_id",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested filters (e.g., delivered status)",
+          "sql": "None applied",
+          "status": "match"
+        },
+        {
+          "requirement": "Correct join path to category",
+          "sql": "order_items -> products -> category_translation",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH furniture_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'furniture_decor'\n)\nSELECT AVG(r.review_score) AS avg_review_score\nFROM reviews r\nJOIN furniture_orders fo ON r.order_id = fo.order_id",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 2.41,
+      "seconds": 8.67,
       "calls": []
     }
   ]

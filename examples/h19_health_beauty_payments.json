@@ -2,26 +2,77 @@
   "id": "h19_health_beauty_payments",
   "question": "What is the total amount paid for delivered orders that contain at least one health_beauty product?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 679,
-    "completion": 261
+    "prompt": 4272,
+    "completion": 783
   },
-  "sql": "WITH health_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'health_beauty'\n),\ndelivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id\nWHERE oi.order_id IN (SELECT order_id FROM health_orders)",
+  "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n    GROUP BY o.order_id\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Identify order IDs of delivered orders (order_status = 'delivered') that have at least one item whose product's category (via products and category_translation) is 'health_beauty'.\n- From order_items, compute revenue per item as price + freight_value.\n- Sum revenue for all items belonging to the identified order IDs.\n- No additional grouping needed; return a single total value.",
+  "attempts": [
+    {
+      "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n    GROUP BY o.order_id\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders do ON oi.order_id = do.order_id",
+      "error": "ParserException: Parser Error: syntax error at or near \"do\"\n\nLINE 13: JOIN delivered_orders do ON oi.order_id = do.order_id\n                               ^"
+    },
+    {
+      "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n    GROUP BY o.order_id\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n    GROUP BY o.order_id\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Filter for delivered orders",
+          "sql": "WHERE o.order_status = 'delivered'",
+          "status": "match"
+        },
+        {
+          "requirement": "Identify orders containing at least one health_beauty product",
+          "sql": "JOIN category_translation ct ... AND ct.product_category_name_english = 'health_beauty' ... GROUP BY o.order_id",
+          "status": "match"
+        },
+        {
+          "requirement": "Calculate total amount paid (revenue) for those orders",
+          "sql": "SELECT SUM(oi.price + oi.freight_value) ... FROM order_items oi JOIN delivered_orders d ON oi.order_id = d.order_id",
+          "status": "match"
+        },
+        {
+          "requirement": "Return single numeric value",
+          "sql": "SELECT SUM(...) AS total_paid",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n    GROUP BY o.order_id\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders do ON oi.order_id = do.order_id",
+          "error": "ParserException: Parser Error: syntax error at or near \"do\"\n\nLINE 13: JOIN delivered_orders do ON oi.order_id = do.order_id\n                               ^"
+        },
+        {
+          "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n    GROUP BY o.order_id\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 3.04,
+      "seconds": 9.79,
       "calls": []
     }
   ]

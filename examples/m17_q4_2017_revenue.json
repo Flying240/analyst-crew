@@ -2,26 +2,69 @@
   "id": "m17_q4_2017_revenue",
   "question": "What was the revenue from orders purchased in Q4 2017 (October through December)?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 677,
-    "completion": 142
+    "prompt": 3146,
+    "completion": 560
   },
-  "sql": "WITH delivered_orders AS (\n    SELECT oi.price, oi.freight_value\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= TIMESTAMP '2017-10-01'\n      AND o.order_purchase_timestamp < TIMESTAMP '2018-01-01'\n)\nSELECT SUM(price + freight_value) AS revenue_q4_2017 FROM delivered_orders",
+  "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-10-01'\n      AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue_q4_2017\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Filter orders where order_purchase_timestamp falls between 2017-10-01 and 2017-12-31 and order_status = 'delivered'.\n- Join these orders to order_items on order_id.\n- For each matching order_item, calculate revenue as price + freight_value.\n- Sum the revenue across all filtered order_items to get the total revenue for Q4 2017.",
+  "attempts": [
+    {
+      "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-10-01'\n      AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue_q4_2017\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-10-01'\n      AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue_q4_2017\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Revenue definition (price + freight_value)",
+          "sql": "SUM(oi.price + oi.freight_value)",
+          "status": "match"
+        },
+        {
+          "requirement": "Delivered orders only",
+          "sql": "WHERE o.order_status = 'delivered'",
+          "status": "match"
+        },
+        {
+          "requirement": "Time period Q4 2017 (Oct-Dec)",
+          "sql": "o.order_purchase_timestamp >= DATE '2017-10-01' AND o.order_purchase_timestamp < DATE '2018-01-01'",
+          "status": "match"
+        },
+        {
+          "requirement": "Single numeric result",
+          "sql": "SELECT SUM(...) AS revenue_q4_2017",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-10-01'\n      AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue_q4_2017\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 1.33,
+      "seconds": 20.89,
       "calls": []
     }
   ]

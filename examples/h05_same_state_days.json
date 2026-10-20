@@ -2,26 +2,74 @@
   "id": "h05_same_state_days",
   "question": "For delivered order items where the seller and customer are in the same state, what is the average delivery time in days (fractional days from purchase to customer delivery)?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 2565,
-    "completion": 847
+    "prompt": 3180,
+    "completion": 774
   },
-  "sql": "WITH delivered AS (\n    SELECT\n        o.order_purchase_timestamp,\n        o.order_delivered_customer_date,\n        c.customer_state,\n        s.seller_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n      AND c.customer_state = s.seller_state\n)\nSELECT AVG(EXTRACT(EPOCH FROM (order_delivered_customer_date - order_purchase_timestamp)) / 86400.0) AS avg_delivery_days\nFROM delivered",
+  "sql": "SELECT AVG(EXTRACT(epoch FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0) AS avg_delivery_days\nFROM orders AS o\nJOIN order_items AS oi USING (order_id)\nJOIN customers AS c ON o.customer_id = c.customer_id\nJOIN sellers AS s ON oi.seller_id = s.seller_id\nWHERE o.order_status = 'delivered'\n  AND c.customer_state = s.seller_state",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Filter orders to status 'delivered' and join to order_items, customers, and sellers.\n- Keep rows where customers.customer_state = sellers.seller_state.\n- Compute delivery time as the difference between orders.order_delivered_customer_date and orders.order_purchase_timestamp in days.\n- Aggregate by taking the average of these delivery times.\n- No grouping needed beyond the overall average.\n- Return a single numeric column representing the average delivery time in days.",
+  "attempts": [
+    {
+      "sql": "SELECT AVG(EXTRACT(epoch FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0) AS avg_delivery_days\nFROM orders AS o\nJOIN order_items AS oi USING (order_id)\nJOIN customers AS c ON o.customer_id = c.customer_id\nJOIN sellers AS s ON oi.seller_id = s.seller_id\nWHERE o.order_status = 'delivered'\n  AND c.customer_state = s.seller_state",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "SELECT AVG(EXTRACT(epoch FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0) AS avg_delivery_days\nFROM orders AS o\nJOIN order_items AS oi USING (order_id)\nJOIN customers AS c ON o.customer_id = c.customer_id\nJOIN sellers AS s ON oi.seller_id = s.seller_id\nWHERE o.order_status = 'delivered'\n  AND c.customer_state = s.seller_state",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Delivered orders only",
+          "sql": "WHERE o.order_status = 'delivered'",
+          "status": "match"
+        },
+        {
+          "requirement": "Seller and customer in same state",
+          "sql": "c.customer_state = s.seller_state",
+          "status": "match"
+        },
+        {
+          "requirement": "Average delivery time in days",
+          "sql": "AVG(EXTRACT(epoch FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0)",
+          "status": "match"
+        },
+        {
+          "requirement": "Grain: per order item",
+          "sql": "JOIN order_items AS oi USING (order_id)",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested filters or joins",
+          "sql": "None",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "SELECT AVG(EXTRACT(epoch FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0) AS avg_delivery_days\nFROM orders AS o\nJOIN order_items AS oi USING (order_id)\nJOIN customers AS c ON o.customer_id = c.customer_id\nJOIN sellers AS s ON oi.seller_id = s.seller_id\nWHERE o.order_status = 'delivered'\n  AND c.customer_state = s.seller_state",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 18.43,
+      "seconds": 15.36,
       "calls": []
     }
   ]

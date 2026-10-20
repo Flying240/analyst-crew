@@ -2,26 +2,69 @@
   "id": "m16_on_time_orders",
   "question": "How many delivered orders arrived on time (on or before the estimated delivery date)?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 675,
-    "completion": 78
+    "prompt": 3036,
+    "completion": 451
   },
-  "sql": "SELECT COUNT(*) AS on_time_delivered_orders\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date <= order_estimated_delivery_date",
+  "sql": "SELECT COUNT(*) AS delivered_on_time_count\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date <= order_estimated_delivery_date",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Count orders where order_status = 'delivered'.\n- Filter to rows where order_delivered_customer_date is on or before order_estimated_delivery_date.\n- Use the orders table columns: order_status, order_delivered_customer_date, order_estimated_delivery_date.\n- No joins required.\n- Aggregate with COUNT(*) to get a single numeric result.",
+  "attempts": [
+    {
+      "sql": "SELECT COUNT(*) AS delivered_on_time_count\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date <= order_estimated_delivery_date",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "SELECT COUNT(*) AS delivered_on_time_count\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date <= order_estimated_delivery_date",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Count delivered orders",
+          "sql": "COUNT(*) ... WHERE order_status = 'delivered'",
+          "status": "match"
+        },
+        {
+          "requirement": "Arrived on time (on or before estimated date)",
+          "sql": "order_delivered_customer_date <= order_estimated_delivery_date",
+          "status": "match"
+        },
+        {
+          "requirement": "Grain is per order",
+          "sql": "FROM orders",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested filters or joins",
+          "sql": "None",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "SELECT COUNT(*) AS delivered_on_time_count\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date <= order_estimated_delivery_date",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 2.45,
+      "seconds": 15.39,
       "calls": []
     }
   ]

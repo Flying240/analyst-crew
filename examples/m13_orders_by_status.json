@@ -2,26 +2,64 @@
   "id": "m13_orders_by_status",
   "question": "How many orders are there in each order status?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 669,
-    "completion": 52
+    "prompt": 4074,
+    "completion": 303
   },
-  "sql": "SELECT\n    order_status,\n    COUNT(*) AS order_count\nFROM\n    orders\nGROUP BY\n    order_status\nORDER BY\n    order_status",
+  "sql": "SELECT\n    o.order_status,\n    COUNT(*) AS order_count\nFROM orders AS o\nGROUP BY o.order_status\nORDER BY o.order_status",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Count orders by order_status from the orders table.\n- Use orders.order_status as the grouping column.\n- No additional filters are required.\n- Return each order_status with its corresponding count.\n- Order the results by order_status alphabetically (optional).",
+  "attempts": [
+    {
+      "sql": "SELECT\n    o.order_status,\n    COUNT(*) AS order_count\nFROM orders AS o\nGROUP BY o.order_status\nORDER BY o.order_status",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "SELECT\n    o.order_status,\n    COUNT(*) AS order_count\nFROM orders AS o\nGROUP BY o.order_status\nORDER BY o.order_status",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Count orders",
+          "sql": "COUNT(*)",
+          "status": "match"
+        },
+        {
+          "requirement": "Group by order status",
+          "sql": "GROUP BY o.order_status",
+          "status": "match"
+        },
+        {
+          "requirement": "No specific filters requested",
+          "sql": "FROM orders AS o",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "SELECT\n    o.order_status,\n    COUNT(*) AS order_count\nFROM orders AS o\nGROUP BY o.order_status\nORDER BY o.order_status",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 0.83,
+      "seconds": 16.17,
       "calls": []
     }
   ]

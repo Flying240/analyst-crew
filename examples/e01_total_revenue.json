@@ -2,26 +2,64 @@
   "id": "e01_total_revenue",
   "question": "What is the total revenue from delivered orders?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 668,
-    "completion": 84
+    "prompt": 3070,
+    "completion": 364
   },
-  "sql": "SELECT SUM(oi.price + oi.freight_value) AS total_revenue\nFROM order_items AS oi\nJOIN orders AS o\n  ON oi.order_id = o.order_id\nWHERE o.order_status = 'delivered'",
+  "sql": "WITH delivered AS (\n    SELECT oi.price, oi.freight_value\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT SUM(price + freight_value) AS total_revenue\nFROM delivered",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "\u2022 Sum the revenue defined as price plus freight_value from order_items. \u2022 Join order_items to orders on order_id to filter where order_status = 'delivered'. \u2022 No additional grouping needed; aggregate over all matching rows. \u2022 Use only the columns order_items.price, order_items.freight_value, orders.order_status. \u2022 Apply the filter order_status = 'delivered' as per project rules. \u2022 Return a single numeric total.",
+  "attempts": [
+    {
+      "sql": "WITH delivered AS (\n    SELECT oi.price, oi.freight_value\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT SUM(price + freight_value) AS total_revenue\nFROM delivered",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH delivered AS (\n    SELECT oi.price, oi.freight_value\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT SUM(price + freight_value) AS total_revenue\nFROM delivered",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Calculate total revenue",
+          "sql": "SUM(price + freight_value)",
+          "status": "match"
+        },
+        {
+          "requirement": "Include only delivered orders",
+          "sql": "WHERE o.order_status = 'delivered'",
+          "status": "match"
+        },
+        {
+          "requirement": "Return single aggregate value",
+          "sql": "SELECT SUM(...)",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH delivered AS (\n    SELECT oi.price, oi.freight_value\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT SUM(price + freight_value) AS total_revenue\nFROM delivered",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 3.17,
+      "seconds": 4.97,
       "calls": []
     }
   ]

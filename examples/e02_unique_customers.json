@@ -2,26 +2,74 @@
   "id": "e02_unique_customers",
   "question": "How many unique customers are there?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 666,
-    "completion": 44
+    "prompt": 3485,
+    "completion": 381
   },
-  "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers FROM customers",
+  "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers\nFROM customers",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Identify the column that uniquely represents a customer: customers.customer_unique_id.\n- Use the customers table as the source.\n- Apply no additional filters.\n- Count distinct values of customer_unique_id to get the total number of unique customers.\n- Return a single numeric result.",
+  "attempts": [
+    {
+      "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers\nFROM customers",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers\nFROM customers",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Count unique customers",
+          "sql": "COUNT(DISTINCT customer_unique_id)",
+          "status": "match"
+        },
+        {
+          "requirement": "Use customer_unique_id for counting",
+          "sql": "customer_unique_id",
+          "status": "match"
+        },
+        {
+          "requirement": "Source data from customers table",
+          "sql": "FROM customers",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested filters",
+          "sql": "None",
+          "status": "match"
+        },
+        {
+          "requirement": "No unrequested joins",
+          "sql": "None",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers\nFROM customers",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 2.14,
+      "seconds": 2.53,
       "calls": []
     }
   ]

@@ -2,26 +2,74 @@
   "id": "h10_corr_days_review",
   "question": "For delivered orders, what is the correlation between delivery time in days (fractional) and review score?",
   "source": "eval",
-  "eval_run": "baseline",
-  "created_at": "2026-10-16",
+  "eval_run": "graph-gate-critic-r2",
+  "created_at": "2026-10-20",
   "settings": {
-    "critic": false,
-    "retries": null
+    "critic": true,
+    "retries": 2
   },
   "eval_tokens": {
-    "prompt": 2529,
-    "completion": 666
+    "prompt": 3173,
+    "completion": 675
   },
-  "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0 AS delivery_days,\n        CAST(r.review_score AS DOUBLE) AS review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n      AND r.review_score IS NOT NULL\n)\nSELECT CORR(delivery_days, review_score) AS delivery_review_correlation\nFROM delivered",
+  "sql": "WITH delivered AS (\n    SELECT\n        o.order_id,\n        (epoch(o.order_delivered_customer_date) - epoch(o.order_purchase_timestamp)) / 86400.0 AS delivery_days,\n        r.review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n      AND r.review_score IS NOT NULL\n)\nSELECT corr(delivery_days, review_score) AS delivery_review_correlation\nFROM delivered",
   "error": null,
-  "plan": null,
-  "attempts": [],
-  "critic_rounds": [],
-  "returned": null,
+  "plan": "- Filter orders to those with order_status = 'delivered'.\n- Join orders to reviews on order_id.\n- Compute delivery time as the difference in days between order_delivered_customer_date and order_purchase_timestamp (as a fractional number).\n- Use the review_score from the reviews table.\n- Calculate the correlation between delivery time and review_score using an aggregate correlation function.\n- Return a single numeric value representing the correlation.",
+  "attempts": [
+    {
+      "sql": "WITH delivered AS (\n    SELECT\n        o.order_id,\n        (epoch(o.order_delivered_customer_date) - epoch(o.order_purchase_timestamp)) / 86400.0 AS delivery_days,\n        r.review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n      AND r.review_score IS NOT NULL\n)\nSELECT corr(delivery_days, review_score) AS delivery_review_correlation\nFROM delivered",
+      "error": null
+    }
+  ],
+  "critic_rounds": [
+    {
+      "round": 1,
+      "sql": "WITH delivered AS (\n    SELECT\n        o.order_id,\n        (epoch(o.order_delivered_customer_date) - epoch(o.order_purchase_timestamp)) / 86400.0 AS delivery_days,\n        r.review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n      AND r.review_score IS NOT NULL\n)\nSELECT corr(delivery_days, review_score) AS delivery_review_correlation\nFROM delivered",
+      "verdict": "ok",
+      "feedback": "",
+      "checklist": [
+        {
+          "requirement": "Filter for delivered orders",
+          "sql": "WHERE o.order_status = 'delivered'",
+          "status": "match"
+        },
+        {
+          "requirement": "Calculate delivery time in days (fractional)",
+          "sql": "(epoch(o.order_delivered_customer_date) - epoch(o.order_purchase_timestamp)) / 86400.0",
+          "status": "match"
+        },
+        {
+          "requirement": "Calculate correlation with review score",
+          "sql": "corr(delivery_days, review_score)",
+          "status": "match"
+        },
+        {
+          "requirement": "Handle NULLs appropriately",
+          "sql": "AND o.order_delivered_customer_date IS NOT NULL AND o.order_purchase_timestamp IS NOT NULL AND r.review_score IS NOT NULL",
+          "status": "match"
+        },
+        {
+          "requirement": "Return single value",
+          "sql": "SELECT corr(...) AS delivery_review_correlation",
+          "status": "match"
+        }
+      ],
+      "parse_error": false,
+      "attempts": [
+        {
+          "sql": "WITH delivered AS (\n    SELECT\n        o.order_id,\n        (epoch(o.order_delivered_customer_date) - epoch(o.order_purchase_timestamp)) / 86400.0 AS delivery_days,\n        r.review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n      AND r.review_score IS NOT NULL\n)\nSELECT corr(delivery_days, review_score) AS delivery_review_correlation\nFROM delivered",
+          "error": null
+        }
+      ],
+      "correct": true,
+      "outcome": "confirmed"
+    }
+  ],
+  "returned": "ok",
   "nodes": [
     {
       "node": "eval",
-      "seconds": 12.44,
+      "seconds": 19.82,
       "calls": []
     }
   ]
