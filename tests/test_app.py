@@ -79,6 +79,17 @@ def test_other_pages_render(page):
     assert not at.exception and at.dataframe
 
 
+def test_eval_dashboard_official_by_default_experiments_on_toggle():
+    at = AppTest.from_file("../app_pages/eval_dashboard.py", default_timeout=30).run()
+    runs = at.dataframe[0].value
+    assert len(runs) and (runs["official"] != "unofficial").all()
+    assert not any("(unofficial)" in o for o in at.selectbox[0].options)
+    at.toggle[0].set_value(True).run()
+    runs = at.dataframe[0].value
+    unofficial = runs[runs["official"] == "unofficial"]
+    assert len(unofficial) and unofficial["run"].str.endswith("(unofficial)").all()
+
+
 def test_about_page_renders_via_navigation():
     at = AppTest.from_file("../app.py", default_timeout=30).run()
     assert not at.exception
@@ -171,5 +182,5 @@ def test_record_order_answer_summary_sql_chart_table_trace():
     assert labels[0] == "Final SQL" and labels[1] == "How the agents got here"  # agent cards are nested after it
     trace = at.main.expander[1]
     assert trace.proto.expanded and all("**" in e.label for e in trace.expander)
-    assert any(c.value.startswith("Data (SQL) · ") and "tokens in the eval" in c.value for c in at.main.caption)
+    assert any(c.value.startswith("Planner → Data (SQL) → Critic · ") and "tokens in the eval" in c.value for c in at.main.caption)
     assert len(at.get("download_button")) == 1 and len(at.get("plotly_chart")) == 1

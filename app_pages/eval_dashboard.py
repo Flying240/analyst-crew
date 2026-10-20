@@ -19,12 +19,22 @@ if not runs:
     st.info("No eval summaries yet. Run `python scripts/export_eval_summaries.py` after an eval.")
     st.stop()
 
-full = st.toggle("Only full 50-question runs", value=True)
-shown = [r for r in runs if r["answerer"] != "oracle" and (not full or r["total"] == 50)]
+
+
+def run_label(r: dict) -> str:
+    return f"{r['date']} {r['time']} {r['run']}" + ("" if r["official"] else " (unofficial)")
+
+
+experiments = st.toggle("Show experiments and spot checks", value=False,
+                        help="Runs not listed in an evals/*_50q_runs.json official set: partial runs, spot checks, older setups.")
+shown = [r for r in runs if r["answerer"] != "oracle" and (experiments or r["official"])]
+if not shown:
+    st.info("No official runs yet. Turn on **Show experiments and spot checks** to see the rest.")
+    st.stop()
 table = pd.DataFrame([{
-    "run": f"{r['date']} {r['time']} {r['run']}", "answerer": r["run"], "date": r["date"],
+    "run": run_label(r), "answerer": r["run"], "date": r["date"],
     "score %": round(100 * r["score"] / r["total"], 1) if r["total"] else 0.0,
-    "score": f"{r['score']}/{r['total']}", "official": r["official"] or "",
+    "score": f"{r['score']}/{r['total']}", "official": r["official"] or "unofficial",
     "tokens / question": round((r["tokens"] or {}).get("mean_prompt", 0) + (r["tokens"] or {}).get("mean_completion", 0)),
     "complete": r["complete"],
 } for r in shown])
@@ -37,9 +47,9 @@ st.subheader("Tokens per question")
 st.bar_chart(table, x="run", y="tokens / question", horizontal=True, sort=False, height=max(240, 28 * len(table)))
 
 st.subheader("One run in detail")
-labels = [f"{r['date']} {r['time']} {r['run']} ({r['score']}/{r['total']})" for r in runs]
-pick = st.selectbox("Run", range(len(runs)), format_func=lambda i: labels[i], index=len(runs) - 1)
-run = runs[pick]
+labels = [f"{run_label(r)} ({r['score']}/{r['total']})" for r in shown]
+pick = st.selectbox("Run", range(len(shown)), format_func=lambda i: labels[i], index=len(shown) - 1)
+run = shown[pick]
 breakdown = [
     {"group": f"{kind}: {name}", "score %": round(100 * b["score"] / b["total"], 1) if b["total"] else 0.0, "score": f"{b['score']}/{b['total']}"}
     for kind, groups in (("difficulty", run.get("by_difficulty") or {}), ("split", run.get("by_split") or {}))
