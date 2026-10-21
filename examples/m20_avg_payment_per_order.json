@@ -3,56 +3,56 @@
   "question": "What is the average total amount paid per order, across all orders that have payments?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3101,
-    "completion": 487
+    "prompt": 3077,
+    "completion": 470
   },
-  "sql": "WITH order_totals AS (\n    SELECT\n        p.order_id,\n        SUM(p.payment_value) AS total_paid\n    FROM payments p\n    JOIN orders o USING (order_id)\n    GROUP BY p.order_id\n)\nSELECT AVG(total_paid) AS avg_total_paid_per_order\nFROM order_totals",
+  "sql": "WITH order_totals AS (\n    SELECT\n        p.order_id,\n        SUM(p.payment_value) AS total_paid\n    FROM payments p\n    GROUP BY p.order_id\n)\nSELECT AVG(total_paid) AS avg_total_paid_per_order\nFROM order_totals",
   "error": null,
-  "plan": "- Identify each order that appears in the payments table (inner join with orders to ensure valid orders). - For each order, sum payment_value across all its payment rows to get the total amount paid per order. - Compute the average of these order totals across all such orders. - No additional filters beyond requiring a payment record. - Use orders.order_id and payments.payment_value columns. - Return a single numeric value representing the average total paid per order.",
+  "plan": "- Identify orders that have at least one payment record in the payments table.\n- Join payments to orders on order_id.\n- Aggregate payment_value per order to get total amount paid per order.\n- Compute the average of these order totals across all qualifying orders.\n- No additional filters beyond requiring a payment record.\n- Return a single numeric value representing the average total paid per order.",
   "attempts": [
     {
-      "sql": "WITH order_totals AS (\n    SELECT\n        p.order_id,\n        SUM(p.payment_value) AS total_paid\n    FROM payments p\n    JOIN orders o USING (order_id)\n    GROUP BY p.order_id\n)\nSELECT AVG(total_paid) AS avg_total_paid_per_order\nFROM order_totals",
+      "sql": "WITH order_totals AS (\n    SELECT\n        p.order_id,\n        SUM(p.payment_value) AS total_paid\n    FROM payments p\n    GROUP BY p.order_id\n)\nSELECT AVG(total_paid) AS avg_total_paid_per_order\nFROM order_totals",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH order_totals AS (\n    SELECT\n        p.order_id,\n        SUM(p.payment_value) AS total_paid\n    FROM payments p\n    JOIN orders o USING (order_id)\n    GROUP BY p.order_id\n)\nSELECT AVG(total_paid) AS avg_total_paid_per_order\nFROM order_totals",
+      "sql": "WITH order_totals AS (\n    SELECT\n        p.order_id,\n        SUM(p.payment_value) AS total_paid\n    FROM payments p\n    GROUP BY p.order_id\n)\nSELECT AVG(total_paid) AS avg_total_paid_per_order\nFROM order_totals",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
         {
-          "requirement": "Average total amount paid per order",
+          "requirement": "Calculate total amount paid per order",
+          "sql": "SUM(p.payment_value) AS total_paid ... GROUP BY p.order_id",
+          "status": "match"
+        },
+        {
+          "requirement": "Average the totals across orders",
           "sql": "AVG(total_paid)",
           "status": "match"
         },
         {
-          "requirement": "Total amount paid per order",
-          "sql": "SUM(p.payment_value) ... GROUP BY p.order_id",
+          "requirement": "Include only orders that have payments",
+          "sql": "FROM payments p",
           "status": "match"
         },
         {
-          "requirement": "Across all orders that have payments",
-          "sql": "FROM payments p JOIN orders o USING (order_id)",
-          "status": "match"
-        },
-        {
-          "requirement": "No unrequested filters (e.g., delivered only)",
-          "sql": "No order_status filter",
+          "requirement": "No unrequested filters (e.g., status, date)",
+          "sql": "None present",
           "status": "match"
         }
       ],
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH order_totals AS (\n    SELECT\n        p.order_id,\n        SUM(p.payment_value) AS total_paid\n    FROM payments p\n    JOIN orders o USING (order_id)\n    GROUP BY p.order_id\n)\nSELECT AVG(total_paid) AS avg_total_paid_per_order\nFROM order_totals",
+          "sql": "WITH order_totals AS (\n    SELECT\n        p.order_id,\n        SUM(p.payment_value) AS total_paid\n    FROM payments p\n    GROUP BY p.order_id\n)\nSELECT AVG(total_paid) AS avg_total_paid_per_order\nFROM order_totals",
           "error": null
         }
       ],
@@ -64,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 18.09,
+      "seconds": 13.22,
       "calls": []
     }
   ]

@@ -3,28 +3,28 @@
   "question": "What is the average review score for orders containing products in the furniture_decor category?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3125,
-    "completion": 610
+    "prompt": 3108,
+    "completion": 591
   },
-  "sql": "WITH furniture_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'furniture_decor'\n)\nSELECT AVG(r.review_score) AS avg_review_score\nFROM reviews r\nJOIN furniture_orders fo ON r.order_id = fo.order_id",
+  "sql": "WITH furniture_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'furniture_decor'\n)\nSELECT AVG(r.review_score) AS average_review_score\nFROM reviews r\nJOIN furniture_orders fo ON r.order_id = fo.order_id",
   "error": null,
-  "plan": "- Identify order items whose product belongs to the 'furniture_decor' category by joining products to category_translation on product_category_name and filtering category_translation.product_category_name_english = 'furniture_decor'.\n- Join these order items to orders via order_id.\n- Join orders to reviews via order_id to obtain review_score.\n- Compute the average of review_score across all matching reviews.\n- No additional filters beyond the category condition are needed.",
+  "plan": "\u2022 Identify product IDs whose English category name is 'furniture_decor' via products joined to category_translation.\n\u2022 Find order IDs that contain those product IDs by joining order_items.\n\u2022 Join those order IDs to reviews to get review_score values.\n\u2022 Compute the average of review_score across the resulting rows.\n\u2022 No additional filters beyond the category condition are needed.",
   "attempts": [
     {
-      "sql": "WITH furniture_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'furniture_decor'\n)\nSELECT AVG(r.review_score) AS avg_review_score\nFROM reviews r\nJOIN furniture_orders fo ON r.order_id = fo.order_id",
+      "sql": "WITH furniture_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'furniture_decor'\n)\nSELECT AVG(r.review_score) AS average_review_score\nFROM reviews r\nJOIN furniture_orders fo ON r.order_id = fo.order_id",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH furniture_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'furniture_decor'\n)\nSELECT AVG(r.review_score) AS avg_review_score\nFROM reviews r\nJOIN furniture_orders fo ON r.order_id = fo.order_id",
+      "sql": "WITH furniture_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'furniture_decor'\n)\nSELECT AVG(r.review_score) AS average_review_score\nFROM reviews r\nJOIN furniture_orders fo ON r.order_id = fo.order_id",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
@@ -57,7 +57,7 @@
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH furniture_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'furniture_decor'\n)\nSELECT AVG(r.review_score) AS avg_review_score\nFROM reviews r\nJOIN furniture_orders fo ON r.order_id = fo.order_id",
+          "sql": "WITH furniture_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'furniture_decor'\n)\nSELECT AVG(r.review_score) AS average_review_score\nFROM reviews r\nJOIN furniture_orders fo ON r.order_id = fo.order_id",
           "error": null
         }
       ],
@@ -69,7 +69,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 8.67,
+      "seconds": 12.27,
       "calls": []
     }
   ]

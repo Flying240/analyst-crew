@@ -41,12 +41,16 @@
     "mean_completion": 361.0
   },
   "critic": null,
+  "round1": null,
+  "tokens_by_model": null,
+  "critic_model": null,
   "questions": [
     {
       "id": "e10_avg_delivery_days",
       "difficulty": "easy",
       "split": "dev",
       "passed": false,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 3.41,
       "tokens": {
@@ -60,6 +64,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 3.13,
       "tokens": {
@@ -73,6 +78,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": false,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 2.48,
       "tokens": {
@@ -86,6 +92,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 9.98,
       "tokens": {
@@ -99,6 +106,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 4.64,
       "tokens": {

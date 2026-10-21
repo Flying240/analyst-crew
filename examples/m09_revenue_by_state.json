@@ -3,34 +3,39 @@
   "question": "Which 5 customer states generate the most revenue, and how much?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3200,
-    "completion": 541
+    "prompt": 3203,
+    "completion": 513
   },
-  "sql": "WITH delivered AS (\n    SELECT \n        oi.price + oi.freight_value AS revenue,\n        c.customer_state\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c USING (customer_id)\n    WHERE o.order_status = 'delivered'\n)\nSELECT \n    customer_state,\n    SUM(revenue) AS total_revenue\nFROM delivered\nGROUP BY customer_state\nORDER BY total_revenue DESC\nLIMIT 5",
+  "sql": "WITH delivered AS (\n    SELECT o.order_id, c.customer_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT\n    d.customer_state,\n    SUM(oi.price + oi.freight_value) AS revenue\nFROM delivered d\nJOIN order_items oi ON d.order_id = oi.order_id\nGROUP BY d.customer_state\nORDER BY revenue DESC\nLIMIT 5",
   "error": null,
-  "plan": "- Join orders to order_items on order_id and to customers on customer_id.\n- Filter orders where order_status = 'delivered' to define revenue.\n- Compute revenue per order item as price + freight_value.\n- Aggregate revenue by customers.customer_state.\n- Sum the revenue per state.\n- Order the results by summed revenue descending and limit to 5 rows.",
+  "plan": "\u2022 Identify delivered orders (order_status = 'delivered') from orders. \u2022 Join orders to order_items to get price and freight_value, compute revenue as price + freight_value per order item. \u2022 Join orders to customers to get customer_state. \u2022 Aggregate revenue by customer_state summing the revenue per item. \u2022 Order the results by revenue descending and limit to the top 5 states.",
   "attempts": [
     {
-      "sql": "WITH delivered AS (\n    SELECT \n        oi.price + oi.freight_value AS revenue,\n        c.customer_state\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c USING (customer_id)\n    WHERE o.order_status = 'delivered'\n)\nSELECT \n    customer_state,\n    SUM(revenue) AS total_revenue\nFROM delivered\nGROUP BY customer_state\nORDER BY total_revenue DESC\nLIMIT 5",
+      "sql": "WITH delivered AS (\n    SELECT o.order_id, c.customer_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT\n    d.customer_state,\n    SUM(oi.price + oi.freight_value) AS revenue\nFROM delivered d\nJOIN order_items oi ON d.order_id = oi.order_id\nGROUP BY d.customer_state\nORDER BY revenue DESC\nLIMIT 5",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH delivered AS (\n    SELECT \n        oi.price + oi.freight_value AS revenue,\n        c.customer_state\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c USING (customer_id)\n    WHERE o.order_status = 'delivered'\n)\nSELECT \n    customer_state,\n    SUM(revenue) AS total_revenue\nFROM delivered\nGROUP BY customer_state\nORDER BY total_revenue DESC\nLIMIT 5",
+      "sql": "WITH delivered AS (\n    SELECT o.order_id, c.customer_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT\n    d.customer_state,\n    SUM(oi.price + oi.freight_value) AS revenue\nFROM delivered d\nJOIN order_items oi ON d.order_id = oi.order_id\nGROUP BY d.customer_state\nORDER BY revenue DESC\nLIMIT 5",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
         {
-          "requirement": "Calculate revenue as price + freight_value",
-          "sql": "oi.price + oi.freight_value AS revenue",
+          "requirement": "Identify customer states",
+          "sql": "c.customer_state",
+          "status": "match"
+        },
+        {
+          "requirement": "Calculate revenue (price + freight)",
+          "sql": "SUM(oi.price + oi.freight_value)",
           "status": "match"
         },
         {
@@ -39,30 +44,20 @@
           "status": "match"
         },
         {
-          "requirement": "Group by customer state",
-          "sql": "GROUP BY customer_state",
+          "requirement": "Aggregate by state",
+          "sql": "GROUP BY d.customer_state",
           "status": "match"
         },
         {
-          "requirement": "Sum revenue per state",
-          "sql": "SUM(revenue) AS total_revenue",
-          "status": "match"
-        },
-        {
-          "requirement": "Return top 5 states by revenue",
-          "sql": "ORDER BY total_revenue DESC LIMIT 5",
-          "status": "match"
-        },
-        {
-          "requirement": "No unrequested filters or joins",
-          "sql": "JOIN order_items oi USING (order_id) JOIN customers c USING (customer_id)",
+          "requirement": "Return top 5 states",
+          "sql": "ORDER BY revenue DESC LIMIT 5",
           "status": "match"
         }
       ],
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH delivered AS (\n    SELECT \n        oi.price + oi.freight_value AS revenue,\n        c.customer_state\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN customers c USING (customer_id)\n    WHERE o.order_status = 'delivered'\n)\nSELECT \n    customer_state,\n    SUM(revenue) AS total_revenue\nFROM delivered\nGROUP BY customer_state\nORDER BY total_revenue DESC\nLIMIT 5",
+          "sql": "WITH delivered AS (\n    SELECT o.order_id, c.customer_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT\n    d.customer_state,\n    SUM(oi.price + oi.freight_value) AS revenue\nFROM delivered d\nJOIN order_items oi ON d.order_id = oi.order_id\nGROUP BY d.customer_state\nORDER BY revenue DESC\nLIMIT 5",
           "error": null
         }
       ],
@@ -74,7 +69,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 5.7,
+      "seconds": 14.14,
       "calls": []
     }
   ]

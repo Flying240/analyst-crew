@@ -3,66 +3,56 @@
   "question": "What percentage (0-100) of revenue comes from unique customers who have more than one delivered order?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-19",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3295,
-    "completion": 1362
+    "prompt": 3349,
+    "completion": 750
   },
-  "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.customer_id,\n        c.customer_unique_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n),\ntotal_rev AS (\n    SELECT SUM(revenue) AS total_revenue\n    FROM delivered\n),\nmulti_cust_rev AS (\n    SELECT \n        d.customer_unique_id,\n        SUM(d.revenue) AS cust_revenue\n    FROM delivered d\n    GROUP BY d.customer_unique_id\n    HAVING COUNT(DISTINCT d.order_id) > 1\n),\nmulti_rev AS (\n    SELECT SUM(cust_revenue) AS multi_revenue\n    FROM multi_cust_rev\n)\nSELECT \n    (multi_rev.multi_revenue / total_rev.total_revenue) * 100.0 AS revenue_percentage\nFROM multi_rev, total_rev",
+  "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.customer_id,\n        c.customer_unique_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n),\ncustomer_order_counts AS (\n    SELECT \n        customer_unique_id,\n        COUNT(DISTINCT order_id) AS order_cnt\n    FROM delivered\n    GROUP BY customer_unique_id\n),\nmulti_customer_revenue AS (\n    SELECT \n        d.revenue\n    FROM delivered d\n    JOIN customer_order_counts coc \n        ON d.customer_unique_id = coc.customer_unique_id\n    WHERE coc.order_cnt > 1\n),\ntotal_revenue AS (\n    SELECT SUM(revenue) AS total_rev FROM delivered\n),\nmulti_revenue AS (\n    SELECT SUM(revenue) AS multi_rev FROM multi_customer_revenue\n)\nSELECT \n    (COALESCE(m.multi_rev,0) / NULLIF(t.total_rev,0)) * 100.0 AS revenue_percentage\nFROM total_revenue t\nCROSS JOIN multi_revenue m",
   "error": null,
-  "plan": "- Identify delivered orders (order_status = 'delivered') from orders and join to order_items to compute revenue per order as sum(price + freight_value) per order_id.\n- Join orders to customers to get customer_unique_id for each delivered order.\n- Aggregate revenue per customer_unique_id by summing revenue of their delivered orders.\n- Count total revenue across all delivered orders.\n- Identify customers with more than one delivered order by counting distinct order_id per customer_unique_id and filtering count > 1.\n- Sum revenue for those qualifying customers.\n- Compute percentage = (revenue from qualifying customers / total revenue) * 100.",
+  "plan": "- Identify delivered orders (order_status = 'delivered') and join orders to order_items to compute revenue as price + freight_value per order item.\n- Join orders to customers to get customer_unique_id for each order.\n- Aggregate revenue per customer_unique_id by summing revenue of their delivered orders.\n- Determine which customer_unique_id have more than one delivered order (count of distinct order_id > 1).\n- Sum revenue for all delivered orders (total revenue).\n- Sum revenue for orders belonging to customers identified as having >1 delivered order (subset revenue).\n- Compute percentage as (subset revenue / total revenue) * 100.",
   "attempts": [
     {
-      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.customer_id,\n        c.customer_unique_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n),\ntotal_rev AS (\n    SELECT SUM(revenue) AS total_revenue\n    FROM delivered\n),\nmulti_cust_rev AS (\n    SELECT \n        d.customer_unique_id,\n        SUM(d.revenue) AS cust_revenue\n    FROM delivered d\n    GROUP BY d.customer_unique_id\n    HAVING COUNT(DISTINCT d.order_id) > 1\n),\nmulti_rev AS (\n    SELECT SUM(cust_revenue) AS multi_revenue\n    FROM multi_cust_rev\n)\nSELECT \n    (multi_rev.multi_revenue / total_rev.total_revenue) * 100.0 AS revenue_percentage\nFROM multi_rev, total_rev",
+      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.customer_id,\n        c.customer_unique_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n),\ncustomer_order_counts AS (\n    SELECT \n        customer_unique_id,\n        COUNT(DISTINCT order_id) AS order_cnt\n    FROM delivered\n    GROUP BY customer_unique_id\n),\nmulti_customer_revenue AS (\n    SELECT \n        d.revenue\n    FROM delivered d\n    JOIN customer_order_counts coc \n        ON d.customer_unique_id = coc.customer_unique_id\n    WHERE coc.order_cnt > 1\n),\ntotal_revenue AS (\n    SELECT SUM(revenue) AS total_rev FROM delivered\n),\nmulti_revenue AS (\n    SELECT SUM(revenue) AS multi_rev FROM multi_customer_revenue\n)\nSELECT \n    (COALESCE(m.multi_rev,0) / NULLIF(t.total_rev,0)) * 100.0 AS revenue_percentage\nFROM total_revenue t\nCROSS JOIN multi_revenue m",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.customer_id,\n        c.customer_unique_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n),\ntotal_rev AS (\n    SELECT SUM(revenue) AS total_revenue\n    FROM delivered\n),\nmulti_cust_rev AS (\n    SELECT \n        d.customer_unique_id,\n        SUM(d.revenue) AS cust_revenue\n    FROM delivered d\n    GROUP BY d.customer_unique_id\n    HAVING COUNT(DISTINCT d.order_id) > 1\n),\nmulti_rev AS (\n    SELECT SUM(cust_revenue) AS multi_revenue\n    FROM multi_cust_rev\n)\nSELECT \n    (multi_rev.multi_revenue / total_rev.total_revenue) * 100.0 AS revenue_percentage\nFROM multi_rev, total_rev",
+      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.customer_id,\n        c.customer_unique_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n),\ncustomer_order_counts AS (\n    SELECT \n        customer_unique_id,\n        COUNT(DISTINCT order_id) AS order_cnt\n    FROM delivered\n    GROUP BY customer_unique_id\n),\nmulti_customer_revenue AS (\n    SELECT \n        d.revenue\n    FROM delivered d\n    JOIN customer_order_counts coc \n        ON d.customer_unique_id = coc.customer_unique_id\n    WHERE coc.order_cnt > 1\n),\ntotal_revenue AS (\n    SELECT SUM(revenue) AS total_rev FROM delivered\n),\nmulti_revenue AS (\n    SELECT SUM(revenue) AS multi_rev FROM multi_customer_revenue\n)\nSELECT \n    (COALESCE(m.multi_rev,0) / NULLIF(t.total_rev,0)) * 100.0 AS revenue_percentage\nFROM total_revenue t\nCROSS JOIN multi_revenue m",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
         {
-          "requirement": "Revenue = price + freight_value from order_items",
-          "sql": "(oi.price + oi.freight_value) AS revenue",
+          "requirement": "Calculate revenue as price + freight_value for delivered orders",
+          "sql": "(oi.price + oi.freight_value) AS revenue ... WHERE o.order_status = 'delivered'",
           "status": "match"
         },
         {
-          "requirement": "Only delivered orders (order_status = 'delivered')",
-          "sql": "WHERE o.order_status = 'delivered'",
+          "requirement": "Identify unique customers with more than one delivered order",
+          "sql": "COUNT(DISTINCT order_id) AS order_cnt ... WHERE coc.order_cnt > 1",
           "status": "match"
         },
         {
-          "requirement": "Identify unique customers (customer_unique_id) with more than one delivered order",
-          "sql": "GROUP BY d.customer_unique_id HAVING COUNT(DISTINCT d.order_id) > 1",
+          "requirement": "Calculate percentage of total revenue from these customers",
+          "sql": "(COALESCE(m.multi_rev,0) / NULLIF(t.total_rev,0)) * 100.0",
           "status": "match"
         },
         {
-          "requirement": "Calculate percentage of total revenue from those multi-order customers (0-100)",
-          "sql": "(multi_rev.multi_revenue / total_rev.total_revenue) * 100.0 AS revenue_percentage",
-          "status": "match"
-        },
-        {
-          "requirement": "Return exactly one row with one numeric column",
-          "sql": "SELECT ... FROM multi_rev, total_rev \u2014 produces 1 row, 1 column",
-          "status": "match"
-        },
-        {
-          "requirement": "No unrequested filters or joins that inflate sums",
-          "sql": "Joins are orders\u2192customers (1:1 per order) and orders\u2192order_items (1:many, correctly summed). No extra filters.",
+          "requirement": "Return a single numeric value representing the percentage",
+          "sql": "SELECT ... AS revenue_percentage",
           "status": "match"
         }
       ],
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.customer_id,\n        c.customer_unique_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n),\ntotal_rev AS (\n    SELECT SUM(revenue) AS total_revenue\n    FROM delivered\n),\nmulti_cust_rev AS (\n    SELECT \n        d.customer_unique_id,\n        SUM(d.revenue) AS cust_revenue\n    FROM delivered d\n    GROUP BY d.customer_unique_id\n    HAVING COUNT(DISTINCT d.order_id) > 1\n),\nmulti_rev AS (\n    SELECT SUM(cust_revenue) AS multi_revenue\n    FROM multi_cust_rev\n)\nSELECT \n    (multi_rev.multi_revenue / total_rev.total_revenue) * 100.0 AS revenue_percentage\nFROM multi_rev, total_rev",
+          "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.customer_id,\n        c.customer_unique_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n),\ncustomer_order_counts AS (\n    SELECT \n        customer_unique_id,\n        COUNT(DISTINCT order_id) AS order_cnt\n    FROM delivered\n    GROUP BY customer_unique_id\n),\nmulti_customer_revenue AS (\n    SELECT \n        d.revenue\n    FROM delivered d\n    JOIN customer_order_counts coc \n        ON d.customer_unique_id = coc.customer_unique_id\n    WHERE coc.order_cnt > 1\n),\ntotal_revenue AS (\n    SELECT SUM(revenue) AS total_rev FROM delivered\n),\nmulti_revenue AS (\n    SELECT SUM(revenue) AS multi_rev FROM multi_customer_revenue\n)\nSELECT \n    (COALESCE(m.multi_rev,0) / NULLIF(t.total_rev,0)) * 100.0 AS revenue_percentage\nFROM total_revenue t\nCROSS JOIN multi_revenue m",
           "error": null
         }
       ],
@@ -74,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 20.03,
+      "seconds": 20.77,
       "calls": []
     }
   ]

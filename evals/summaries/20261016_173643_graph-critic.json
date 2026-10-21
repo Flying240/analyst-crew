@@ -50,12 +50,16 @@
       "ok": 5
     }
   },
+  "round1": null,
+  "tokens_by_model": null,
+  "critic_model": null,
   "questions": [
     {
       "id": "e10_avg_delivery_days",
       "difficulty": "easy",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 10.24,
       "tokens": {
@@ -69,6 +73,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 19.54,
       "tokens": {
@@ -82,6 +87,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": false,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 16.22,
       "tokens": {
@@ -95,6 +101,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 37.47,
       "tokens": {
@@ -108,6 +115,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 17.54,
       "tokens": {

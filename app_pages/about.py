@@ -127,7 +127,8 @@ def score_tab() -> None:
         },
     )
     st.caption(f"Mean over complete 50-question runs. Last updated: {updated or 'no runs yet'}. "
-               "Rows fill in as full runs are added to evals/summaries/.")
+               "The graph row scores the first SQL of the graph + Critic runs, before any Critic rewrite, "
+               "and leaves out the Critic's tokens. Rows fill in as full runs are added to evals/summaries/.")
     st.page_link("app_pages/eval_dashboard.py", label="See every run on the Eval dashboard", icon=":material/monitoring:")
 
     st.subheader("Why several agents, if one already scores well?")
@@ -138,7 +139,7 @@ def score_tab() -> None:
         "about that score. The Planner checks whether a question can be answered at all, and plans the logic first. "
         "The Critic can catch SQL that runs fine but answers the wrong thing, which an error retry never sees. "
         "The Viz and Reporter agents turn the result into a chart and a plain answer. Each of these is measured "
-        "separately, and the table above will show if they help, hurt, or just cost more tokens."
+        "separately, and the table above shows whether they help, hurt, or just cost more tokens."
     )
 
     st.subheader("Questions that failed in every run")

@@ -53,12 +53,16 @@
     "confirmed": 0,
     "returned": {}
   },
+  "round1": null,
+  "tokens_by_model": null,
+  "critic_model": null,
   "questions": [
     {
       "id": "e01_total_revenue",
       "difficulty": "easy",
       "split": "heldout",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 2.17,
       "tokens": {
@@ -72,6 +76,7 @@
       "difficulty": "easy",
       "split": "heldout",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 0.81,
       "tokens": {
@@ -85,6 +90,7 @@
       "difficulty": "easy",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.04,
       "tokens": {
@@ -98,6 +104,7 @@
       "difficulty": "easy",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.37,
       "tokens": {
@@ -111,6 +118,7 @@
       "difficulty": "easy",
       "split": "heldout",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.41,
       "tokens": {
@@ -124,6 +132,7 @@
       "difficulty": "easy",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.54,
       "tokens": {
@@ -137,6 +146,7 @@
       "difficulty": "easy",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.14,
       "tokens": {
@@ -150,6 +160,7 @@
       "difficulty": "easy",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.17,
       "tokens": {
@@ -163,6 +174,7 @@
       "difficulty": "easy",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 0.96,
       "tokens": {
@@ -176,6 +188,7 @@
       "difficulty": "easy",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.11,
       "tokens": {
@@ -189,6 +202,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.5,
       "tokens": {
@@ -202,6 +216,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.4,
       "tokens": {
@@ -215,6 +230,7 @@
       "difficulty": "medium",
       "split": "heldout",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.25,
       "tokens": {
@@ -228,6 +244,7 @@
       "difficulty": "medium",
       "split": "heldout",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 3.46,
       "tokens": {
@@ -241,6 +258,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 3.38,
       "tokens": {
@@ -254,6 +272,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 2.08,
       "tokens": {
@@ -267,6 +286,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 3.51,
       "tokens": {
@@ -280,6 +300,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 7.33,
       "tokens": {
@@ -293,6 +314,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 3.52,
       "tokens": {
@@ -306,6 +328,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 6.01,
       "tokens": {
@@ -319,6 +342,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 5.85,
       "tokens": {
@@ -332,6 +356,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 2.39,
       "tokens": {
@@ -345,6 +370,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 7.02,
       "tokens": {
@@ -358,6 +384,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 2.82,
       "tokens": {
@@ -371,6 +398,7 @@
       "difficulty": "medium",
       "split": "heldout",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 7.69,
       "tokens": {
@@ -384,6 +412,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 7.16,
       "tokens": {
@@ -397,6 +426,7 @@
       "difficulty": "hard",
       "split": "heldout",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 2.68,
       "tokens": {
@@ -410,6 +440,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 5.03,
       "tokens": {
@@ -423,6 +454,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": false,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 4.23,
       "tokens": {
@@ -436,6 +468,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 12.2,
       "tokens": {
@@ -449,6 +482,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 12.21,
       "tokens": {
@@ -462,6 +496,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 7.9,
       "tokens": {
@@ -475,6 +510,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 7.89,
       "tokens": {
@@ -488,6 +524,7 @@
       "difficulty": "hard",
       "split": "heldout",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 6.37,
       "tokens": {
@@ -501,6 +538,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 18.1,
       "tokens": {
@@ -514,6 +552,7 @@
       "difficulty": "hard",
       "split": "heldout",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 4.87,
       "tokens": {
@@ -527,6 +566,7 @@
       "difficulty": "hard",
       "split": "heldout",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 3.26,
       "tokens": {
@@ -540,6 +580,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": false,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 8.5,
       "tokens": {
@@ -553,6 +594,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 5.5,
       "tokens": {
@@ -566,6 +608,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 21.88,
       "tokens": {
@@ -579,6 +622,7 @@
       "difficulty": "medium",
       "split": "heldout",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 7.36,
       "tokens": {
@@ -592,6 +636,7 @@
       "difficulty": "medium",
       "split": "heldout",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.99,
       "tokens": {
@@ -605,6 +650,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 8.77,
       "tokens": {
@@ -618,6 +664,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 2.9,
       "tokens": {
@@ -631,6 +678,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": false,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 6.12,
       "tokens": {
@@ -644,6 +692,7 @@
       "difficulty": "medium",
       "split": "heldout",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 5.49,
       "tokens": {
@@ -657,6 +706,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": false,
+      "round1_passed": null,
       "infra_error": true,
       "seconds": 0.57,
       "tokens": null,

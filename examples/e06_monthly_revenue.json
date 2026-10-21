@@ -3,28 +3,28 @@
   "question": "Show monthly revenue for the complete months (Jan 2017 to Aug 2018).",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3428,
-    "completion": 581
+    "prompt": 3433,
+    "completion": 587
   },
-  "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.order_purchase_timestamp,\n        oi.price,\n        oi.freight_value\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n)\nSELECT \n    strftime(order_purchase_timestamp, '%Y-%m') AS month,\n    SUM(price + freight_value) AS revenue\nFROM delivered\nGROUP BY month\nORDER BY month",
+  "sql": "WITH delivered AS (\n    SELECT \n        oi.price,\n        oi.freight_value,\n        o.order_purchase_timestamp\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n)\nSELECT \n    strftime(order_purchase_timestamp, '%Y-%m') AS month,\n    SUM(price + freight_value) AS revenue\nFROM delivered\nGROUP BY month\nORDER BY month",
   "error": null,
-  "plan": "\u2022 Filter orders with order_status = 'delivered' and order_purchase_timestamp between 2017-01-01 and 2018-08-31. \u2022 Join order_items to orders on order_id. \u2022 Compute revenue per item as price + freight_value. \u2022 Aggregate revenue by month using strftime(order_purchase_timestamp, '%Y-%m'). \u2022 Sum the revenue for each month. \u2022 Order the results chronologically by the month label.",
+  "plan": "- Use orders joined with order_items to get price and freight_value; filter orders where order_status = 'delivered'.\n- Compute revenue as price + freight_value per order_item.\n- Filter order_purchase_timestamp to months between 2017-01-01 and 2018-08-31 inclusive.\n- Group by month formatted as 'YYYY-MM' using strftime on order_purchase_timestamp.\n- Sum the revenue per month.\n- Order the results chronologically by the month label.",
   "attempts": [
     {
-      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.order_purchase_timestamp,\n        oi.price,\n        oi.freight_value\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n)\nSELECT \n    strftime(order_purchase_timestamp, '%Y-%m') AS month,\n    SUM(price + freight_value) AS revenue\nFROM delivered\nGROUP BY month\nORDER BY month",
+      "sql": "WITH delivered AS (\n    SELECT \n        oi.price,\n        oi.freight_value,\n        o.order_purchase_timestamp\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n)\nSELECT \n    strftime(order_purchase_timestamp, '%Y-%m') AS month,\n    SUM(price + freight_value) AS revenue\nFROM delivered\nGROUP BY month\nORDER BY month",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.order_purchase_timestamp,\n        oi.price,\n        oi.freight_value\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n)\nSELECT \n    strftime(order_purchase_timestamp, '%Y-%m') AS month,\n    SUM(price + freight_value) AS revenue\nFROM delivered\nGROUP BY month\nORDER BY month",
+      "sql": "WITH delivered AS (\n    SELECT \n        oi.price,\n        oi.freight_value,\n        o.order_purchase_timestamp\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n)\nSELECT \n    strftime(order_purchase_timestamp, '%Y-%m') AS month,\n    SUM(price + freight_value) AS revenue\nFROM delivered\nGROUP BY month\nORDER BY month",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
@@ -57,7 +57,7 @@
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.order_purchase_timestamp,\n        oi.price,\n        oi.freight_value\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n)\nSELECT \n    strftime(order_purchase_timestamp, '%Y-%m') AS month,\n    SUM(price + freight_value) AS revenue\nFROM delivered\nGROUP BY month\nORDER BY month",
+          "sql": "WITH delivered AS (\n    SELECT \n        oi.price,\n        oi.freight_value,\n        o.order_purchase_timestamp\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n)\nSELECT \n    strftime(order_purchase_timestamp, '%Y-%m') AS month,\n    SUM(price + freight_value) AS revenue\nFROM delivered\nGROUP BY month\nORDER BY month",
           "error": null
         }
       ],
@@ -69,7 +69,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 11.51,
+      "seconds": 9.98,
       "calls": []
     }
   ]

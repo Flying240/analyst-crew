@@ -3,28 +3,28 @@
   "question": "What was the revenue from orders purchased in Q4 2017 (October through December)?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
     "prompt": 3146,
-    "completion": 560
+    "completion": 558
   },
-  "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-10-01'\n      AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue_q4_2017\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+  "sql": "WITH filtered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-10-01'\n      AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue_q4_2017\nFROM order_items oi\nJOIN filtered_orders fo ON oi.order_id = fo.order_id",
   "error": null,
   "plan": "- Filter orders where order_purchase_timestamp falls between 2017-10-01 and 2017-12-31 and order_status = 'delivered'.\n- Join these orders to order_items on order_id.\n- For each matching order_item, calculate revenue as price + freight_value.\n- Sum the revenue across all filtered order_items to get the total revenue for Q4 2017.",
   "attempts": [
     {
-      "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-10-01'\n      AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue_q4_2017\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+      "sql": "WITH filtered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-10-01'\n      AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue_q4_2017\nFROM order_items oi\nJOIN filtered_orders fo ON oi.order_id = fo.order_id",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-10-01'\n      AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue_q4_2017\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+      "sql": "WITH filtered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-10-01'\n      AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue_q4_2017\nFROM order_items oi\nJOIN filtered_orders fo ON oi.order_id = fo.order_id",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
@@ -39,7 +39,7 @@
           "status": "match"
         },
         {
-          "requirement": "Time period Q4 2017 (Oct-Dec)",
+          "requirement": "Q4 2017 purchase date range (Oct-Dec)",
           "sql": "o.order_purchase_timestamp >= DATE '2017-10-01' AND o.order_purchase_timestamp < DATE '2018-01-01'",
           "status": "match"
         },
@@ -52,7 +52,7 @@
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-10-01'\n      AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue_q4_2017\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+          "sql": "WITH filtered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-10-01'\n      AND o.order_purchase_timestamp < DATE '2018-01-01'\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue_q4_2017\nFROM order_items oi\nJOIN filtered_orders fo ON oi.order_id = fo.order_id",
           "error": null
         }
       ],
@@ -64,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 20.89,
+      "seconds": 14.05,
       "calls": []
     }
   ]

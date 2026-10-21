@@ -3,56 +3,56 @@
   "question": "How many unique customers placed more than one order?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3020,
-    "completion": 440
+    "prompt": 3028,
+    "completion": 447
   },
-  "sql": "SELECT COUNT(*) AS customers_multiple_orders\nFROM (\n    SELECT c.customer_unique_id\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n    HAVING COUNT(*) > 1\n) t",
+  "sql": "WITH cust_orders AS (\n    SELECT c.customer_unique_id, COUNT(*) AS order_cnt\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT COUNT(*) AS customers_multiple_orders\nFROM cust_orders\nWHERE order_cnt > 1",
   "error": null,
-  "plan": "- Join orders to customers on customer_id to get customer_unique_id per order.\n- Group by customer_unique_id and count orders per customer.\n- Filter groups where the order count is greater than one.\n- Count the number of customer_unique_id values that satisfy this condition.",
+  "plan": "- Join orders to customers on customer_id to get customer_unique_id per order.\n- Group by customer_unique_id and count orders.\n- Filter groups where the order count is greater than one.\n- Count the number of customer_unique_id values that satisfy this condition.",
   "attempts": [
     {
-      "sql": "SELECT COUNT(*) AS customers_multiple_orders\nFROM (\n    SELECT c.customer_unique_id\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n    HAVING COUNT(*) > 1\n) t",
+      "sql": "WITH cust_orders AS (\n    SELECT c.customer_unique_id, COUNT(*) AS order_cnt\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT COUNT(*) AS customers_multiple_orders\nFROM cust_orders\nWHERE order_cnt > 1",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "SELECT COUNT(*) AS customers_multiple_orders\nFROM (\n    SELECT c.customer_unique_id\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n    HAVING COUNT(*) > 1\n) t",
+      "sql": "WITH cust_orders AS (\n    SELECT c.customer_unique_id, COUNT(*) AS order_cnt\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT COUNT(*) AS customers_multiple_orders\nFROM cust_orders\nWHERE order_cnt > 1",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
         {
           "requirement": "Count unique customers",
-          "sql": "COUNT(*) ... GROUP BY c.customer_unique_id",
+          "sql": "COUNT(*) ... FROM cust_orders WHERE order_cnt > 1",
           "status": "match"
         },
         {
-          "requirement": "Customers placed more than one order",
-          "sql": "HAVING COUNT(*) > 1",
+          "requirement": "Identify customers by unique ID",
+          "sql": "GROUP BY c.customer_unique_id",
           "status": "match"
         },
         {
-          "requirement": "No specific status filter requested",
-          "sql": "No WHERE clause on order_status",
+          "requirement": "Filter for customers with more than one order",
+          "sql": "WHERE order_cnt > 1",
           "status": "match"
         },
         {
-          "requirement": "No date range filter requested",
-          "sql": "No date filters",
+          "requirement": "No status or date filters requested",
+          "sql": "None applied",
           "status": "match"
         }
       ],
       "parse_error": false,
       "attempts": [
         {
-          "sql": "SELECT COUNT(*) AS customers_multiple_orders\nFROM (\n    SELECT c.customer_unique_id\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n    HAVING COUNT(*) > 1\n) t",
+          "sql": "WITH cust_orders AS (\n    SELECT c.customer_unique_id, COUNT(*) AS order_cnt\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT COUNT(*) AS customers_multiple_orders\nFROM cust_orders\nWHERE order_cnt > 1",
           "error": null
         }
       ],
@@ -64,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 17.75,
+      "seconds": 18.21,
       "calls": []
     }
   ]

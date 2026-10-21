@@ -3,18 +3,18 @@
   "question": "How many unique customers are in the state of SP?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 2991,
-    "completion": 370
+    "prompt": 4011,
+    "completion": 374
   },
   "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers_sp\nFROM customers\nWHERE customer_state = 'SP'",
   "error": null,
-  "plan": "- Identify unique customers using customer_unique_id.\n- Filter customers where customer_state = 'SP'.\n- Count distinct customer_unique_id.\n- No joins needed.\n- No additional grouping; single aggregate result.\n- Return the count as a single numeric column.",
+  "plan": "- Identify unique customers using customer_unique_id.\n- Filter customers where customer_state = 'SP'.\n- Count distinct customer_unique_id.\n- Use the customers table only.\n- No additional grouping needed.\n- Return a single numeric result.",
   "attempts": [
     {
       "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers_sp\nFROM customers\nWHERE customer_state = 'SP'",
@@ -64,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 4.35,
+      "seconds": 14.49,
       "calls": []
     }
   ]

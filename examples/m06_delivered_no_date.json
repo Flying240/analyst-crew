@@ -3,28 +3,28 @@
   "question": "How many orders have status 'delivered' but no customer delivery date?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3002,
-    "completion": 386
+    "prompt": 3000,
+    "completion": 383
   },
-  "sql": "SELECT COUNT(*) AS delivered_orders_missing_delivery_date\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date IS NULL",
+  "sql": "SELECT COUNT(*) AS delivered_without_delivery_date\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date IS NULL",
   "error": null,
-  "plan": "- Filter orders where order_status = 'delivered' and order_delivered_customer_date IS NULL; - Count the resulting rows; - Use the orders table only; - No grouping needed; - Return a single numeric count.",
+  "plan": "- Count orders where order_status = 'delivered' and order_delivered_customer_date is NULL; - Use the orders table; - No joins required; - Apply the specified filters only; - Return a single numeric count.",
   "attempts": [
     {
-      "sql": "SELECT COUNT(*) AS delivered_orders_missing_delivery_date\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date IS NULL",
+      "sql": "SELECT COUNT(*) AS delivered_without_delivery_date\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date IS NULL",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "SELECT COUNT(*) AS delivered_orders_missing_delivery_date\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date IS NULL",
+      "sql": "SELECT COUNT(*) AS delivered_without_delivery_date\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date IS NULL",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
@@ -52,7 +52,7 @@
       "parse_error": false,
       "attempts": [
         {
-          "sql": "SELECT COUNT(*) AS delivered_orders_missing_delivery_date\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date IS NULL",
+          "sql": "SELECT COUNT(*) AS delivered_without_delivery_date\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date IS NULL",
           "error": null
         }
       ],
@@ -64,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 16.99,
+      "seconds": 11.03,
       "calls": []
     }
   ]

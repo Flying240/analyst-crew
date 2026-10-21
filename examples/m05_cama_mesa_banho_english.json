@@ -3,34 +3,34 @@
   "question": "What is the English name of the category 'cama_mesa_banho', and how many products does it have?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3113,
-    "completion": 492
+    "prompt": 3130,
+    "completion": 532
   },
-  "sql": "WITH filtered AS (\n    SELECT\n        ct.product_category_name_english,\n        p.product_id\n    FROM products p\n    JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name = 'cama_mesa_banho'\n)\nSELECT\n    MAX(product_category_name_english) AS category_name_english,\n    COUNT(DISTINCT product_id) AS product_count\nFROM filtered",
+  "sql": "WITH filtered AS (\n    SELECT ct.product_category_name_english,\n           p.product_id\n    FROM products p\n    JOIN category_translation ct\n      ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name = 'cama_mesa_banho'\n)\nSELECT \n    MAX(product_category_name_english) AS product_category_name_english,\n    COUNT(DISTINCT product_id) AS product_count\nFROM filtered",
   "error": null,
-  "plan": "\u2022 Filter products where product_category_name = 'cama_mesa_banho'.\n\u2022 Join to category_translation on product_category_name to get product_category_name_english.\n\u2022 Count distinct product_id to get the number of products.\n\u2022 Select the English category name and the product count.",
+  "plan": "\u2022 Filter products where product_category_name = 'cama_mesa_banho'.\n\u2022 Join to category_translation on product_category_name to get product_category_name_english.\n\u2022 Count distinct product_id to get number of products.\n\u2022 Select the English category name and the product count.\n\u2022 No additional filters needed.\n\u2022 Return one row with the English name and the count.",
   "attempts": [
     {
-      "sql": "WITH filtered AS (\n    SELECT\n        ct.product_category_name_english,\n        p.product_id\n    FROM products p\n    JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name = 'cama_mesa_banho'\n)\nSELECT\n    MAX(product_category_name_english) AS category_name_english,\n    COUNT(DISTINCT product_id) AS product_count\nFROM filtered",
+      "sql": "WITH filtered AS (\n    SELECT ct.product_category_name_english,\n           p.product_id\n    FROM products p\n    JOIN category_translation ct\n      ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name = 'cama_mesa_banho'\n)\nSELECT \n    MAX(product_category_name_english) AS product_category_name_english,\n    COUNT(DISTINCT product_id) AS product_count\nFROM filtered",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH filtered AS (\n    SELECT\n        ct.product_category_name_english,\n        p.product_id\n    FROM products p\n    JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name = 'cama_mesa_banho'\n)\nSELECT\n    MAX(product_category_name_english) AS category_name_english,\n    COUNT(DISTINCT product_id) AS product_count\nFROM filtered",
+      "sql": "WITH filtered AS (\n    SELECT ct.product_category_name_english,\n           p.product_id\n    FROM products p\n    JOIN category_translation ct\n      ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name = 'cama_mesa_banho'\n)\nSELECT \n    MAX(product_category_name_english) AS product_category_name_english,\n    COUNT(DISTINCT product_id) AS product_count\nFROM filtered",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
         {
           "requirement": "English name of category 'cama_mesa_banho'",
-          "sql": "ct.product_category_name_english ... WHERE p.product_category_name = 'cama_mesa_banho'",
+          "sql": "MAX(product_category_name_english)",
           "status": "match"
         },
         {
@@ -39,12 +39,17 @@
           "status": "match"
         },
         {
-          "requirement": "Correct join to get English name",
+          "requirement": "Filter for specific category",
+          "sql": "WHERE p.product_category_name = 'cama_mesa_banho'",
+          "status": "match"
+        },
+        {
+          "requirement": "Join to get English translation",
           "sql": "JOIN category_translation ct ON p.product_category_name = ct.product_category_name",
           "status": "match"
         },
         {
-          "requirement": "No unrequested filters (e.g., delivered status, date ranges)",
+          "requirement": "No unrequested filters (e.g., delivered status)",
           "sql": "None present",
           "status": "match"
         }
@@ -52,7 +57,7 @@
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH filtered AS (\n    SELECT\n        ct.product_category_name_english,\n        p.product_id\n    FROM products p\n    JOIN category_translation ct\n        ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name = 'cama_mesa_banho'\n)\nSELECT\n    MAX(product_category_name_english) AS category_name_english,\n    COUNT(DISTINCT product_id) AS product_count\nFROM filtered",
+          "sql": "WITH filtered AS (\n    SELECT ct.product_category_name_english,\n           p.product_id\n    FROM products p\n    JOIN category_translation ct\n      ON p.product_category_name = ct.product_category_name\n    WHERE p.product_category_name = 'cama_mesa_banho'\n)\nSELECT \n    MAX(product_category_name_english) AS product_category_name_english,\n    COUNT(DISTINCT product_id) AS product_count\nFROM filtered",
           "error": null
         }
       ],
@@ -64,7 +69,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 17.94,
+      "seconds": 3.92,
       "calls": []
     }
   ]

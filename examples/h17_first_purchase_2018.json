@@ -3,18 +3,18 @@
   "question": "How many customers made their first-ever purchase in 2018, counting orders of any status?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
     "prompt": 3089,
-    "completion": 501
+    "completion": 499
   },
   "sql": "WITH first_purchase AS (\n    SELECT\n        c.customer_unique_id,\n        MIN(o.order_purchase_timestamp) AS first_ts\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT COUNT(*) AS customers_first_purchase_2018\nFROM first_purchase\nWHERE EXTRACT(year FROM first_ts) = 2018",
   "error": null,
-  "plan": "- Join orders to customers on customer_id to get customer_unique_id and order_purchase_timestamp.\n- For each customer_unique_id, find the earliest order_purchase_timestamp.\n- Filter those earliest timestamps to the year 2018.\n- Count the distinct customer_unique_id values that meet this condition.",
+  "plan": "- Join orders to customers on customer_id to get customer_unique_id and order_purchase_timestamp.\n- For each customer_unique_id, compute the earliest order_purchase_timestamp.\n- Filter those earliest timestamps to the year 2018.\n- Count the distinct customer_unique_id values that satisfy this condition.",
   "attempts": [
     {
       "sql": "WITH first_purchase AS (\n    SELECT\n        c.customer_unique_id,\n        MIN(o.order_purchase_timestamp) AS first_ts\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT COUNT(*) AS customers_first_purchase_2018\nFROM first_purchase\nWHERE EXTRACT(year FROM first_ts) = 2018",
@@ -64,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 13.29,
+      "seconds": 12.43,
       "calls": []
     }
   ]

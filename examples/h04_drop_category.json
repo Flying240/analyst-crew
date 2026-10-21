@@ -3,74 +3,28 @@
   "question": "In the complete months (Jan 2017 to Aug 2018), find the month with the biggest month-over-month revenue drop. Which product category (English name) had the largest revenue decrease that month compared with the previous month?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 6721,
-    "completion": 1848
+    "prompt": 3593,
+    "completion": 1009
   },
-  "sql": "WITH monthly_category_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        ct.product_category_name_english AS category,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'  -- up to Aug 2018 inclusive\n    GROUP BY month, category\n),\nmonthly_rev AS (\n    SELECT\n        month,\n        SUM(revenue) AS total_revenue\n    FROM monthly_category_rev\n    GROUP BY month\n),\nmonthly_change AS (\n    SELECT\n        month,\n        total_revenue,\n        LAG(total_revenue) OVER (ORDER BY month) AS prev_total,\n        total_revenue - LAG(total_revenue) OVER (ORDER BY month) AS delta_total\n    FROM monthly_rev\n),\nmax_drop_month AS (\n    SELECT month\n    FROM monthly_change\n    WHERE delta_total IS NOT NULL\n    ORDER BY delta_total ASC\n    LIMIT 1\n),\ncategory_change AS (\n    SELECT\n        month,\n        category,\n        revenue,\n        LAG(revenue) OVER (PARTITION BY category ORDER BY month) AS prev_revenue,\n        revenue - LAG(revenue) OVER (PARTITION BY category ORDER BY month) AS delta_category\n    FROM monthly_category_rev\n)\nSELECT\n    md.month,\n    cc.category AS product_category_english,\n    cc.delta_category AS revenue_decrease\nFROM max_drop_month md\nJOIN category_change cc\n  ON cc.month = md.month\nWHERE cc.delta_category = (\n    SELECT MIN(delta_category)\n    FROM category_change\n    WHERE month = md.month\n)\nLIMIT 1",
+  "sql": "WITH monthly_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        ct.product_category_name_english AS category,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n    GROUP BY month, category\n),\nrev_with_lag AS (\n    SELECT\n        month,\n        category,\n        revenue,\n        LAG(revenue) OVER (PARTITION BY category ORDER BY month) AS prev_rev\n    FROM monthly_rev\n),\ndiffs AS (\n    SELECT\n        month,\n        category,\n        revenue - COALESCE(prev_rev, revenue) AS rev_change\n    FROM rev_with_lag\n),\nmonth_drop AS (\n    SELECT\n        month,\n        SUM(rev_change) AS total_change\n    FROM diffs\n    GROUP BY month\n),\nworst_month AS (\n    SELECT month\n    FROM month_drop\n    ORDER BY total_change ASC\n    LIMIT 1\n),\ncategory_drop AS (\n    SELECT\n        d.month,\n        d.category,\n        d.rev_change\n    FROM diffs d\n    JOIN worst_month wm ON d.month = wm.month\n)\nSELECT\n    wm.month AS month,\n    cd.category AS category_with_largest_drop\nFROM worst_month wm\nJOIN (\n    SELECT month, category\n    FROM category_drop\n    ORDER BY rev_change ASC\n    LIMIT 1\n) cd ON cd.month = wm.month",
   "error": null,
-  "plan": "- Compute monthly revenue per product category using order_items (price + freight_value) joined to orders (filter order_status='delivered' and order_purchase_timestamp in complete months) and products (to get product_category_name) and category_translation (to get English name). - Aggregate to get total revenue per category per month (grain: month, category). - Compute month-over-month revenue change per category by lagging previous month\u2019s revenue. - Identify, for each month, the category with the largest revenue decrease (most negative change). - Compute overall month-over-month total revenue change (sum across categories) per month and find the month with the biggest drop. - Return the month (YYYY-MM) and the English category name with the largest decrease in that month.",
+  "plan": "- Filter orders with order_status = 'delivered' and order_purchase_timestamp between 2017-01-01 and 2018-08-31.\n- Join order_items to orders to get price and freight_value, compute revenue = price + freight_value.\n- Join products to get product_category_name, then join category_translation to get the English name.\n- Aggregate revenue per month (strftime(order_purchase_timestamp, '%Y-%m')) and per English product category.\n- Compute month-over-month revenue change for each category by comparing each month to the previous month (using lag on the month label).\n- Identify the month with the largest overall revenue drop (sum across categories) and, within that month, the category with the greatest revenue decrease compared to its prior month.",
   "attempts": [
     {
-      "sql": "WITH monthly_category_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        ct.product_category_name_english AS category,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'  -- up to Aug 2018 inclusive\n    GROUP BY month, category\n),\nmonthly_rev AS (\n    SELECT\n        month,\n        SUM(revenue) AS total_revenue\n    FROM monthly_category_rev\n    GROUP BY month\n),\nmonthly_change AS (\n    SELECT\n        m.month,\n        m.total_revenue,\n        LAG(m.total_revenue) OVER (ORDER BY m.month) AS prev_total,\n        m.total_revenue - LAG(m.total_revenue) OVER (ORDER BY m.month) AS delta_total\n    FROM monthly_rev m\n),\nmax_drop_month AS (\n    SELECT month\n    FROM monthly_change\n    WHERE delta_total IS NOT NULL\n    ORDER BY delta_total ASC\n    LIMIT 1\n),\ncategory_drop AS (\n    SELECT\n        c.month,\n        c.category,\n        c.revenue - LAG(c.revenue) OVER (PARTITION BY c.category ORDER BY c.month) AS delta_category\n    FROM monthly_category_rev c\n    WHERE c.month IN (SELECT month FROM max_drop_month)\n)\nSELECT\n    md.month,\n    cd.category AS product_category_english,\n    cd.delta_category AS revenue_decrease\nFROM max_drop_month md\nJOIN category_drop cd\n  ON cd.month = md.month\nWHERE cd.delta_category = (\n    SELECT MIN(delta_category)\n    FROM category_drop\n    WHERE month = md.month\n)\nLIMIT 1",
-      "error": null
-    },
-    {
-      "sql": "WITH monthly_category_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        ct.product_category_name_english AS category,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'  -- up to Aug 2018 inclusive\n    GROUP BY month, category\n),\nmonthly_rev AS (\n    SELECT\n        month,\n        SUM(revenue) AS total_revenue\n    FROM monthly_category_rev\n    GROUP BY month\n),\nmonthly_change AS (\n    SELECT\n        month,\n        total_revenue,\n        LAG(total_revenue) OVER (ORDER BY month) AS prev_total,\n        total_revenue - LAG(total_revenue) OVER (ORDER BY month) AS delta_total\n    FROM monthly_rev\n),\nmax_drop_month AS (\n    SELECT month\n    FROM monthly_change\n    WHERE delta_total IS NOT NULL\n    ORDER BY delta_total ASC\n    LIMIT 1\n),\ncategory_change AS (\n    SELECT\n        month,\n        category,\n        revenue,\n        LAG(revenue) OVER (PARTITION BY category ORDER BY month) AS prev_revenue,\n        revenue - LAG(revenue) OVER (PARTITION BY category ORDER BY month) AS delta_category\n    FROM monthly_category_rev\n)\nSELECT\n    md.month,\n    cc.category AS product_category_english,\n    cc.delta_category AS revenue_decrease\nFROM max_drop_month md\nJOIN category_change cc\n  ON cc.month = md.month\nWHERE cc.delta_category = (\n    SELECT MIN(delta_category)\n    FROM category_change\n    WHERE month = md.month\n)\nLIMIT 1",
+      "sql": "WITH monthly_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        ct.product_category_name_english AS category,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n    GROUP BY month, category\n),\nrev_with_lag AS (\n    SELECT\n        month,\n        category,\n        revenue,\n        LAG(revenue) OVER (PARTITION BY category ORDER BY month) AS prev_rev\n    FROM monthly_rev\n),\ndiffs AS (\n    SELECT\n        month,\n        category,\n        revenue - COALESCE(prev_rev, revenue) AS rev_change\n    FROM rev_with_lag\n),\nmonth_drop AS (\n    SELECT\n        month,\n        SUM(rev_change) AS total_change\n    FROM diffs\n    GROUP BY month\n),\nworst_month AS (\n    SELECT month\n    FROM month_drop\n    ORDER BY total_change ASC\n    LIMIT 1\n),\ncategory_drop AS (\n    SELECT\n        d.month,\n        d.category,\n        d.rev_change\n    FROM diffs d\n    JOIN worst_month wm ON d.month = wm.month\n)\nSELECT\n    wm.month AS month,\n    cd.category AS category_with_largest_drop\nFROM worst_month wm\nJOIN (\n    SELECT month, category\n    FROM category_drop\n    ORDER BY rev_change ASC\n    LIMIT 1\n) cd ON cd.month = wm.month",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH monthly_category_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        ct.product_category_name_english AS category,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'  -- up to Aug 2018 inclusive\n    GROUP BY month, category\n),\nmonthly_rev AS (\n    SELECT\n        month,\n        SUM(revenue) AS total_revenue\n    FROM monthly_category_rev\n    GROUP BY month\n),\nmonthly_change AS (\n    SELECT\n        m.month,\n        m.total_revenue,\n        LAG(m.total_revenue) OVER (ORDER BY m.month) AS prev_total,\n        m.total_revenue - LAG(m.total_revenue) OVER (ORDER BY m.month) AS delta_total\n    FROM monthly_rev m\n),\nmax_drop_month AS (\n    SELECT month\n    FROM monthly_change\n    WHERE delta_total IS NOT NULL\n    ORDER BY delta_total ASC\n    LIMIT 1\n),\ncategory_drop AS (\n    SELECT\n        c.month,\n        c.category,\n        c.revenue - LAG(c.revenue) OVER (PARTITION BY c.category ORDER BY c.month) AS delta_category\n    FROM monthly_category_rev c\n    WHERE c.month IN (SELECT month FROM max_drop_month)\n)\nSELECT\n    md.month,\n    cd.category AS product_category_english,\n    cd.delta_category AS revenue_decrease\nFROM max_drop_month md\nJOIN category_drop cd\n  ON cd.month = md.month\nWHERE cd.delta_category = (\n    SELECT MIN(delta_category)\n    FROM category_drop\n    WHERE month = md.month\n)\nLIMIT 1",
-      "verdict": "revise",
-      "feedback": "The query returns empty results because the `category_drop` CTE filters for the target month *before* calculating the LAG. Since the previous month's data is excluded, `LAG` returns NULL, making `delta_category` NULL. Remove the `WHERE c.month IN (...)` filter from `category_drop` so LAG can access the previous month's revenue, and apply the month filter in the final SELECT.",
-      "checklist": [
-        {
-          "requirement": "Filter to complete months (Jan 2017 to Aug 2018)",
-          "sql": "o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01'",
-          "status": "match"
-        },
-        {
-          "requirement": "Calculate revenue as price + freight_value for delivered orders",
-          "sql": "SUM(oi.price + oi.freight_value) ... WHERE o.order_status = 'delivered'",
-          "status": "match"
-        },
-        {
-          "requirement": "Identify the month with the biggest month-over-month revenue drop",
-          "sql": "max_drop_month ... ORDER BY delta_total ASC LIMIT 1",
-          "status": "match"
-        },
-        {
-          "requirement": "Find the category with the largest revenue decrease in that specific month",
-          "sql": "category_drop ... WHERE c.month IN (SELECT month FROM max_drop_month)",
-          "status": "mismatch"
-        },
-        {
-          "requirement": "Return the English category name",
-          "sql": "ct.product_category_name_english AS category",
-          "status": "match"
-        }
-      ],
-      "parse_error": false,
-      "attempts": [
-        {
-          "sql": "WITH monthly_category_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        ct.product_category_name_english AS category,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'  -- up to Aug 2018 inclusive\n    GROUP BY month, category\n),\nmonthly_rev AS (\n    SELECT\n        month,\n        SUM(revenue) AS total_revenue\n    FROM monthly_category_rev\n    GROUP BY month\n),\nmonthly_change AS (\n    SELECT\n        m.month,\n        m.total_revenue,\n        LAG(m.total_revenue) OVER (ORDER BY m.month) AS prev_total,\n        m.total_revenue - LAG(m.total_revenue) OVER (ORDER BY m.month) AS delta_total\n    FROM monthly_rev m\n),\nmax_drop_month AS (\n    SELECT month\n    FROM monthly_change\n    WHERE delta_total IS NOT NULL\n    ORDER BY delta_total ASC\n    LIMIT 1\n),\ncategory_drop AS (\n    SELECT\n        c.month,\n        c.category,\n        c.revenue - LAG(c.revenue) OVER (PARTITION BY c.category ORDER BY c.month) AS delta_category\n    FROM monthly_category_rev c\n    WHERE c.month IN (SELECT month FROM max_drop_month)\n)\nSELECT\n    md.month,\n    cd.category AS product_category_english,\n    cd.delta_category AS revenue_decrease\nFROM max_drop_month md\nJOIN category_drop cd\n  ON cd.month = md.month\nWHERE cd.delta_category = (\n    SELECT MIN(delta_category)\n    FROM category_drop\n    WHERE month = md.month\n)\nLIMIT 1",
-          "error": null
-        }
-      ],
-      "correct": false,
-      "outcome": "caught"
-    },
-    {
-      "round": 2,
-      "sql": "WITH monthly_category_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        ct.product_category_name_english AS category,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'  -- up to Aug 2018 inclusive\n    GROUP BY month, category\n),\nmonthly_rev AS (\n    SELECT\n        month,\n        SUM(revenue) AS total_revenue\n    FROM monthly_category_rev\n    GROUP BY month\n),\nmonthly_change AS (\n    SELECT\n        month,\n        total_revenue,\n        LAG(total_revenue) OVER (ORDER BY month) AS prev_total,\n        total_revenue - LAG(total_revenue) OVER (ORDER BY month) AS delta_total\n    FROM monthly_rev\n),\nmax_drop_month AS (\n    SELECT month\n    FROM monthly_change\n    WHERE delta_total IS NOT NULL\n    ORDER BY delta_total ASC\n    LIMIT 1\n),\ncategory_change AS (\n    SELECT\n        month,\n        category,\n        revenue,\n        LAG(revenue) OVER (PARTITION BY category ORDER BY month) AS prev_revenue,\n        revenue - LAG(revenue) OVER (PARTITION BY category ORDER BY month) AS delta_category\n    FROM monthly_category_rev\n)\nSELECT\n    md.month,\n    cc.category AS product_category_english,\n    cc.delta_category AS revenue_decrease\nFROM max_drop_month md\nJOIN category_change cc\n  ON cc.month = md.month\nWHERE cc.delta_category = (\n    SELECT MIN(delta_category)\n    FROM category_change\n    WHERE month = md.month\n)\nLIMIT 1",
+      "sql": "WITH monthly_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        ct.product_category_name_english AS category,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n    GROUP BY month, category\n),\nrev_with_lag AS (\n    SELECT\n        month,\n        category,\n        revenue,\n        LAG(revenue) OVER (PARTITION BY category ORDER BY month) AS prev_rev\n    FROM monthly_rev\n),\ndiffs AS (\n    SELECT\n        month,\n        category,\n        revenue - COALESCE(prev_rev, revenue) AS rev_change\n    FROM rev_with_lag\n),\nmonth_drop AS (\n    SELECT\n        month,\n        SUM(rev_change) AS total_change\n    FROM diffs\n    GROUP BY month\n),\nworst_month AS (\n    SELECT month\n    FROM month_drop\n    ORDER BY total_change ASC\n    LIMIT 1\n),\ncategory_drop AS (\n    SELECT\n        d.month,\n        d.category,\n        d.rev_change\n    FROM diffs d\n    JOIN worst_month wm ON d.month = wm.month\n)\nSELECT\n    wm.month AS month,\n    cd.category AS category_with_largest_drop\nFROM worst_month wm\nJOIN (\n    SELECT month, category\n    FROM category_drop\n    ORDER BY rev_change ASC\n    LIMIT 1\n) cd ON cd.month = wm.month",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
@@ -86,16 +40,16 @@
         },
         {
           "requirement": "Identify the month with the biggest month-over-month revenue drop",
-          "sql": "max_drop_month ... ORDER BY delta_total ASC LIMIT 1",
+          "sql": "worst_month AS (SELECT month FROM month_drop ORDER BY total_change ASC LIMIT 1)",
           "status": "match"
         },
         {
           "requirement": "Find the product category with the largest revenue decrease in that specific month",
-          "sql": "WHERE cc.delta_category = (SELECT MIN(delta_category) ... WHERE month = md.month)",
+          "sql": "category_drop ... ORDER BY rev_change ASC LIMIT 1",
           "status": "match"
         },
         {
-          "requirement": "Return the product category in English",
+          "requirement": "Return the English name of the category",
           "sql": "ct.product_category_name_english AS category",
           "status": "match"
         }
@@ -103,7 +57,7 @@
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH monthly_category_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        ct.product_category_name_english AS category,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'  -- up to Aug 2018 inclusive\n    GROUP BY month, category\n),\nmonthly_rev AS (\n    SELECT\n        month,\n        SUM(revenue) AS total_revenue\n    FROM monthly_category_rev\n    GROUP BY month\n),\nmonthly_change AS (\n    SELECT\n        month,\n        total_revenue,\n        LAG(total_revenue) OVER (ORDER BY month) AS prev_total,\n        total_revenue - LAG(total_revenue) OVER (ORDER BY month) AS delta_total\n    FROM monthly_rev\n),\nmax_drop_month AS (\n    SELECT month\n    FROM monthly_change\n    WHERE delta_total IS NOT NULL\n    ORDER BY delta_total ASC\n    LIMIT 1\n),\ncategory_change AS (\n    SELECT\n        month,\n        category,\n        revenue,\n        LAG(revenue) OVER (PARTITION BY category ORDER BY month) AS prev_revenue,\n        revenue - LAG(revenue) OVER (PARTITION BY category ORDER BY month) AS delta_category\n    FROM monthly_category_rev\n)\nSELECT\n    md.month,\n    cc.category AS product_category_english,\n    cc.delta_category AS revenue_decrease\nFROM max_drop_month md\nJOIN category_change cc\n  ON cc.month = md.month\nWHERE cc.delta_category = (\n    SELECT MIN(delta_category)\n    FROM category_change\n    WHERE month = md.month\n)\nLIMIT 1",
+          "sql": "WITH monthly_rev AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        ct.product_category_name_english AS category,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n    GROUP BY month, category\n),\nrev_with_lag AS (\n    SELECT\n        month,\n        category,\n        revenue,\n        LAG(revenue) OVER (PARTITION BY category ORDER BY month) AS prev_rev\n    FROM monthly_rev\n),\ndiffs AS (\n    SELECT\n        month,\n        category,\n        revenue - COALESCE(prev_rev, revenue) AS rev_change\n    FROM rev_with_lag\n),\nmonth_drop AS (\n    SELECT\n        month,\n        SUM(rev_change) AS total_change\n    FROM diffs\n    GROUP BY month\n),\nworst_month AS (\n    SELECT month\n    FROM month_drop\n    ORDER BY total_change ASC\n    LIMIT 1\n),\ncategory_drop AS (\n    SELECT\n        d.month,\n        d.category,\n        d.rev_change\n    FROM diffs d\n    JOIN worst_month wm ON d.month = wm.month\n)\nSELECT\n    wm.month AS month,\n    cd.category AS category_with_largest_drop\nFROM worst_month wm\nJOIN (\n    SELECT month, category\n    FROM category_drop\n    ORDER BY rev_change ASC\n    LIMIT 1\n) cd ON cd.month = wm.month",
           "error": null
         }
       ],
@@ -115,7 +69,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 41.73,
+      "seconds": 21.74,
       "calls": []
     }
   ]

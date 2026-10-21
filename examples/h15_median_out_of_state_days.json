@@ -3,79 +3,28 @@
   "question": "For delivered order items where seller and customer are in different states, what is the median delivery time in fractional days?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 5754,
-    "completion": 1607
+    "prompt": 3239,
+    "completion": 922
   },
-  "sql": "WITH item_delivery AS (\n    SELECT \n        (EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0) AS delivery_days\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n      AND s.seller_state <> c.customer_state\n)\nSELECT \n    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY delivery_days) AS median_delivery_time_days\nFROM item_delivery",
+  "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.order_purchase_timestamp,\n        o.order_delivered_customer_date,\n        c.customer_state,\n        s.seller_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND c.customer_state IS NOT NULL\n      AND s.seller_state IS NOT NULL\n      AND c.customer_state <> s.seller_state\n)\nSELECT \n    median((epoch(order_delivered_customer_date) - epoch(order_purchase_timestamp)) / 86400.0) AS median_delivery_days\nFROM delivered",
   "error": null,
-  "plan": "- Identify delivered orders (order_status = 'delivered') from orders.\n- Join orders to customers to get customer_state and to sellers via order_items.seller_id to get seller_state.\n- Filter rows where seller_state <> customer_state.\n- Compute delivery time as the difference between order_delivered_customer_date and order_purchase_timestamp in days (including fractional part).\n- Calculate the median of these delivery times across all qualifying order items.\n- Return a single numeric value representing the median delivery time.",
+  "plan": "\u2022 Identify delivered order items by joining order_items to orders where order_status = 'delivered'.\n\u2022 Join orders to customers on customer_id to get customer_state, and join order_items to sellers on seller_id to get seller_state.\n\u2022 Filter rows where seller_state <> customer_state.\n\u2022 Compute delivery time as the difference in days (including fractional part) between order_delivered_customer_date and order_purchase_timestamp.\n\u2022 Calculate the median of these delivery times using a percentile function.\n\u2022 Return a single numeric value representing the median delivery time in days.",
   "attempts": [
     {
-      "sql": "WITH diffs AS (\n    SELECT \n        EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0 AS delivery_days\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND s.seller_state <> c.customer_state\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n)\nSELECT \n    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY delivery_days) AS median_delivery_time_days\nFROM diffs",
-      "error": null
-    },
-    {
-      "sql": "WITH item_delivery AS (\n    SELECT \n        (EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0) AS delivery_days\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n      AND s.seller_state <> c.customer_state\n)\nSELECT \n    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY delivery_days) AS median_delivery_time_days\nFROM item_delivery",
+      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.order_purchase_timestamp,\n        o.order_delivered_customer_date,\n        c.customer_state,\n        s.seller_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND c.customer_state IS NOT NULL\n      AND s.seller_state IS NOT NULL\n      AND c.customer_state <> s.seller_state\n)\nSELECT \n    median((epoch(order_delivered_customer_date) - epoch(order_purchase_timestamp)) / 86400.0) AS median_delivery_days\nFROM delivered",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH diffs AS (\n    SELECT \n        EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0 AS delivery_days\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND s.seller_state <> c.customer_state\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n)\nSELECT \n    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY delivery_days) AS median_delivery_time_days\nFROM diffs",
-      "verdict": "revise",
-      "feedback": "The question asks for 'delivered order items', but the SQL joins order_items without filtering on item-level attributes, and the delivery time is calculated at the order level. If the intent is to compute median delivery time per order item, the current logic is correct because delivery time is an order-level attribute. However, if the question implies filtering to specific items (e.g., those with different states), the join is necessary. The main issue is that the question says 'order items' but the metric is order-level. Since delivery time is per order, and the filter is on seller/customer state (which can vary per item in an order), the join is needed to identify which orders have at least one item where seller and customer are in different states. The current SQL includes an order if ANY item has seller/customer in different states, which may be the intended interpretation. No concrete mismatch found upon re-evaluation.",
-      "checklist": [
-        {
-          "requirement": "Delivered orders only",
-          "sql": "WHERE o.order_status = 'delivered'",
-          "status": "match"
-        },
-        {
-          "requirement": "Seller and customer in different states",
-          "sql": "AND s.seller_state <> c.customer_state",
-          "status": "match"
-        },
-        {
-          "requirement": "Median delivery time",
-          "sql": "PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY delivery_days)",
-          "status": "match"
-        },
-        {
-          "requirement": "Delivery time in fractional days",
-          "sql": "EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0",
-          "status": "match"
-        },
-        {
-          "requirement": "Grain: per order item (implied by 'order items')",
-          "sql": "JOIN order_items oi ON o.order_id = oi.order_id",
-          "status": "mismatch"
-        },
-        {
-          "requirement": "No unrequested filters or joins",
-          "sql": "JOIN order_items oi ON o.order_id = oi.order_id",
-          "status": "mismatch"
-        }
-      ],
-      "parse_error": false,
-      "attempts": [
-        {
-          "sql": "WITH diffs AS (\n    SELECT \n        EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0 AS delivery_days\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND s.seller_state <> c.customer_state\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n)\nSELECT \n    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY delivery_days) AS median_delivery_time_days\nFROM diffs",
-          "error": null
-        }
-      ],
-      "correct": true,
-      "outcome": "false_alarm"
-    },
-    {
-      "round": 2,
-      "sql": "WITH item_delivery AS (\n    SELECT \n        (EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0) AS delivery_days\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n      AND s.seller_state <> c.customer_state\n)\nSELECT \n    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY delivery_days) AS median_delivery_time_days\nFROM item_delivery",
+      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.order_purchase_timestamp,\n        o.order_delivered_customer_date,\n        c.customer_state,\n        s.seller_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND c.customer_state IS NOT NULL\n      AND s.seller_state IS NOT NULL\n      AND c.customer_state <> s.seller_state\n)\nSELECT \n    median((epoch(order_delivered_customer_date) - epoch(order_purchase_timestamp)) / 86400.0) AS median_delivery_days\nFROM delivered",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
@@ -86,34 +35,34 @@
         },
         {
           "requirement": "Seller and customer in different states",
-          "sql": "AND s.seller_state <> c.customer_state",
+          "sql": "c.customer_state <> s.seller_state",
           "status": "match"
         },
         {
           "requirement": "Median delivery time",
-          "sql": "PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY delivery_days)",
+          "sql": "median((epoch(order_delivered_customer_date) - epoch(order_purchase_timestamp)) / 86400.0)",
           "status": "match"
         },
         {
-          "requirement": "Delivery time in fractional days",
-          "sql": "EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0",
+          "requirement": "Fractional days",
+          "sql": "/ 86400.0",
           "status": "match"
         },
         {
-          "requirement": "Grain: per order item",
-          "sql": "JOIN order_items oi ON o.order_id = oi.order_id",
+          "requirement": "Grain: per order item (implied by 'order items')",
+          "sql": "JOIN order_items oi ... JOIN sellers s ON oi.seller_id = s.seller_id",
           "status": "match"
         },
         {
-          "requirement": "Exclude NULL delivery dates",
-          "sql": "AND o.order_delivered_customer_date IS NOT NULL",
+          "requirement": "No unrequested filters or row inflation",
+          "sql": "JOIN order_items ... JOIN sellers",
           "status": "match"
         }
       ],
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH item_delivery AS (\n    SELECT \n        (EXTRACT(EPOCH FROM (o.order_delivered_customer_date - o.order_purchase_timestamp)) / 86400.0) AS delivery_days\n    FROM orders o\n    JOIN order_items oi ON o.order_id = oi.order_id\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_purchase_timestamp IS NOT NULL\n      AND s.seller_state <> c.customer_state\n)\nSELECT \n    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY delivery_days) AS median_delivery_time_days\nFROM item_delivery",
+          "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        o.order_purchase_timestamp,\n        o.order_delivered_customer_date,\n        c.customer_state,\n        s.seller_state\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN order_items oi ON o.order_id = oi.order_id\n    JOIN sellers s ON oi.seller_id = s.seller_id\n    WHERE o.order_status = 'delivered'\n      AND c.customer_state IS NOT NULL\n      AND s.seller_state IS NOT NULL\n      AND c.customer_state <> s.seller_state\n)\nSELECT \n    median((epoch(order_delivered_customer_date) - epoch(order_purchase_timestamp)) / 86400.0) AS median_delivery_days\nFROM delivered",
           "error": null
         }
       ],
@@ -125,7 +74,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 45.5,
+      "seconds": 17.51,
       "calls": []
     }
   ]

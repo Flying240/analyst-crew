@@ -3,18 +3,18 @@
   "question": "What is the average freight cost per delivered order?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3084,
-    "completion": 438
+    "prompt": 3100,
+    "completion": 452
   },
   "sql": "WITH order_freight AS (\n    SELECT\n        o.order_id,\n        SUM(oi.freight_value) AS total_freight\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n    GROUP BY o.order_id\n)\nSELECT AVG(total_freight) AS avg_freight_per_delivered_order\nFROM order_freight",
   "error": null,
-  "plan": "- Use orders to filter rows where order_status = 'delivered'.\n- Join order_items to orders on order_id.\n- For each delivered order, sum freight_value across its items to get total freight per order.\n- Compute the average of these per\u2011order freight totals.\n- No additional grouping needed beyond order_id; final result is a single numeric value.",
+  "plan": "- Identify delivered orders where orders.order_status = 'delivered'.\n- Join orders to order_items on order_id.\n- For each delivered order, sum the freight_value across its items (since freight is per item).\n- Compute the average of these per\u2011order freight sums.\n- Use only the columns orders.order_id, orders.order_status, order_items.freight_value.\n- No grouping beyond per order is needed for the final average.",
   "attempts": [
     {
       "sql": "WITH order_freight AS (\n    SELECT\n        o.order_id,\n        SUM(oi.freight_value) AS total_freight\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n    GROUP BY o.order_id\n)\nSELECT AVG(total_freight) AS avg_freight_per_delivered_order\nFROM order_freight",
@@ -64,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 16.24,
+      "seconds": 15.28,
       "calls": []
     }
   ]

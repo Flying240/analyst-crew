@@ -3,61 +3,61 @@
   "question": "What percentage (0-100) of customers with at least one payment paid with a credit card at least once, regardless of order status?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3247,
-    "completion": 678
+    "prompt": 3217,
+    "completion": 624
   },
-  "sql": "WITH\n    cust_all AS (\n        SELECT DISTINCT c.customer_unique_id\n        FROM orders o\n        JOIN customers c ON o.customer_id = c.customer_id\n        JOIN payments p ON o.order_id = p.order_id\n    ),\n    cust_cc AS (\n        SELECT DISTINCT c.customer_unique_id\n        FROM orders o\n        JOIN customers c ON o.customer_id = c.customer_id\n        JOIN payments p ON o.order_id = p.order_id\n        WHERE p.payment_type = 'credit_card'\n    )\nSELECT\n    (COUNT(cc.customer_unique_id) * 100.0) / NULLIF(COUNT(allc.customer_unique_id), 0) AS credit_card_customer_percentage\nFROM cust_all allc\nLEFT JOIN cust_cc cc USING (customer_unique_id)",
+  "sql": "WITH cust_pay AS (\n    SELECT DISTINCT c.customer_unique_id, p.payment_type\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN payments p ON o.order_id = p.order_id\n),\nall_cust AS (\n    SELECT DISTINCT customer_unique_id\n    FROM cust_pay\n),\ncredit_cust AS (\n    SELECT DISTINCT customer_unique_id\n    FROM cust_pay\n    WHERE payment_type = 'credit_card'\n)\nSELECT\n    100.0 * COUNT(cc.customer_unique_id) / COUNT(ac.customer_unique_id) AS credit_card_payment_percentage\nFROM all_cust ac\nLEFT JOIN credit_cust cc ON ac.customer_unique_id = cc.customer_unique_id",
   "error": null,
-  "plan": "- Identify customers by joining orders to customers on customer_id and using customer_unique_id.\n- From payments, determine which orders have a payment_type of 'credit_card'.\n- Count distinct customer_unique_id that have at least one payment record (any type).\n- Count distinct customer_unique_id that have at least one payment record with payment_type = 'credit_card'.\n- Compute the percentage as (credit_card_customers / total_customers) * 100.\n- No additional filters or grouping beyond distinct customer counts are needed.",
+  "plan": "\u2022 Identify customers via customers.customer_unique_id linked to orders.customer_id. \u2022 Join orders to payments on order_id to get each customer's payment records. \u2022 Determine the set of customers who have at least one payment record. \u2022 Determine the subset of those customers who have at least one payment where payment_type = 'credit_card'. \u2022 Compute the percentage as 100 * (count of credit\u2011card customers) / (count of all customers with payments).",
   "attempts": [
     {
-      "sql": "WITH\n    cust_all AS (\n        SELECT DISTINCT c.customer_unique_id\n        FROM orders o\n        JOIN customers c ON o.customer_id = c.customer_id\n        JOIN payments p ON o.order_id = p.order_id\n    ),\n    cust_cc AS (\n        SELECT DISTINCT c.customer_unique_id\n        FROM orders o\n        JOIN customers c ON o.customer_id = c.customer_id\n        JOIN payments p ON o.order_id = p.order_id\n        WHERE p.payment_type = 'credit_card'\n    )\nSELECT\n    (COUNT(cc.customer_unique_id) * 100.0) / NULLIF(COUNT(allc.customer_unique_id), 0) AS credit_card_customer_percentage\nFROM cust_all allc\nLEFT JOIN cust_cc cc USING (customer_unique_id)",
+      "sql": "WITH cust_pay AS (\n    SELECT DISTINCT c.customer_unique_id, p.payment_type\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN payments p ON o.order_id = p.order_id\n),\nall_cust AS (\n    SELECT DISTINCT customer_unique_id\n    FROM cust_pay\n),\ncredit_cust AS (\n    SELECT DISTINCT customer_unique_id\n    FROM cust_pay\n    WHERE payment_type = 'credit_card'\n)\nSELECT\n    100.0 * COUNT(cc.customer_unique_id) / COUNT(ac.customer_unique_id) AS credit_card_payment_percentage\nFROM all_cust ac\nLEFT JOIN credit_cust cc ON ac.customer_unique_id = cc.customer_unique_id",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH\n    cust_all AS (\n        SELECT DISTINCT c.customer_unique_id\n        FROM orders o\n        JOIN customers c ON o.customer_id = c.customer_id\n        JOIN payments p ON o.order_id = p.order_id\n    ),\n    cust_cc AS (\n        SELECT DISTINCT c.customer_unique_id\n        FROM orders o\n        JOIN customers c ON o.customer_id = c.customer_id\n        JOIN payments p ON o.order_id = p.order_id\n        WHERE p.payment_type = 'credit_card'\n    )\nSELECT\n    (COUNT(cc.customer_unique_id) * 100.0) / NULLIF(COUNT(allc.customer_unique_id), 0) AS credit_card_customer_percentage\nFROM cust_all allc\nLEFT JOIN cust_cc cc USING (customer_unique_id)",
+      "sql": "WITH cust_pay AS (\n    SELECT DISTINCT c.customer_unique_id, p.payment_type\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN payments p ON o.order_id = p.order_id\n),\nall_cust AS (\n    SELECT DISTINCT customer_unique_id\n    FROM cust_pay\n),\ncredit_cust AS (\n    SELECT DISTINCT customer_unique_id\n    FROM cust_pay\n    WHERE payment_type = 'credit_card'\n)\nSELECT\n    100.0 * COUNT(cc.customer_unique_id) / COUNT(ac.customer_unique_id) AS credit_card_payment_percentage\nFROM all_cust ac\nLEFT JOIN credit_cust cc ON ac.customer_unique_id = cc.customer_unique_id",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
         {
           "requirement": "Count customers with at least one payment",
-          "sql": "cust_all ... JOIN payments p ON o.order_id = p.order_id",
+          "sql": "SELECT DISTINCT customer_unique_id FROM cust_pay",
           "status": "match"
         },
         {
           "requirement": "Count customers who paid with credit card at least once",
-          "sql": "cust_cc ... WHERE p.payment_type = 'credit_card'",
+          "sql": "SELECT DISTINCT customer_unique_id FROM cust_pay WHERE payment_type = 'credit_card'",
           "status": "match"
         },
         {
           "requirement": "Calculate percentage (0-100)",
-          "sql": "(COUNT(cc.customer_unique_id) * 100.0) / NULLIF(COUNT(allc.customer_unique_id), 0)",
+          "sql": "100.0 * COUNT(cc.customer_unique_id) / COUNT(ac.customer_unique_id)",
           "status": "match"
         },
         {
           "requirement": "Regardless of order status",
-          "sql": "No filter on order_status in cust_all or cust_cc",
+          "sql": "No filter on order_status in joins",
           "status": "match"
         },
         {
           "requirement": "Use customer_unique_id for counting",
-          "sql": "SELECT DISTINCT c.customer_unique_id",
+          "sql": "c.customer_unique_id",
           "status": "match"
         }
       ],
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH\n    cust_all AS (\n        SELECT DISTINCT c.customer_unique_id\n        FROM orders o\n        JOIN customers c ON o.customer_id = c.customer_id\n        JOIN payments p ON o.order_id = p.order_id\n    ),\n    cust_cc AS (\n        SELECT DISTINCT c.customer_unique_id\n        FROM orders o\n        JOIN customers c ON o.customer_id = c.customer_id\n        JOIN payments p ON o.order_id = p.order_id\n        WHERE p.payment_type = 'credit_card'\n    )\nSELECT\n    (COUNT(cc.customer_unique_id) * 100.0) / NULLIF(COUNT(allc.customer_unique_id), 0) AS credit_card_customer_percentage\nFROM cust_all allc\nLEFT JOIN cust_cc cc USING (customer_unique_id)",
+          "sql": "WITH cust_pay AS (\n    SELECT DISTINCT c.customer_unique_id, p.payment_type\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    JOIN payments p ON o.order_id = p.order_id\n),\nall_cust AS (\n    SELECT DISTINCT customer_unique_id\n    FROM cust_pay\n),\ncredit_cust AS (\n    SELECT DISTINCT customer_unique_id\n    FROM cust_pay\n    WHERE payment_type = 'credit_card'\n)\nSELECT\n    100.0 * COUNT(cc.customer_unique_id) / COUNT(ac.customer_unique_id) AS credit_card_payment_percentage\nFROM all_cust ac\nLEFT JOIN credit_cust cc ON ac.customer_unique_id = cc.customer_unique_id",
           "error": null
         }
       ],
@@ -69,7 +69,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 16.99,
+      "seconds": 14.64,
       "calls": []
     }
   ]

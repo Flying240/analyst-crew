@@ -3,34 +3,34 @@
   "question": "In the complete months (Jan 2017 to Aug 2018), which purchase month had the highest average review score across all orders, regardless of order status?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3251,
-    "completion": 670
+    "prompt": 3224,
+    "completion": 727
   },
-  "sql": "WITH monthly_scores AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        r.review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n)\nSELECT\n    month,\n    AVG(review_score) AS avg_review_score\nFROM monthly_scores\nGROUP BY month\nORDER BY avg_review_score DESC\nLIMIT 1",
+  "sql": "WITH monthly_scores AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        r.review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_purchase_timestamp >= '2017-01-01'\n      AND o.order_purchase_timestamp < '2018-09-01'\n)\nSELECT\n    month,\n    AVG(review_score) AS avg_review_score\nFROM monthly_scores\nGROUP BY month\nORDER BY avg_review_score DESC\nLIMIT 1",
   "error": null,
-  "plan": "- Identify each order's purchase month using orders.order_purchase_timestamp and label it as 'YYYY-MM'.\n- Join orders to reviews on order_id to get review_score for each order.\n- Filter to purchase months between 2017-01-01 and 2018-08-31 inclusive.\n- Exclude any months outside this range (i.e., 2016 and Sep-Oct 2018) as per project rules.\n- Group by the purchase month label and compute the average of review_score.\n- Order the results by the average review score descending and select the top month.",
+  "plan": "- Identify each order's purchase month using orders.order_purchase_timestamp and format as 'YYYY-MM'.\n- Join orders to reviews on order_id to obtain review_score for each order.\n- Filter purchase months to the range Jan 2017 through Aug 2018.\n- Group by the formatted purchase month and compute the average of review_score.\n- Order the results by the average review score descending and limit to the top row to get the month with the highest average.",
   "attempts": [
     {
-      "sql": "WITH monthly_scores AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        r.review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n)\nSELECT\n    month,\n    AVG(review_score) AS avg_review_score\nFROM monthly_scores\nGROUP BY month\nORDER BY avg_review_score DESC\nLIMIT 1",
+      "sql": "WITH monthly_scores AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        r.review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_purchase_timestamp >= '2017-01-01'\n      AND o.order_purchase_timestamp < '2018-09-01'\n)\nSELECT\n    month,\n    AVG(review_score) AS avg_review_score\nFROM monthly_scores\nGROUP BY month\nORDER BY avg_review_score DESC\nLIMIT 1",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH monthly_scores AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        r.review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n)\nSELECT\n    month,\n    AVG(review_score) AS avg_review_score\nFROM monthly_scores\nGROUP BY month\nORDER BY avg_review_score DESC\nLIMIT 1",
+      "sql": "WITH monthly_scores AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        r.review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_purchase_timestamp >= '2017-01-01'\n      AND o.order_purchase_timestamp < '2018-09-01'\n)\nSELECT\n    month,\n    AVG(review_score) AS avg_review_score\nFROM monthly_scores\nGROUP BY month\nORDER BY avg_review_score DESC\nLIMIT 1",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
         {
           "requirement": "Filter to complete months (Jan 2017 to Aug 2018)",
-          "sql": "WHERE o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01'",
+          "sql": "WHERE o.order_purchase_timestamp >= '2017-01-01' AND o.order_purchase_timestamp < '2018-09-01'",
           "status": "match"
         },
         {
@@ -57,7 +57,7 @@
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH monthly_scores AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        r.review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_purchase_timestamp >= DATE '2017-01-01'\n      AND o.order_purchase_timestamp < DATE '2018-09-01'\n)\nSELECT\n    month,\n    AVG(review_score) AS avg_review_score\nFROM monthly_scores\nGROUP BY month\nORDER BY avg_review_score DESC\nLIMIT 1",
+          "sql": "WITH monthly_scores AS (\n    SELECT\n        strftime(o.order_purchase_timestamp, '%Y-%m') AS month,\n        r.review_score\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_purchase_timestamp >= '2017-01-01'\n      AND o.order_purchase_timestamp < '2018-09-01'\n)\nSELECT\n    month,\n    AVG(review_score) AS avg_review_score\nFROM monthly_scores\nGROUP BY month\nORDER BY avg_review_score DESC\nLIMIT 1",
           "error": null
         }
       ],
@@ -69,7 +69,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 19.22,
+      "seconds": 19.15,
       "calls": []
     }
   ]

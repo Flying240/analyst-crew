@@ -3,28 +3,28 @@
   "question": "How many payments were made with each payment type?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3032,
-    "completion": 296
+    "prompt": 3018,
+    "completion": 315
   },
-  "sql": "SELECT\n    payment_type,\n    COUNT(*) AS payment_count\nFROM\n    payments\nGROUP BY\n    payment_type\nORDER BY\n    payment_type",
+  "sql": "SELECT\n    payment_type,\n    COUNT(*) AS payment_count\nFROM payments\nGROUP BY payment_type\nORDER BY payment_type",
   "error": null,
-  "plan": "- Count rows in the payments table for each distinct payment_type.\n- Use the payment_type column from the payments table.\n- No additional filters are required.\n- Group the results by payment_type.\n- Order the output by payment_type (optional).",
+  "plan": "\u2022 Count rows in the payments table for each distinct payment_type; \u2022 Use payments.payment_type column; \u2022 No additional filters needed; \u2022 Group by payment_type; \u2022 Order results by payment_type for readability.",
   "attempts": [
     {
-      "sql": "SELECT\n    payment_type,\n    COUNT(*) AS payment_count\nFROM\n    payments\nGROUP BY\n    payment_type\nORDER BY\n    payment_type",
+      "sql": "SELECT\n    payment_type,\n    COUNT(*) AS payment_count\nFROM payments\nGROUP BY payment_type\nORDER BY payment_type",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "SELECT\n    payment_type,\n    COUNT(*) AS payment_count\nFROM\n    payments\nGROUP BY\n    payment_type\nORDER BY\n    payment_type",
+      "sql": "SELECT\n    payment_type,\n    COUNT(*) AS payment_count\nFROM payments\nGROUP BY payment_type\nORDER BY payment_type",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
@@ -39,15 +39,20 @@
           "status": "match"
         },
         {
-          "requirement": "No specific filters requested",
+          "requirement": "Source data from payments table",
           "sql": "FROM payments",
+          "status": "match"
+        },
+        {
+          "requirement": "No specific filters requested",
+          "sql": "None",
           "status": "match"
         }
       ],
       "parse_error": false,
       "attempts": [
         {
-          "sql": "SELECT\n    payment_type,\n    COUNT(*) AS payment_count\nFROM\n    payments\nGROUP BY\n    payment_type\nORDER BY\n    payment_type",
+          "sql": "SELECT\n    payment_type,\n    COUNT(*) AS payment_count\nFROM payments\nGROUP BY payment_type\nORDER BY payment_type",
           "error": null
         }
       ],
@@ -59,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 10.97,
+      "seconds": 3.69,
       "calls": []
     }
   ]

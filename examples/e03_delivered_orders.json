@@ -3,18 +3,18 @@
   "question": "How many orders were delivered?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 2982,
-    "completion": 307
+    "prompt": 2963,
+    "completion": 294
   },
   "sql": "SELECT COUNT(*) AS delivered_orders\nFROM orders\nWHERE order_status = 'delivered'",
   "error": null,
-  "plan": "\u2022 Count rows in orders where order_status = 'delivered'.\n\u2022 Use the orders table and its order_status column.\n\u2022 Apply filter order_status = 'delivered'.\n\u2022 No grouping needed; aggregate count over all rows.\n\u2022 Return a single numeric column representing the total number of delivered orders.\n\u2022 No ordering required.",
+  "plan": "\u2022 Count rows in orders where order_status = 'delivered'. \u2022 Use the orders table and its order_status column. \u2022 Apply filter order_status = 'delivered'. \u2022 No grouping needed; aggregate count over all rows.",
   "attempts": [
     {
       "sql": "SELECT COUNT(*) AS delivered_orders\nFROM orders\nWHERE order_status = 'delivered'",
@@ -59,7 +59,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 2.61,
+      "seconds": 3.55,
       "calls": []
     }
   ]

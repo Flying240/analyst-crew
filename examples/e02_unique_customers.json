@@ -3,18 +3,18 @@
   "question": "How many unique customers are there?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3485,
-    "completion": 381
+    "prompt": 2963,
+    "completion": 364
   },
   "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers\nFROM customers",
   "error": null,
-  "plan": "- Identify the column that uniquely represents a customer: customers.customer_unique_id.\n- Use the customers table as the source.\n- Apply no additional filters.\n- Count distinct values of customer_unique_id to get the total number of unique customers.\n- Return a single numeric result.",
+  "plan": "- Identify the metric: count of unique customers.\n- Source table: customers.\n- Column to use: customer_unique_id.\n- Apply no additional filters.\n- Aggregate using distinct count.\n- Return a single numeric result.",
   "attempts": [
     {
       "sql": "SELECT COUNT(DISTINCT customer_unique_id) AS unique_customers\nFROM customers",
@@ -69,7 +69,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 2.53,
+      "seconds": 3.83,
       "calls": []
     }
   ]

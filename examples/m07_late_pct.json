@@ -3,58 +3,53 @@
   "question": "What percentage (0-100) of delivered orders with a known delivery date arrived after the estimated delivery date?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3160,
-    "completion": 636
+    "prompt": 3173,
+    "completion": 604
   },
-  "sql": "WITH delivered AS (\n    SELECT o.order_id,\n           o.order_delivered_customer_date,\n           o.order_estimated_delivery_date\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    (SUM(CASE WHEN d.order_delivered_customer_date > d.order_estimated_delivery_date THEN 1 ELSE 0 END)::DOUBLE\n     / COUNT(*)) * 100 AS late_delivery_percentage\nFROM delivered d",
+  "sql": "WITH delivered AS (\n    SELECT\n        order_id,\n        order_delivered_customer_date,\n        order_estimated_delivery_date,\n        (order_delivered_customer_date > order_estimated_delivery_date) AS is_late\n    FROM orders\n    WHERE order_status = 'delivered'\n      AND order_delivered_customer_date IS NOT NULL\n)\nSELECT\n    (SUM(CASE WHEN is_late THEN 1 ELSE 0 END)::DOUBLE / COUNT(*) * 100) AS late_delivery_percentage\nFROM delivered",
   "error": null,
-  "plan": "- Filter orders where order_status = 'delivered' and both order_delivered_customer_date and order_estimated_delivery_date are not null.\n- Count total filtered orders.\n- Count orders where order_delivered_customer_date > order_estimated_delivery_date (late deliveries).\n- Compute percentage as (late count / total count) * 100.\n- Return a single numeric value representing the percentage.",
+  "plan": "- Filter orders where order_status = 'delivered' and order_delivered_customer_date is not null.\n- Count total number of such delivered orders.\n- Count number of those orders where order_delivered_customer_date > order_estimated_delivery_date (late deliveries).\n- Compute percentage as (late count / total count) * 100.\n- Use only the orders table columns: order_status, order_delivered_customer_date, order_estimated_delivery_date.\n- Return a single numeric value representing the percentage.",
   "attempts": [
     {
-      "sql": "WITH delivered AS (\n    SELECT o.order_id,\n           o.order_delivered_customer_date,\n           o.order_estimated_delivery_date\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    (SUM(CASE WHEN d.order_delivered_customer_date > d.order_estimated_delivery_date THEN 1 ELSE 0 END)::DOUBLE\n     / COUNT(*)) * 100 AS late_delivery_percentage\nFROM delivered d",
+      "sql": "WITH delivered AS (\n    SELECT\n        order_id,\n        order_delivered_customer_date,\n        order_estimated_delivery_date,\n        (order_delivered_customer_date > order_estimated_delivery_date) AS is_late\n    FROM orders\n    WHERE order_status = 'delivered'\n      AND order_delivered_customer_date IS NOT NULL\n)\nSELECT\n    (SUM(CASE WHEN is_late THEN 1 ELSE 0 END)::DOUBLE / COUNT(*) * 100) AS late_delivery_percentage\nFROM delivered",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH delivered AS (\n    SELECT o.order_id,\n           o.order_delivered_customer_date,\n           o.order_estimated_delivery_date\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    (SUM(CASE WHEN d.order_delivered_customer_date > d.order_estimated_delivery_date THEN 1 ELSE 0 END)::DOUBLE\n     / COUNT(*)) * 100 AS late_delivery_percentage\nFROM delivered d",
+      "sql": "WITH delivered AS (\n    SELECT\n        order_id,\n        order_delivered_customer_date,\n        order_estimated_delivery_date,\n        (order_delivered_customer_date > order_estimated_delivery_date) AS is_late\n    FROM orders\n    WHERE order_status = 'delivered'\n      AND order_delivered_customer_date IS NOT NULL\n)\nSELECT\n    (SUM(CASE WHEN is_late THEN 1 ELSE 0 END)::DOUBLE / COUNT(*) * 100) AS late_delivery_percentage\nFROM delivered",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
         {
           "requirement": "Filter to delivered orders",
-          "sql": "WHERE o.order_status = 'delivered'",
+          "sql": "WHERE order_status = 'delivered'",
           "status": "match"
         },
         {
           "requirement": "Filter to orders with known delivery date",
-          "sql": "AND o.order_delivered_customer_date IS NOT NULL",
-          "status": "match"
-        },
-        {
-          "requirement": "Filter to orders with known estimated delivery date",
-          "sql": "AND o.order_estimated_delivery_date IS NOT NULL",
+          "sql": "AND order_delivered_customer_date IS NOT NULL",
           "status": "match"
         },
         {
           "requirement": "Identify late orders (delivered after estimated)",
-          "sql": "CASE WHEN d.order_delivered_customer_date > d.order_estimated_delivery_date THEN 1 ELSE 0 END",
+          "sql": "(order_delivered_customer_date > order_estimated_delivery_date) AS is_late",
           "status": "match"
         },
         {
-          "requirement": "Calculate percentage (0-100)",
-          "sql": "(SUM(...)::DOUBLE / COUNT(*)) * 100",
+          "requirement": "Calculate percentage of late orders",
+          "sql": "SUM(CASE WHEN is_late THEN 1 ELSE 0 END)::DOUBLE / COUNT(*) * 100",
           "status": "match"
         },
         {
-          "requirement": "Return single value",
+          "requirement": "Return single numeric value",
           "sql": "SELECT ... AS late_delivery_percentage",
           "status": "match"
         }
@@ -62,7 +57,7 @@
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH delivered AS (\n    SELECT o.order_id,\n           o.order_delivered_customer_date,\n           o.order_estimated_delivery_date\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    (SUM(CASE WHEN d.order_delivered_customer_date > d.order_estimated_delivery_date THEN 1 ELSE 0 END)::DOUBLE\n     / COUNT(*)) * 100 AS late_delivery_percentage\nFROM delivered d",
+          "sql": "WITH delivered AS (\n    SELECT\n        order_id,\n        order_delivered_customer_date,\n        order_estimated_delivery_date,\n        (order_delivered_customer_date > order_estimated_delivery_date) AS is_late\n    FROM orders\n    WHERE order_status = 'delivered'\n      AND order_delivered_customer_date IS NOT NULL\n)\nSELECT\n    (SUM(CASE WHEN is_late THEN 1 ELSE 0 END)::DOUBLE / COUNT(*) * 100) AS late_delivery_percentage\nFROM delivered",
           "error": null
         }
       ],
@@ -74,7 +69,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 9.24,
+      "seconds": 8.52,
       "calls": []
     }
   ]

@@ -3,43 +3,48 @@
   "question": "Among sellers with at least 100 delivered orders and an average review score of at least 4.5, which seller (seller_id) has the highest revenue?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3301,
-    "completion": 632
+    "prompt": 3302,
+    "completion": 664
   },
-  "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        oi.seller_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n),\nseller_stats AS (\n    SELECT \n        d.seller_id,\n        COUNT(DISTINCT d.order_id) AS delivered_orders,\n        SUM(d.revenue) AS total_revenue,\n        AVG(r.review_score) AS avg_review_score\n    FROM delivered d\n    JOIN reviews r USING (order_id)\n    GROUP BY d.seller_id\n    HAVING COUNT(DISTINCT d.order_id) >= 100\n       AND AVG(r.review_score) >= 4.5\n)\nSELECT seller_id\nFROM seller_stats\nORDER BY total_revenue DESC\nLIMIT 1",
+  "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        oi.seller_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n),\nseller_stats AS (\n    SELECT \n        d.seller_id,\n        COUNT(DISTINCT d.order_id) AS delivered_orders,\n        SUM(d.revenue) AS total_revenue,\n        AVG(r.review_score) AS avg_review_score\n    FROM delivered d\n    LEFT JOIN reviews r USING (order_id)\n    GROUP BY d.seller_id\n    HAVING COUNT(DISTINCT d.order_id) >= 100\n       AND AVG(r.review_score) >= 4.5\n)\nSELECT seller_id\nFROM seller_stats\nORDER BY total_revenue DESC\nLIMIT 1",
   "error": null,
-  "plan": "- Identify delivered orders (order_status = 'delivered') and join them to order_items to compute revenue per order as price + freight_value.\n- Aggregate revenue per seller_id by summing revenue across their delivered order_items.\n- Join orders to reviews via order_id and compute average review_score per seller_id.\n- Count delivered orders per seller_id.\n- Filter sellers to those with count >= 100 and average review_score >= 4.5.\n- Select the seller_id with the maximum aggregated revenue among the filtered sellers.",
+  "plan": "- Identify delivered orders (order_status = 'delivered') and join them to order_items to compute revenue per order as price + freight_value.\n- Aggregate revenue per seller_id by summing revenue across their delivered order_items.\n- Join orders to reviews via order_id and compute average review_score per seller_id.\n- Count delivered orders per seller_id.\n- Filter sellers to those with count >= 100 and average review_score >= 4.5.\n- Select the seller_id with the maximum total revenue among the filtered sellers.",
   "attempts": [
     {
-      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        oi.seller_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n),\nseller_stats AS (\n    SELECT \n        d.seller_id,\n        COUNT(DISTINCT d.order_id) AS delivered_orders,\n        SUM(d.revenue) AS total_revenue,\n        AVG(r.review_score) AS avg_review_score\n    FROM delivered d\n    JOIN reviews r USING (order_id)\n    GROUP BY d.seller_id\n    HAVING COUNT(DISTINCT d.order_id) >= 100\n       AND AVG(r.review_score) >= 4.5\n)\nSELECT seller_id\nFROM seller_stats\nORDER BY total_revenue DESC\nLIMIT 1",
+      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        oi.seller_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n),\nseller_stats AS (\n    SELECT \n        d.seller_id,\n        COUNT(DISTINCT d.order_id) AS delivered_orders,\n        SUM(d.revenue) AS total_revenue,\n        AVG(r.review_score) AS avg_review_score\n    FROM delivered d\n    LEFT JOIN reviews r USING (order_id)\n    GROUP BY d.seller_id\n    HAVING COUNT(DISTINCT d.order_id) >= 100\n       AND AVG(r.review_score) >= 4.5\n)\nSELECT seller_id\nFROM seller_stats\nORDER BY total_revenue DESC\nLIMIT 1",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        oi.seller_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n),\nseller_stats AS (\n    SELECT \n        d.seller_id,\n        COUNT(DISTINCT d.order_id) AS delivered_orders,\n        SUM(d.revenue) AS total_revenue,\n        AVG(r.review_score) AS avg_review_score\n    FROM delivered d\n    JOIN reviews r USING (order_id)\n    GROUP BY d.seller_id\n    HAVING COUNT(DISTINCT d.order_id) >= 100\n       AND AVG(r.review_score) >= 4.5\n)\nSELECT seller_id\nFROM seller_stats\nORDER BY total_revenue DESC\nLIMIT 1",
+      "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        oi.seller_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n),\nseller_stats AS (\n    SELECT \n        d.seller_id,\n        COUNT(DISTINCT d.order_id) AS delivered_orders,\n        SUM(d.revenue) AS total_revenue,\n        AVG(r.review_score) AS avg_review_score\n    FROM delivered d\n    LEFT JOIN reviews r USING (order_id)\n    GROUP BY d.seller_id\n    HAVING COUNT(DISTINCT d.order_id) >= 100\n       AND AVG(r.review_score) >= 4.5\n)\nSELECT seller_id\nFROM seller_stats\nORDER BY total_revenue DESC\nLIMIT 1",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
         {
-          "requirement": "Revenue definition (price + freight_value, delivered only)",
-          "sql": "(oi.price + oi.freight_value) AS revenue ... WHERE o.order_status = 'delivered'",
+          "requirement": "Filter for delivered orders",
+          "sql": "WHERE o.order_status = 'delivered'",
           "status": "match"
         },
         {
-          "requirement": "Filter: at least 100 delivered orders",
+          "requirement": "Calculate revenue as price + freight_value",
+          "sql": "(oi.price + oi.freight_value) AS revenue",
+          "status": "match"
+        },
+        {
+          "requirement": "Filter sellers with at least 100 delivered orders",
           "sql": "HAVING COUNT(DISTINCT d.order_id) >= 100",
           "status": "match"
         },
         {
-          "requirement": "Filter: average review score >= 4.5",
+          "requirement": "Filter sellers with average review score >= 4.5",
           "sql": "AND AVG(r.review_score) >= 4.5",
           "status": "match"
         },
@@ -57,7 +62,7 @@
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        oi.seller_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n),\nseller_stats AS (\n    SELECT \n        d.seller_id,\n        COUNT(DISTINCT d.order_id) AS delivered_orders,\n        SUM(d.revenue) AS total_revenue,\n        AVG(r.review_score) AS avg_review_score\n    FROM delivered d\n    JOIN reviews r USING (order_id)\n    GROUP BY d.seller_id\n    HAVING COUNT(DISTINCT d.order_id) >= 100\n       AND AVG(r.review_score) >= 4.5\n)\nSELECT seller_id\nFROM seller_stats\nORDER BY total_revenue DESC\nLIMIT 1",
+          "sql": "WITH delivered AS (\n    SELECT \n        o.order_id,\n        oi.seller_id,\n        (oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n),\nseller_stats AS (\n    SELECT \n        d.seller_id,\n        COUNT(DISTINCT d.order_id) AS delivered_orders,\n        SUM(d.revenue) AS total_revenue,\n        AVG(r.review_score) AS avg_review_score\n    FROM delivered d\n    LEFT JOIN reviews r USING (order_id)\n    GROUP BY d.seller_id\n    HAVING COUNT(DISTINCT d.order_id) >= 100\n       AND AVG(r.review_score) >= 4.5\n)\nSELECT seller_id\nFROM seller_stats\nORDER BY total_revenue DESC\nLIMIT 1",
           "error": null
         }
       ],
@@ -69,7 +74,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 19.68,
+      "seconds": 18.55,
       "calls": []
     }
   ]

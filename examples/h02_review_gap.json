@@ -3,32 +3,28 @@
   "question": "For delivered orders, how much higher is the average review score of on-time orders than late orders (on-time average minus late average)? Late means delivered after the estimated delivery date; ignore orders without a delivery date.",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 4507,
-    "completion": 898
+    "prompt": 3306,
+    "completion": 698
   },
-  "sql": "WITH filtered AS (\n    SELECT\n        r.review_score,\n        CASE\n            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 'late'\n            ELSE 'on_time'\n        END AS timeliness\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN f.timeliness = 'on_time' THEN f.review_score END) -\n    AVG(CASE WHEN f.timeliness = 'late' THEN f.review_score END) AS avg_score_difference\nFROM filtered f",
+  "sql": "WITH delivered AS (\n    SELECT\n        o.order_id,\n        r.review_score,\n        o.order_delivered_customer_date,\n        o.order_estimated_delivery_date,\n        CASE\n            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 'late'\n            ELSE 'on_time'\n        END AS timeliness\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN timeliness = 'on_time' THEN review_score END) -\n    AVG(CASE WHEN timeliness = 'late' THEN review_score END) AS avg_score_diff\nFROM delivered",
   "error": null,
   "plan": "- Filter orders to those with order_status = 'delivered' and a non\u2011null order_delivered_customer_date.\n- Join orders to reviews on order_id to get review_score.\n- Determine lateness by comparing order_delivered_customer_date to order_estimated_delivery_date; label each order as 'late' or 'on_time'.\n- Compute the average review_score for on\u2011time orders and for late orders.\n- Subtract the late average from the on\u2011time average to get the difference.\n- Return a single numeric column representing this difference.",
   "attempts": [
     {
-      "sql": "WITH filtered AS (\n    SELECT\n        r.review_score,\n        CASE\n            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 'late'\n            ELSE 'on_time'\n        END AS timeliness\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN timeliness = 'on_time' THEN review_score END) -\n    AVG(CASE WHEN timeliness = 'late' THEN review_score END) AS avg_score_difference",
-      "error": "BinderException: Binder Error: Referenced column \"timeliness\" was not found because the FROM clause is missing\n\nLINE 15:     AVG(CASE WHEN timeliness = 'on_time' THEN review_score END) -\n                           ^"
-    },
-    {
-      "sql": "WITH filtered AS (\n    SELECT\n        r.review_score,\n        CASE\n            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 'late'\n            ELSE 'on_time'\n        END AS timeliness\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN f.timeliness = 'on_time' THEN f.review_score END) -\n    AVG(CASE WHEN f.timeliness = 'late' THEN f.review_score END) AS avg_score_difference\nFROM filtered f",
+      "sql": "WITH delivered AS (\n    SELECT\n        o.order_id,\n        r.review_score,\n        o.order_delivered_customer_date,\n        o.order_estimated_delivery_date,\n        CASE\n            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 'late'\n            ELSE 'on_time'\n        END AS timeliness\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN timeliness = 'on_time' THEN review_score END) -\n    AVG(CASE WHEN timeliness = 'late' THEN review_score END) AS avg_score_diff\nFROM delivered",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH filtered AS (\n    SELECT\n        r.review_score,\n        CASE\n            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 'late'\n            ELSE 'on_time'\n        END AS timeliness\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN f.timeliness = 'on_time' THEN f.review_score END) -\n    AVG(CASE WHEN f.timeliness = 'late' THEN f.review_score END) AS avg_score_difference\nFROM filtered f",
+      "sql": "WITH delivered AS (\n    SELECT\n        o.order_id,\n        r.review_score,\n        o.order_delivered_customer_date,\n        o.order_estimated_delivery_date,\n        CASE\n            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 'late'\n            ELSE 'on_time'\n        END AS timeliness\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN timeliness = 'on_time' THEN review_score END) -\n    AVG(CASE WHEN timeliness = 'late' THEN review_score END) AS avg_score_diff\nFROM delivered",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
@@ -38,7 +34,7 @@
           "status": "match"
         },
         {
-          "requirement": "Ignore orders without delivery date",
+          "requirement": "Ignore orders without a delivery date",
           "sql": "AND o.order_delivered_customer_date IS NOT NULL AND o.order_estimated_delivery_date IS NOT NULL",
           "status": "match"
         },
@@ -49,28 +45,24 @@
         },
         {
           "requirement": "Calculate average review score for on-time orders",
-          "sql": "AVG(CASE WHEN f.timeliness = 'on_time' THEN f.review_score END)",
+          "sql": "AVG(CASE WHEN timeliness = 'on_time' THEN review_score END)",
           "status": "match"
         },
         {
           "requirement": "Calculate average review score for late orders",
-          "sql": "AVG(CASE WHEN f.timeliness = 'late' THEN f.review_score END)",
+          "sql": "AVG(CASE WHEN timeliness = 'late' THEN review_score END)",
           "status": "match"
         },
         {
           "requirement": "Return difference (on-time minus late)",
-          "sql": "AVG(...) - AVG(...) AS avg_score_difference",
+          "sql": "AVG(...) - AVG(...) AS avg_score_diff",
           "status": "match"
         }
       ],
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH filtered AS (\n    SELECT\n        r.review_score,\n        CASE\n            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 'late'\n            ELSE 'on_time'\n        END AS timeliness\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN timeliness = 'on_time' THEN review_score END) -\n    AVG(CASE WHEN timeliness = 'late' THEN review_score END) AS avg_score_difference",
-          "error": "BinderException: Binder Error: Referenced column \"timeliness\" was not found because the FROM clause is missing\n\nLINE 15:     AVG(CASE WHEN timeliness = 'on_time' THEN review_score END) -\n                           ^"
-        },
-        {
-          "sql": "WITH filtered AS (\n    SELECT\n        r.review_score,\n        CASE\n            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 'late'\n            ELSE 'on_time'\n        END AS timeliness\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN f.timeliness = 'on_time' THEN f.review_score END) -\n    AVG(CASE WHEN f.timeliness = 'late' THEN f.review_score END) AS avg_score_difference\nFROM filtered f",
+          "sql": "WITH delivered AS (\n    SELECT\n        o.order_id,\n        r.review_score,\n        o.order_delivered_customer_date,\n        o.order_estimated_delivery_date,\n        CASE\n            WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date THEN 'late'\n            ELSE 'on_time'\n        END AS timeliness\n    FROM orders o\n    JOIN reviews r ON r.order_id = o.order_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n)\nSELECT\n    AVG(CASE WHEN timeliness = 'on_time' THEN review_score END) -\n    AVG(CASE WHEN timeliness = 'late' THEN review_score END) AS avg_score_diff\nFROM delivered",
           "error": null
         }
       ],
@@ -82,7 +74,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 14.42,
+      "seconds": 11.34,
       "calls": []
     }
   ]

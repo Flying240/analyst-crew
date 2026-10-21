@@ -3,18 +3,18 @@
   "question": "How many delivered orders arrived on time (on or before the estimated delivery date)?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3036,
-    "completion": 451
+    "prompt": 3030,
+    "completion": 440
   },
   "sql": "SELECT COUNT(*) AS delivered_on_time_count\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date <= order_estimated_delivery_date",
   "error": null,
-  "plan": "- Count orders where order_status = 'delivered'.\n- Filter to rows where order_delivered_customer_date is on or before order_estimated_delivery_date.\n- Use the orders table columns: order_status, order_delivered_customer_date, order_estimated_delivery_date.\n- No joins required.\n- Aggregate with COUNT(*) to get a single numeric result.",
+  "plan": "- Count orders where order_status = 'delivered' and order_delivered_customer_date <= order_estimated_delivery_date; - Use the orders table and its columns order_status, order_delivered_customer_date, order_estimated_delivery_date; - No additional filters; - Aggregate with COUNT(*) to get a single numeric result.",
   "attempts": [
     {
       "sql": "SELECT COUNT(*) AS delivered_on_time_count\nFROM orders\nWHERE order_status = 'delivered'\n  AND order_delivered_customer_date <= order_estimated_delivery_date",
@@ -64,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 15.39,
+      "seconds": 18.33,
       "calls": []
     }
   ]

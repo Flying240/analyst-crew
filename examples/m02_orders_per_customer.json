@@ -3,56 +3,56 @@
   "question": "On average, how many orders does each unique customer place?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3057,
-    "completion": 488
+    "prompt": 3048,
+    "completion": 462
   },
-  "sql": "WITH cust_orders AS (\n    SELECT c.customer_unique_id, COUNT(*) AS orders_cnt\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT AVG(orders_cnt) AS avg_orders_per_unique_customer\nFROM cust_orders",
+  "sql": "WITH orders_per_customer AS (\n    SELECT c.customer_unique_id, COUNT(o.order_id) AS order_cnt\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT AVG(order_cnt) AS avg_orders_per_unique_customer\nFROM orders_per_customer",
   "error": null,
-  "plan": "- Join orders to customers on customer_id to get customer_unique_id for each order.\n- Group by customer_unique_id and count orders per customer.\n- Compute the average of these order counts across all customers.\n- No additional filters needed.\n- Return a single numeric value representing the average orders per unique customer.",
+  "plan": "- Join orders to customers on customer_id to get customer_unique_id for each order.\n- Group by customer_unique_id and count orders per customer.\n- Compute the average of these per\u2011customer order counts.\n- No additional filters are required.",
   "attempts": [
     {
-      "sql": "WITH cust_orders AS (\n    SELECT c.customer_unique_id, COUNT(*) AS orders_cnt\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT AVG(orders_cnt) AS avg_orders_per_unique_customer\nFROM cust_orders",
+      "sql": "WITH orders_per_customer AS (\n    SELECT c.customer_unique_id, COUNT(o.order_id) AS order_cnt\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT AVG(order_cnt) AS avg_orders_per_unique_customer\nFROM orders_per_customer",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH cust_orders AS (\n    SELECT c.customer_unique_id, COUNT(*) AS orders_cnt\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT AVG(orders_cnt) AS avg_orders_per_unique_customer\nFROM cust_orders",
+      "sql": "WITH orders_per_customer AS (\n    SELECT c.customer_unique_id, COUNT(o.order_id) AS order_cnt\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT AVG(order_cnt) AS avg_orders_per_unique_customer\nFROM orders_per_customer",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
         {
           "requirement": "Count orders per unique customer",
-          "sql": "COUNT(*) AS orders_cnt ... GROUP BY c.customer_unique_id",
+          "sql": "COUNT(o.order_id) ... GROUP BY c.customer_unique_id",
           "status": "match"
         },
         {
-          "requirement": "Calculate average of these counts",
-          "sql": "AVG(orders_cnt)",
+          "requirement": "Calculate average of those counts",
+          "sql": "AVG(order_cnt)",
           "status": "match"
         },
         {
           "requirement": "Use customer_unique_id for customer identity",
-          "sql": "JOIN customers c ON o.customer_id = c.customer_id ... GROUP BY c.customer_unique_id",
+          "sql": "JOIN customers c ON o.customer_id = c.customer_id",
           "status": "match"
         },
         {
-          "requirement": "No specific status filter requested",
-          "sql": "FROM orders o",
+          "requirement": "No specific date or status filters requested",
+          "sql": "None applied",
           "status": "match"
         }
       ],
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH cust_orders AS (\n    SELECT c.customer_unique_id, COUNT(*) AS orders_cnt\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT AVG(orders_cnt) AS avg_orders_per_unique_customer\nFROM cust_orders",
+          "sql": "WITH orders_per_customer AS (\n    SELECT c.customer_unique_id, COUNT(o.order_id) AS order_cnt\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    GROUP BY c.customer_unique_id\n)\nSELECT AVG(order_cnt) AS avg_orders_per_unique_customer\nFROM orders_per_customer",
           "error": null
         }
       ],
@@ -64,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 22.61,
+      "seconds": 10.06,
       "calls": []
     }
   ]

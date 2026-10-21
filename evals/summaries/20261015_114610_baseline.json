@@ -36,12 +36,16 @@
     "mean_completion": 544.0
   },
   "critic": null,
+  "round1": null,
+  "tokens_by_model": null,
+  "critic_model": null,
   "questions": [
     {
       "id": "m11_null_category_products",
       "difficulty": "medium",
       "split": "dev",
       "passed": false,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.88,
       "tokens": {
@@ -55,6 +59,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": false,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 7.17,
       "tokens": {
@@ -68,6 +73,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 6.66,
       "tokens": {
@@ -81,6 +87,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 7.09,
       "tokens": {
@@ -94,6 +101,7 @@
       "difficulty": "medium",
       "split": "dev",
       "passed": false,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.18,
       "tokens": {

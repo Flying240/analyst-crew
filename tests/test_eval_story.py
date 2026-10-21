@@ -42,9 +42,23 @@ def test_always_failed_is_the_intersection(tmp_path):
     assert eval_story.always_failed(runs) == ["q02"]
 
 
-def test_committed_summaries_match_known_failure():
+def test_graph_rows_use_round1_and_drop_critic_tokens(tmp_path):
+    run = summary("src.graph:answer+gate+critic", 48, "graph_critic_50q_runs")
+    run["round1"] = {"score": 47, "total": 50, "infra_errors": 0}
+    run["tokens"] = {"questions": 50, "mean_prompt": 3000, "mean_completion": 1000}
+    run["critic_model"] = "critic-m"
+    run["tokens_by_model"] = {"data-m": {"prompt": 100000, "completion": 25000}, "critic-m": {"prompt": 70000, "completion": 5000}}
+    rows = {r["step"]: r for r in eval_story.ladder(write(tmp_path, [run]))}
+    assert rows["Multi-agent graph"]["mean score %"] == 94.0 and rows["Multi-agent graph"]["tokens / question"] == 2500
+    assert rows["Graph + Critic"]["mean score %"] == 96.0 and rows["Graph + Critic"]["tokens / question"] == 4000
+
+
+def test_committed_summaries_match_known_failures():
     runs = eval_story.load_summaries()
-    assert "m19_avg_freight_per_order" in eval_story.always_failed(runs)
+    rows = {r["step"]: r for r in eval_story.ladder(runs)}
+    assert rows["Multi-agent graph"]["runs"] >= 2 and rows["Graph + Critic"]["runs"] >= 2
+    # m19 failed every baseline-family run; the graph passes it, so no question fails every run.
+    assert "m19_avg_freight_per_order" not in eval_story.always_failed(runs)
     assert all(q in eval_story.question_text() for q in eval_story.FAILURE_NOTES)
 
 

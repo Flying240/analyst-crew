@@ -3,18 +3,18 @@
   "question": "Which 5 states have the most unique customers?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3059,
-    "completion": 391
+    "prompt": 3044,
+    "completion": 373
   },
   "sql": "SELECT\n    c.customer_state,\n    COUNT(DISTINCT c.customer_unique_id) AS unique_customers\nFROM customers AS c\nGROUP BY c.customer_state\nORDER BY unique_customers DESC\nLIMIT 5",
   "error": null,
-  "plan": "- Count distinct customer_unique_id per state to get number of unique customers per state.\n- Use the customers table, selecting customer_state and customer_unique_id.\n- No additional filters needed.\n- Group by customer_state.\n- Order the results by the count descending.\n- Limit the output to the top 5 states.",
+  "plan": "\u2022 Count distinct customer_unique_id per state from the customers table; \u2022 Use the customer_state column for grouping; \u2022 No additional filters needed; \u2022 Order the results by the count descending; \u2022 Limit the output to the top 5 states.",
   "attempts": [
     {
       "sql": "SELECT\n    c.customer_state,\n    COUNT(DISTINCT c.customer_unique_id) AS unique_customers\nFROM customers AS c\nGROUP BY c.customer_state\nORDER BY unique_customers DESC\nLIMIT 5",
@@ -64,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 15.97,
+      "seconds": 16.19,
       "calls": []
     }
   ]

@@ -3,28 +3,28 @@
   "question": "What is the revenue from delivered orders that received at least one 5-star review?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3125,
-    "completion": 571
+    "prompt": 3144,
+    "completion": 573
   },
-  "sql": "WITH delivered AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n),\nreviewed AS (\n    SELECT DISTINCT r.order_id\n    FROM reviews r\n    WHERE r.review_score = 5\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue\nFROM order_items oi\nJOIN delivered d ON oi.order_id = d.order_id\nJOIN reviewed r ON oi.order_id = r.order_id",
+  "sql": "WITH delivered AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n),\nreviewed AS (\n    SELECT DISTINCT r.order_id\n    FROM reviews r\n    WHERE r.review_score = 5\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue\nFROM order_items oi\nJOIN delivered d ON oi.order_id = d.order_id\nJOIN reviewed rev ON oi.order_id = rev.order_id",
   "error": null,
-  "plan": "\u2022 Identify delivered orders where order_status = 'delivered' in orders. \u2022 Join reviews on order_id and keep orders that have at least one review with review_score = 5. \u2022 Join order_items to those orders and compute revenue as price + freight_value for each item. \u2022 Sum the revenue across all qualifying items to get the total revenue.",
+  "plan": "- Identify delivered orders (order_status = 'delivered') from orders.\n- Join reviews to orders on order_id and keep orders that have at least one review with review_score = 5.\n- Join order_items to those orders on order_id to get price and freight_value.\n- Compute revenue as price + freight_value for each order item.\n- Sum the revenue across all qualifying order items.\n- Return a single numeric value representing total revenue.",
   "attempts": [
     {
-      "sql": "WITH delivered AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n),\nreviewed AS (\n    SELECT DISTINCT r.order_id\n    FROM reviews r\n    WHERE r.review_score = 5\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue\nFROM order_items oi\nJOIN delivered d ON oi.order_id = d.order_id\nJOIN reviewed r ON oi.order_id = r.order_id",
+      "sql": "WITH delivered AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n),\nreviewed AS (\n    SELECT DISTINCT r.order_id\n    FROM reviews r\n    WHERE r.review_score = 5\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue\nFROM order_items oi\nJOIN delivered d ON oi.order_id = d.order_id\nJOIN reviewed rev ON oi.order_id = rev.order_id",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH delivered AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n),\nreviewed AS (\n    SELECT DISTINCT r.order_id\n    FROM reviews r\n    WHERE r.review_score = 5\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue\nFROM order_items oi\nJOIN delivered d ON oi.order_id = d.order_id\nJOIN reviewed r ON oi.order_id = r.order_id",
+      "sql": "WITH delivered AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n),\nreviewed AS (\n    SELECT DISTINCT r.order_id\n    FROM reviews r\n    WHERE r.review_score = 5\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue\nFROM order_items oi\nJOIN delivered d ON oi.order_id = d.order_id\nJOIN reviewed rev ON oi.order_id = rev.order_id",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
@@ -40,7 +40,7 @@
         },
         {
           "requirement": "Orders with at least one 5-star review",
-          "sql": "JOIN reviewed r ON oi.order_id = r.order_id ... WHERE r.review_score = 5",
+          "sql": "JOIN reviewed rev ON oi.order_id = rev.order_id ... WHERE r.review_score = 5",
           "status": "match"
         },
         {
@@ -52,7 +52,7 @@
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH delivered AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n),\nreviewed AS (\n    SELECT DISTINCT r.order_id\n    FROM reviews r\n    WHERE r.review_score = 5\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue\nFROM order_items oi\nJOIN delivered d ON oi.order_id = d.order_id\nJOIN reviewed r ON oi.order_id = r.order_id",
+          "sql": "WITH delivered AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n),\nreviewed AS (\n    SELECT DISTINCT r.order_id\n    FROM reviews r\n    WHERE r.review_score = 5\n)\nSELECT SUM(oi.price + oi.freight_value) AS revenue\nFROM order_items oi\nJOIN delivered d ON oi.order_id = d.order_id\nJOIN reviewed rev ON oi.order_id = rev.order_id",
           "error": null
         }
       ],
@@ -64,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 12.16,
+      "seconds": 13.68,
       "calls": []
     }
   ]

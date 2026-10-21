@@ -3,49 +3,44 @@
   "question": "What is the total revenue of the health_beauty category?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3138,
-    "completion": 606
+    "prompt": 3140,
+    "completion": 556
   },
-  "sql": "WITH delivered AS (\n    SELECT oi.price, oi.freight_value, p.product_category_name\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n)\nSELECT SUM(price + freight_value) AS total_revenue\nFROM delivered",
+  "sql": "WITH delivered AS (\n    SELECT oi.price, oi.freight_value, p.product_category_name\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    JOIN products p ON oi.product_id = p.product_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT SUM(d.price + d.freight_value) AS total_revenue\nFROM delivered d\nJOIN category_translation ct\n  ON d.product_category_name = ct.product_category_name\nWHERE ct.product_category_name_english = 'health_beauty'",
   "error": null,
-  "plan": "- Identify order items linked to delivered orders (order_status = 'delivered').\n- Join order_items to orders to filter by delivery status.\n- Join order_items to products to get product_category_name.\n- Join products to category_translation to map to English category names.\n- Filter rows where the English category name equals 'health_beauty'.\n- Compute revenue as price + freight_value for each qualifying order item.\n- Sum the revenue across all qualifying rows to get the total.",
+  "plan": "- Identify order items linked to delivered orders (order_status = 'delivered').\n- Join order_items to orders to filter by delivery status.\n- Join order_items to products to get product_category_name.\n- Join products to category_translation to map to English category names.\n- Filter rows where the English category name equals 'health_beauty'.\n- For each remaining row, compute revenue as price + freight_value.\n- Sum the revenue across all rows to get the total.",
   "attempts": [
     {
-      "sql": "WITH delivered AS (\n    SELECT oi.price, oi.freight_value, p.product_category_name\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n)\nSELECT SUM(price + freight_value) AS total_revenue\nFROM delivered",
+      "sql": "WITH delivered AS (\n    SELECT oi.price, oi.freight_value, p.product_category_name\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    JOIN products p ON oi.product_id = p.product_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT SUM(d.price + d.freight_value) AS total_revenue\nFROM delivered d\nJOIN category_translation ct\n  ON d.product_category_name = ct.product_category_name\nWHERE ct.product_category_name_english = 'health_beauty'",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH delivered AS (\n    SELECT oi.price, oi.freight_value, p.product_category_name\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n)\nSELECT SUM(price + freight_value) AS total_revenue\nFROM delivered",
+      "sql": "WITH delivered AS (\n    SELECT oi.price, oi.freight_value, p.product_category_name\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    JOIN products p ON oi.product_id = p.product_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT SUM(d.price + d.freight_value) AS total_revenue\nFROM delivered d\nJOIN category_translation ct\n  ON d.product_category_name = ct.product_category_name\nWHERE ct.product_category_name_english = 'health_beauty'",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
         {
           "requirement": "Calculate total revenue",
-          "sql": "SUM(price + freight_value)",
+          "sql": "SUM(d.price + d.freight_value)",
           "status": "match"
         },
         {
-          "requirement": "Filter for delivered orders",
+          "requirement": "Filter for delivered orders only",
           "sql": "WHERE o.order_status = 'delivered'",
           "status": "match"
         },
         {
           "requirement": "Filter for health_beauty category",
-          "sql": "ct.product_category_name_english = 'health_beauty'",
-          "status": "match"
-        },
-        {
-          "requirement": "Join items to orders and products",
-          "sql": "JOIN orders o ... JOIN products p ...",
+          "sql": "WHERE ct.product_category_name_english = 'health_beauty'",
           "status": "match"
         },
         {
@@ -57,7 +52,7 @@
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH delivered AS (\n    SELECT oi.price, oi.freight_value, p.product_category_name\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n)\nSELECT SUM(price + freight_value) AS total_revenue\nFROM delivered",
+          "sql": "WITH delivered AS (\n    SELECT oi.price, oi.freight_value, p.product_category_name\n    FROM order_items oi\n    JOIN orders o ON oi.order_id = o.order_id\n    JOIN products p ON oi.product_id = p.product_id\n    WHERE o.order_status = 'delivered'\n)\nSELECT SUM(d.price + d.freight_value) AS total_revenue\nFROM delivered d\nJOIN category_translation ct\n  ON d.product_category_name = ct.product_category_name\nWHERE ct.product_category_name_english = 'health_beauty'",
           "error": null
         }
       ],
@@ -69,7 +64,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 17.55,
+      "seconds": 9.9,
       "calls": []
     }
   ]

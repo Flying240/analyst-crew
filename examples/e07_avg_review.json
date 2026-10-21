@@ -3,28 +3,28 @@
   "question": "What is the average review score?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 2964,
-    "completion": 294
+    "prompt": 2963,
+    "completion": 289
   },
-  "sql": "SELECT AVG(review_score) AS average_review_score\nFROM reviews",
+  "sql": "SELECT AVG(review_score) AS average_review_score FROM reviews",
   "error": null,
   "plan": "- Use the reviews table; column review_score holds the scores.\n- No additional filters are required.\n- Compute the average of review_score across all rows.\n- Return a single numeric value.",
   "attempts": [
     {
-      "sql": "SELECT AVG(review_score) AS average_review_score\nFROM reviews",
+      "sql": "SELECT AVG(review_score) AS average_review_score FROM reviews",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "SELECT AVG(review_score) AS average_review_score\nFROM reviews",
+      "sql": "SELECT AVG(review_score) AS average_review_score FROM reviews",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
@@ -39,7 +39,7 @@
           "status": "match"
         },
         {
-          "requirement": "No specific filters requested (e.g., delivered only, date range)",
+          "requirement": "No specific filters requested",
           "sql": "None",
           "status": "match"
         }
@@ -47,7 +47,7 @@
       "parse_error": false,
       "attempts": [
         {
-          "sql": "SELECT AVG(review_score) AS average_review_score\nFROM reviews",
+          "sql": "SELECT AVG(review_score) AS average_review_score FROM reviews",
           "error": null
         }
       ],
@@ -59,7 +59,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 15.67,
+      "seconds": 15.52,
       "calls": []
     }
   ]

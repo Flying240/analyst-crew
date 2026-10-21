@@ -3,66 +3,61 @@
   "question": "By what percentage (0-100 scale) did revenue for January-August 2018 grow compared with January-August 2017?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3426,
-    "completion": 897
+    "prompt": 3424,
+    "completion": 813
   },
-  "sql": "WITH rev AS (\n    SELECT\n        CASE\n            WHEN o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01' THEN 2017\n            WHEN o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01' THEN 2018\n        END AS yr,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND (\n          (o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01')\n          OR\n          (o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01')\n      )\n    GROUP BY yr\n)\nSELECT\n    ROUND(((rev_2018.revenue - rev_2017.revenue) / rev_2017.revenue) * 100, 2) AS growth_pct\nFROM\n    (SELECT revenue FROM rev WHERE yr = 2017) rev_2017,\n    (SELECT revenue FROM rev WHERE yr = 2018) rev_2018",
+  "sql": "WITH rev AS (\n    SELECT\n        CASE\n            WHEN o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01' THEN 2017\n            WHEN o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01' THEN 2018\n        END AS yr,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND (\n          (o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01')\n          OR\n          (o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01')\n      )\n    GROUP BY yr\n)\nSELECT\n    ROUND(((r2018.revenue - r2017.revenue) / r2017.revenue) * 100, 2) AS revenue_growth_percent\nFROM rev r2017\nJOIN rev r2018 ON r2018.yr = 2018\nWHERE r2017.yr = 2017",
   "error": null,
   "plan": "- Filter orders with order_status = 'delivered' and order_purchase_timestamp between 2017-01-01 and 2017-08-31 or between 2018-01-01 and 2018-08-31.\n- Join orders to order_items to get price and freight_value.\n- Compute revenue as price + freight_value for each order item.\n- Aggregate revenue separately for 2017 and 2018 periods.\n- Calculate growth percentage as (revenue_2018 - revenue_2017) / revenue_2017 * 100.",
   "attempts": [
     {
-      "sql": "WITH rev AS (\n    SELECT\n        CASE\n            WHEN o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01' THEN 2017\n            WHEN o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01' THEN 2018\n        END AS yr,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND (\n          (o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01')\n          OR\n          (o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01')\n      )\n    GROUP BY yr\n)\nSELECT\n    ROUND(((rev_2018.revenue - rev_2017.revenue) / rev_2017.revenue) * 100, 2) AS growth_pct\nFROM\n    (SELECT revenue FROM rev WHERE yr = 2017) rev_2017,\n    (SELECT revenue FROM rev WHERE yr = 2018) rev_2018",
+      "sql": "WITH rev AS (\n    SELECT\n        CASE\n            WHEN o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01' THEN 2017\n            WHEN o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01' THEN 2018\n        END AS yr,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND (\n          (o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01')\n          OR\n          (o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01')\n      )\n    GROUP BY yr\n)\nSELECT\n    ROUND(((r2018.revenue - r2017.revenue) / r2017.revenue) * 100, 2) AS revenue_growth_percent\nFROM rev r2017\nJOIN rev r2018 ON r2018.yr = 2018\nWHERE r2017.yr = 2017",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH rev AS (\n    SELECT\n        CASE\n            WHEN o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01' THEN 2017\n            WHEN o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01' THEN 2018\n        END AS yr,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND (\n          (o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01')\n          OR\n          (o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01')\n      )\n    GROUP BY yr\n)\nSELECT\n    ROUND(((rev_2018.revenue - rev_2017.revenue) / rev_2017.revenue) * 100, 2) AS growth_pct\nFROM\n    (SELECT revenue FROM rev WHERE yr = 2017) rev_2017,\n    (SELECT revenue FROM rev WHERE yr = 2018) rev_2018",
+      "sql": "WITH rev AS (\n    SELECT\n        CASE\n            WHEN o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01' THEN 2017\n            WHEN o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01' THEN 2018\n        END AS yr,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND (\n          (o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01')\n          OR\n          (o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01')\n      )\n    GROUP BY yr\n)\nSELECT\n    ROUND(((r2018.revenue - r2017.revenue) / r2017.revenue) * 100, 2) AS revenue_growth_percent\nFROM rev r2017\nJOIN rev r2018 ON r2018.yr = 2018\nWHERE r2017.yr = 2017",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
         {
-          "requirement": "Revenue definition (price + freight_value)",
+          "requirement": "Calculate revenue growth percentage for Jan-Aug 2018 vs Jan-Aug 2017",
+          "sql": "ROUND(((r2018.revenue - r2017.revenue) / r2017.revenue) * 100, 2)",
+          "status": "match"
+        },
+        {
+          "requirement": "Revenue defined as price + freight_value",
           "sql": "SUM(oi.price + oi.freight_value)",
           "status": "match"
         },
         {
-          "requirement": "Delivered orders only",
+          "requirement": "Filter for delivered orders only",
           "sql": "WHERE o.order_status = 'delivered'",
           "status": "match"
         },
         {
-          "requirement": "Time period Jan-Aug 2017",
+          "requirement": "Time period Jan-Aug 2017 and Jan-Aug 2018",
           "sql": "o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01'",
           "status": "match"
         },
         {
-          "requirement": "Time period Jan-Aug 2018",
-          "sql": "o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01'",
-          "status": "match"
-        },
-        {
-          "requirement": "Percentage growth calculation",
-          "sql": "ROUND(((rev_2018.revenue - rev_2017.revenue) / rev_2017.revenue) * 100, 2)",
-          "status": "match"
-        },
-        {
-          "requirement": "Single row output",
-          "sql": "SELECT ... FROM (SELECT ... WHERE yr = 2017), (SELECT ... WHERE yr = 2018)",
+          "requirement": "Return single numeric value (percentage)",
+          "sql": "SELECT ... AS revenue_growth_percent",
           "status": "match"
         }
       ],
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH rev AS (\n    SELECT\n        CASE\n            WHEN o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01' THEN 2017\n            WHEN o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01' THEN 2018\n        END AS yr,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND (\n          (o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01')\n          OR\n          (o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01')\n      )\n    GROUP BY yr\n)\nSELECT\n    ROUND(((rev_2018.revenue - rev_2017.revenue) / rev_2017.revenue) * 100, 2) AS growth_pct\nFROM\n    (SELECT revenue FROM rev WHERE yr = 2017) rev_2017,\n    (SELECT revenue FROM rev WHERE yr = 2018) rev_2018",
+          "sql": "WITH rev AS (\n    SELECT\n        CASE\n            WHEN o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01' THEN 2017\n            WHEN o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01' THEN 2018\n        END AS yr,\n        SUM(oi.price + oi.freight_value) AS revenue\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    WHERE o.order_status = 'delivered'\n      AND (\n          (o.order_purchase_timestamp >= DATE '2017-01-01' AND o.order_purchase_timestamp < DATE '2017-09-01')\n          OR\n          (o.order_purchase_timestamp >= DATE '2018-01-01' AND o.order_purchase_timestamp < DATE '2018-09-01')\n      )\n    GROUP BY yr\n)\nSELECT\n    ROUND(((r2018.revenue - r2017.revenue) / r2017.revenue) * 100, 2) AS revenue_growth_percent\nFROM rev r2017\nJOIN rev r2018 ON r2018.yr = 2018\nWHERE r2017.yr = 2017",
           "error": null
         }
       ],
@@ -74,7 +69,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 11.81,
+      "seconds": 16.7,
       "calls": []
     }
   ]

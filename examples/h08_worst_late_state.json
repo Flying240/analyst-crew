@@ -3,18 +3,18 @@
   "question": "Among customer states with at least 1000 delivered orders with a known delivery date, which state has the highest share of late deliveries (delivered after the estimated date)?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3302,
-    "completion": 663
+    "prompt": 3310,
+    "completion": 669
   },
   "sql": "WITH delivered AS (\n    SELECT\n        o.order_id,\n        c.customer_state,\n        o.order_delivered_customer_date,\n        o.order_estimated_delivery_date\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n),\nstate_counts AS (\n    SELECT\n        customer_state,\n        COUNT(*) AS total_orders,\n        SUM(CASE WHEN order_delivered_customer_date > order_estimated_delivery_date THEN 1 ELSE 0 END) AS late_orders\n    FROM delivered\n    GROUP BY customer_state\n    HAVING COUNT(*) >= 1000\n)\nSELECT\n    customer_state,\n    late_orders::DOUBLE / total_orders AS late_share\nFROM state_counts\nORDER BY late_share DESC\nLIMIT 1",
   "error": null,
-  "plan": "- Filter orders to delivered status and non\u2011null delivery and estimated dates; join to customers on customer_id to get customer_state.\n- Group by customer_state and count total delivered orders per state.\n- Within each state, count orders where order_delivered_customer_date > order_estimated_delivery_date to get late deliveries.\n- Keep only states with total delivered orders >= 1000.\n- Compute late delivery share as late_count / total_count per state.\n- Select the state with the maximum late delivery share.",
+  "plan": "- Filter orders to those with order_status = 'delivered' and non\u2011null order_delivered_customer_date and order_estimated_delivery_date.\n- Join orders to customers on customer_id to get customer_state.\n- Group by customer_state and count total delivered orders per state.\n- Compute late deliveries per state where order_delivered_customer_date > order_estimated_delivery_date.\n- Keep states with total delivered orders >= 1000.\n- Calculate late share as late_count / total_count per state.\n- Select the state with the maximum late share.",
   "attempts": [
     {
       "sql": "WITH delivered AS (\n    SELECT\n        o.order_id,\n        c.customer_state,\n        o.order_delivered_customer_date,\n        o.order_estimated_delivery_date\n    FROM orders o\n    JOIN customers c ON o.customer_id = c.customer_id\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n),\nstate_counts AS (\n    SELECT\n        customer_state,\n        COUNT(*) AS total_orders,\n        SUM(CASE WHEN order_delivered_customer_date > order_estimated_delivery_date THEN 1 ELSE 0 END) AS late_orders\n    FROM delivered\n    GROUP BY customer_state\n    HAVING COUNT(*) >= 1000\n)\nSELECT\n    customer_state,\n    late_orders::DOUBLE / total_orders AS late_share\nFROM state_counts\nORDER BY late_share DESC\nLIMIT 1",
@@ -69,7 +69,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 12.7,
+      "seconds": 15.22,
       "calls": []
     }
   ]

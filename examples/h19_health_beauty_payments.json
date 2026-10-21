@@ -3,64 +3,61 @@
   "question": "What is the total amount paid for delivered orders that contain at least one health_beauty product?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 4272,
-    "completion": 783
+    "prompt": 3184,
+    "completion": 706
   },
-  "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n    GROUP BY o.order_id\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+  "sql": "WITH health_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'health_beauty'\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_amount_paid\nFROM order_items oi\nJOIN orders o ON oi.order_id = o.order_id\nWHERE o.order_status = 'delivered'\n  AND oi.order_id IN (SELECT order_id FROM health_orders)",
   "error": null,
-  "plan": "- Identify order IDs of delivered orders (order_status = 'delivered') that have at least one item whose product's category (via products and category_translation) is 'health_beauty'.\n- From order_items, compute revenue per item as price + freight_value.\n- Sum revenue for all items belonging to the identified order IDs.\n- No additional grouping needed; return a single total value.",
+  "plan": "- Identify delivered orders (order_status = 'delivered') from orders.\n- Join order_items to orders on order_id.\n- Join products to order_items on product_id and then join category_translation to get the English category name.\n- Filter rows where the English category name equals 'health_beauty'.\n- Determine the set of order_id values that have at least one health_beauty product.\n- Sum revenue (price + freight_value) from order_items for all items belonging to those order_id values.\n- Return a single numeric total.",
   "attempts": [
     {
-      "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n    GROUP BY o.order_id\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders do ON oi.order_id = do.order_id",
-      "error": "ParserException: Parser Error: syntax error at or near \"do\"\n\nLINE 13: JOIN delivered_orders do ON oi.order_id = do.order_id\n                               ^"
-    },
-    {
-      "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n    GROUP BY o.order_id\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+      "sql": "WITH health_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'health_beauty'\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_amount_paid\nFROM order_items oi\nJOIN orders o ON oi.order_id = o.order_id\nWHERE o.order_status = 'delivered'\n  AND oi.order_id IN (SELECT order_id FROM health_orders)",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n    GROUP BY o.order_id\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+      "sql": "WITH health_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'health_beauty'\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_amount_paid\nFROM order_items oi\nJOIN orders o ON oi.order_id = o.order_id\nWHERE o.order_status = 'delivered'\n  AND oi.order_id IN (SELECT order_id FROM health_orders)",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
         {
+          "requirement": "Sum revenue (price + freight_value)",
+          "sql": "SUM(oi.price + oi.freight_value)",
+          "status": "match"
+        },
+        {
           "requirement": "Filter for delivered orders",
-          "sql": "WHERE o.order_status = 'delivered'",
+          "sql": "o.order_status = 'delivered'",
           "status": "match"
         },
         {
-          "requirement": "Identify orders containing at least one health_beauty product",
-          "sql": "JOIN category_translation ct ... AND ct.product_category_name_english = 'health_beauty' ... GROUP BY o.order_id",
+          "requirement": "Filter for orders containing health_beauty products",
+          "sql": "oi.order_id IN (SELECT order_id FROM health_orders)",
           "status": "match"
         },
         {
-          "requirement": "Calculate total amount paid (revenue) for those orders",
-          "sql": "SELECT SUM(oi.price + oi.freight_value) ... FROM order_items oi JOIN delivered_orders d ON oi.order_id = d.order_id",
+          "requirement": "Identify health_beauty category",
+          "sql": "ct.product_category_name_english = 'health_beauty'",
           "status": "match"
         },
         {
-          "requirement": "Return single numeric value",
-          "sql": "SELECT SUM(...) AS total_paid",
+          "requirement": "Return single total value",
+          "sql": "SELECT SUM(...)",
           "status": "match"
         }
       ],
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n    GROUP BY o.order_id\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders do ON oi.order_id = do.order_id",
-          "error": "ParserException: Parser Error: syntax error at or near \"do\"\n\nLINE 13: JOIN delivered_orders do ON oi.order_id = do.order_id\n                               ^"
-        },
-        {
-          "sql": "WITH delivered_orders AS (\n    SELECT o.order_id\n    FROM orders o\n    JOIN order_items oi USING (order_id)\n    JOIN products p USING (product_id)\n    JOIN category_translation ct USING (product_category_name)\n    WHERE o.order_status = 'delivered'\n      AND ct.product_category_name_english = 'health_beauty'\n    GROUP BY o.order_id\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_paid\nFROM order_items oi\nJOIN delivered_orders d ON oi.order_id = d.order_id",
+          "sql": "WITH health_orders AS (\n    SELECT DISTINCT oi.order_id\n    FROM order_items oi\n    JOIN products p ON oi.product_id = p.product_id\n    JOIN category_translation ct ON p.product_category_name = ct.product_category_name\n    WHERE ct.product_category_name_english = 'health_beauty'\n)\nSELECT SUM(oi.price + oi.freight_value) AS total_amount_paid\nFROM order_items oi\nJOIN orders o ON oi.order_id = o.order_id\nWHERE o.order_status = 'delivered'\n  AND oi.order_id IN (SELECT order_id FROM health_orders)",
           "error": null
         }
       ],
@@ -72,7 +69,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 9.79,
+      "seconds": 12.86,
       "calls": []
     }
   ]

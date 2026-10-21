@@ -43,12 +43,16 @@
     "confirmed": 0,
     "returned": {}
   },
+  "round1": null,
+  "tokens_by_model": null,
+  "critic_model": null,
   "questions": [
     {
       "id": "m11_null_category_products",
       "difficulty": "medium",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 3.27,
       "tokens": {
@@ -62,6 +66,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": false,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 2.98,
       "tokens": {
@@ -75,6 +80,7 @@
       "difficulty": "hard",
       "split": "dev",
       "passed": true,
+      "round1_passed": null,
       "infra_error": false,
       "seconds": 1.93,
       "tokens": {

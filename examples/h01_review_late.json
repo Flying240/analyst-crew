@@ -3,28 +3,28 @@
   "question": "What is the average review score of delivered orders that arrived after the estimated delivery date?",
   "source": "eval",
   "eval_run": "graph-gate-critic-r2",
-  "created_at": "2026-10-20",
+  "created_at": "2026-10-21",
   "settings": {
     "critic": true,
     "retries": 2
   },
   "eval_tokens": {
-    "prompt": 3088,
-    "completion": 559
+    "prompt": 3132,
+    "completion": 646
   },
-  "sql": "WITH delivered AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date > o.order_estimated_delivery_date\n)\nSELECT AVG(r.review_score) AS avg_review_score\nFROM delivered d\nJOIN reviews r ON r.order_id = d.order_id",
+  "sql": "WITH delivered AS (\n    SELECT o.order_id, o.order_delivered_customer_date, o.order_estimated_delivery_date\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n      AND o.order_delivered_customer_date > o.order_estimated_delivery_date\n)\nSELECT AVG(r.review_score) AS average_review_score\nFROM delivered d\nJOIN reviews r ON r.order_id = d.order_id",
   "error": null,
-  "plan": "\u2022 Identify delivered orders where order_status = 'delivered'. \u2022 Filter those orders where order_delivered_customer_date > order_estimated_delivery_date to find late deliveries. \u2022 Join the filtered orders to the reviews table on order_id to associate review scores. \u2022 Use the review_score column from reviews. \u2022 Compute the average of review_score across all matching records.",
+  "plan": "- Identify delivered orders where order_status = 'delivered'.\n- Filter those orders to keep only ones where order_delivered_customer_date > order_estimated_delivery_date (late deliveries).\n- Join the filtered orders with the reviews table on order_id to get review_score.\n- Compute the average of review_score across the resulting set.\n- Return a single numeric value representing the average review score.",
   "attempts": [
     {
-      "sql": "WITH delivered AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date > o.order_estimated_delivery_date\n)\nSELECT AVG(r.review_score) AS avg_review_score\nFROM delivered d\nJOIN reviews r ON r.order_id = d.order_id",
+      "sql": "WITH delivered AS (\n    SELECT o.order_id, o.order_delivered_customer_date, o.order_estimated_delivery_date\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n      AND o.order_delivered_customer_date > o.order_estimated_delivery_date\n)\nSELECT AVG(r.review_score) AS average_review_score\nFROM delivered d\nJOIN reviews r ON r.order_id = d.order_id",
       "error": null
     }
   ],
   "critic_rounds": [
     {
       "round": 1,
-      "sql": "WITH delivered AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date > o.order_estimated_delivery_date\n)\nSELECT AVG(r.review_score) AS avg_review_score\nFROM delivered d\nJOIN reviews r ON r.order_id = d.order_id",
+      "sql": "WITH delivered AS (\n    SELECT o.order_id, o.order_delivered_customer_date, o.order_estimated_delivery_date\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n      AND o.order_delivered_customer_date > o.order_estimated_delivery_date\n)\nSELECT AVG(r.review_score) AS average_review_score\nFROM delivered d\nJOIN reviews r ON r.order_id = d.order_id",
       "verdict": "ok",
       "feedback": "",
       "checklist": [
@@ -34,8 +34,8 @@
           "status": "match"
         },
         {
-          "requirement": "Delivered orders",
-          "sql": "o.order_status = 'delivered'",
+          "requirement": "Delivered orders only",
+          "sql": "WHERE o.order_status = 'delivered'",
           "status": "match"
         },
         {
@@ -44,20 +44,25 @@
           "status": "match"
         },
         {
-          "requirement": "Grain: per order (reviews linked to orders)",
+          "requirement": "Join reviews to orders",
           "sql": "JOIN reviews r ON r.order_id = d.order_id",
           "status": "match"
         },
         {
+          "requirement": "Handle NULL dates correctly",
+          "sql": "IS NOT NULL checks on both dates",
+          "status": "match"
+        },
+        {
           "requirement": "No unrequested filters or joins",
-          "sql": "None",
+          "sql": "None present",
           "status": "match"
         }
       ],
       "parse_error": false,
       "attempts": [
         {
-          "sql": "WITH delivered AS (\n    SELECT o.order_id\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date > o.order_estimated_delivery_date\n)\nSELECT AVG(r.review_score) AS avg_review_score\nFROM delivered d\nJOIN reviews r ON r.order_id = d.order_id",
+          "sql": "WITH delivered AS (\n    SELECT o.order_id, o.order_delivered_customer_date, o.order_estimated_delivery_date\n    FROM orders o\n    WHERE o.order_status = 'delivered'\n      AND o.order_delivered_customer_date IS NOT NULL\n      AND o.order_estimated_delivery_date IS NOT NULL\n      AND o.order_delivered_customer_date > o.order_estimated_delivery_date\n)\nSELECT AVG(r.review_score) AS average_review_score\nFROM delivered d\nJOIN reviews r ON r.order_id = d.order_id",
           "error": null
         }
       ],
@@ -69,7 +74,7 @@
   "nodes": [
     {
       "node": "eval",
-      "seconds": 4.24,
+      "seconds": 13.09,
       "calls": []
     }
   ]
