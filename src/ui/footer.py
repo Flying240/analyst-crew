@@ -1,9 +1,9 @@
-"""Footer shown under every page. Fill in the placeholders."""
+"""Footer shown under every page."""
 import streamlit as st
 
-AUTHOR = "<your name>"
-GITHUB_URL = "https://github.com/<your-github>"
-LINKEDIN_URL = "https://www.linkedin.com/in/<your-linkedin>"
+AUTHOR = "D R Vikas"
+GITHUB_URL = "https://github.com/Flying240"
+LINKEDIN_URL = "https://www.linkedin.com/in/d-r-vikas-b1605b292/"
 
 
 def footer_text() -> str:

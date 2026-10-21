@@ -3,6 +3,8 @@
 A multi-agent AI data analyst for the [Olist Brazilian e-commerce dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), stored in DuckDB.
 The planned agents are Planner, Data (SQL), Viz (Plotly), Critic and Reporter, orchestrated with LangGraph. The LLM is Groq or Gemini, chosen in `.env`.
 
+**Live app:** https://analyst-crew.streamlit.app
+
 ## Progress
 
 | # | Step | Status |
@@ -135,6 +137,10 @@ Question gate:
 - The gate is on by default for `src.graph:answer` (`PLANNER_GATE=1`); eval results are labelled `+gate`. `--no-gate` turns it off for a run.
 - Cost: the gate instructions add about 270 prompt tokens per question to the Planner call (tiktoken o200k estimate; the Planner prompt goes from ~720 to ~990). The Planner sees only what the data lacks; the full dataset summary is used only for the meta answer. In a 5-question spot check, accuracy was unchanged (5/5).
 - `python evals/gate_eval.py` measures wrong and missed rejections on 6 answerable and 6 unanswerable cases.
+
+## Limitations
+
+- **The eval checks results, not methods.** A question passes when the SQL's result matches the gold result, so SQL that reaches the right answer by the wrong route still passes. Example, h04 (a live run on 2026-10-21, Critic off): the question asks first for the month with the biggest drop in *total* revenue, then for the category that fell most in that month. The SQL skipped the first step and returned the biggest single-category drop in any month. On this data both are bed_bath_table in 2017-12, so it passed, but only by coincidence: on other data the two can differ.
 
 ## Future improvements
 
