@@ -25,6 +25,7 @@ LADDER = [
     ("Graph + Critic", "A Critic reviews SQL that runs but may answer the wrong thing.",
      lambda r: r.get("official") == GRAPH_RUNS, False),
 ]
+FINAL_STEP = "Graph + Critic"  # the setup the app runs
 
 # Known failures, explained in general terms (no question-specific fixes in the prompts).
 FAILURE_NOTES = {
@@ -35,6 +36,13 @@ FAILURE_NOTES = {
     "m11_null_category_products": (
         "\"Products without a category\" means the category is empty (NULL). The model instead looks for categories "
         "that have no English translation, which is a different set of products."
+    ),
+    "m10_untranslated_categories": (
+        "Some products have no category at all (NULL). The model finds untranslated categories with a left join to "
+        "the translation table, and the empty category has no translation either, so it is counted as one more "
+        "untranslated category and the count is 1 too high. The Critic checks the join and the filter, finds both "
+        "match the question, and passes it. Known limitation: the Critic doesn't yet look at what NULL values do "
+        "to a count."
     ),
 }
 
@@ -81,12 +89,15 @@ def last_updated(summaries: list[dict[str, Any]]) -> str | None:
     return max(dates) if dates else None
 
 
-def always_failed(summaries: list[dict[str, Any]]) -> list[str]:
-    """Question ids that failed in every full run (infra errors don't count as failures)."""
-    runs = [r for r in full_runs(summaries) if any(match(r) for _, _, match, _ in LADDER)]
+def always_failed(summaries: list[dict[str, Any]], step: str = FINAL_STEP) -> list[str]:
+    """Question ids that failed in every full run of one ladder step (infra errors don't count as failures)."""
+    rung = next(r for r in LADDER if r[0] == step)
+    match, round1 = rung[2], rung[3]
+    runs = [r for r in full_runs(summaries) if match(r)]
     if not runs:
         return []
-    failed = [{q["id"] for q in r["questions"] if not q["passed"] and not q.get("infra_error")} for r in runs]
+    key = "round1_passed" if round1 else "passed"
+    failed = [{q["id"] for q in r["questions"] if not q[key] and not q.get("infra_error")} for r in runs]
     return sorted(set.intersection(*failed))
 
 

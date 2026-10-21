@@ -144,6 +144,7 @@ def score_tab() -> None:
 
     st.subheader("Questions that failed in every run")
     failed = eval_story.always_failed(runs)
+    st.caption(f"Over the full test runs of the setup the app uses ({eval_story.FINAL_STEP}).")
     if not failed:
         st.markdown("None: every question passed in at least one full run.")
     texts = eval_story.question_text()
@@ -153,9 +154,10 @@ def score_tab() -> None:
     if failed:
         st.markdown(
             "**Why not add a rule for each failing question?** It would teach the test: the score would go up "
-            "without the app getting better at new questions. Instead, the Critic checks the *grain* of every answer "
-            "(per order, per item or per customer), which is the general mistake behind these failures. Its effect "
-            "is measured on the held-out questions."
+            "without the app getting better at new questions. Fixes stay general instead: the Planner and the Critic "
+            "both check the *grain* of every answer (per order, per item or per customer), which is how the average "
+            "freight per order, failed by every single-model run, started passing. Their effect is measured on the "
+            "held-out questions."
         )
 
 

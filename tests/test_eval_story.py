@@ -34,12 +34,14 @@ def test_ladder_fills_rows_that_exist(tmp_path):
     assert eval_story.last_updated(runs) == "2026-10-05"
 
 
-def test_always_failed_is_the_intersection(tmp_path):
+def test_always_failed_is_the_intersection_for_one_step(tmp_path):
     runs = write(tmp_path, [
-        summary("src.agents.baseline:answer", 48, "baseline_50q_runs", failed=("q01", "q02")),
-        summary("src.agents.baseline:answer", 49, "retry_50q_runs", failed=("q02",)),
+        summary("src.agents.baseline:answer", 47, "baseline_50q_runs", failed=("q01", "q02", "q03")),
+        summary("src.graph:answer+gate+critic", 48, "graph_critic_50q_runs", failed=("q01", "q02")),
+        summary("src.graph:answer+gate+critic", 49, "graph_critic_50q_runs", failed=("q02",)),
     ])
-    assert eval_story.always_failed(runs) == ["q02"]
+    assert eval_story.always_failed(runs) == ["q02"]  # final setup only: q03 failed only in the baseline
+    assert eval_story.always_failed(runs, "Baseline") == ["q01", "q02", "q03"]
 
 
 def test_graph_rows_use_round1_and_drop_critic_tokens(tmp_path):
@@ -57,8 +59,10 @@ def test_committed_summaries_match_known_failures():
     runs = eval_story.load_summaries()
     rows = {r["step"]: r for r in eval_story.ladder(runs)}
     assert rows["Multi-agent graph"]["runs"] >= 2 and rows["Graph + Critic"]["runs"] >= 2
-    # m19 failed every baseline-family run; the graph passes it, so no question fails every run.
-    assert "m19_avg_freight_per_order" not in eval_story.always_failed(runs)
+    # m19 failed every baseline-family run; the graph passes it. m10 fails every graph + Critic run.
+    assert "m19_avg_freight_per_order" in eval_story.always_failed(runs, "+ retry")
+    assert eval_story.always_failed(runs) == ["m10_untranslated_categories"]
+    assert all(q in eval_story.FAILURE_NOTES for q in eval_story.always_failed(runs))
     assert all(q in eval_story.question_text() for q in eval_story.FAILURE_NOTES)
 
 
