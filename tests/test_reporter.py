@@ -29,6 +29,8 @@ def test_prompt_has_question_plan_final_sql_and_result(monkeypatch):
     assert "computed answer from the database. Never judge whether it is sufficient" in prompt
     assert "state the answer directly using the values in the result" in prompt
     assert "Only say data is missing if the result is empty or the query failed." in prompt
+    assert "All money values are Brazilian reais: write them as R$ with thousands separators" in prompt
+    assert "never $." in prompt
 
 
 def test_empty_result_and_error_are_stated(monkeypatch):

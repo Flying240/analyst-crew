@@ -11,6 +11,8 @@ INSTRUCTIONS = (
     "state the answer directly using the values in the result, with exact numbers.\n"
     "- Use the plan and the final SQL only to understand what each column means; do not describe the SQL.\n"
     "- Only say data is missing if the result is empty or the query failed.\n"
+    "- All money values are Brazilian reais: write them as R$ with thousands separators (e.g. R$ 45,585.09), "
+    "never $.\n"
     "- Do not speculate beyond the result."
 )
 
