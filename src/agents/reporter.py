@@ -5,17 +5,30 @@ from src.state import CrewState
 
 MAX_ROWS = 20
 
+INSTRUCTIONS = (
+    "Answer the question in 2-4 sentences.\n"
+    "- The query result below is the computed answer from the database. Never judge whether it is sufficient; "
+    "state the answer directly using the values in the result, with exact numbers.\n"
+    "- Use the plan and the final SQL only to understand what each column means; do not describe the SQL.\n"
+    "- Only say data is missing if the result is empty or the query failed.\n"
+    "- Do not speculate beyond the result."
+)
+
+
+def result_text(state: CrewState) -> str:
+    if state.get("error"):
+        return f"The query failed: {state['error']}"
+    rows = state.get("rows", [])
+    if not rows:
+        return "The query returned no rows."
+    lines = [" | ".join(state.get("columns", []))] + [" | ".join(map(str, r)) for r in rows[:MAX_ROWS]]
+    more = f"\n({len(rows) - MAX_ROWS} more rows not shown)" if len(rows) > MAX_ROWS else ""
+    if state.get("truncated"):
+        more += f"\n(The query hit the row limit; only the first {len(rows)} rows were returned. Say so.)"
+    return "\n".join(lines) + more
+
 
 def build_prompt(state: CrewState) -> str:
-    if state.get("error"):
-        result = f"The query failed: {state['error']}"
-    else:
-        rows = state.get("rows", [])
-        lines = [" | ".join(state.get("columns", []))] + [" | ".join(map(str, r)) for r in rows[:MAX_ROWS]]
-        more = f"\n({len(rows) - MAX_ROWS} more rows not shown)" if len(rows) > MAX_ROWS else ""
-        if state.get("truncated"):
-            more += f"\n(The query hit the row limit; only the first {len(rows)} rows were returned. Say so.)"
-        result = "\n".join(lines) + more
     caveat = ""
     if state.get("answerable") == "partly":
         caveat = (
@@ -23,9 +36,9 @@ def build_prompt(state: CrewState) -> str:
             "The app shows this caveat next to the answer, so do not repeat it; just answer what the data covers.\n\n"
         )
     return (
-        "Answer the question in 2-4 sentences using only the query result. "
-        "Give exact numbers; do not speculate beyond the data.\n\n"
-        f"# Question\n{state['question']}\n\n{caveat}# Query result\n{result}\n\nAnswer:"
+        f"{INSTRUCTIONS}\n\n# Question\n{state['question']}\n\n{caveat}"
+        f"# Plan\n{state.get('plan') or '(none)'}\n\n# Final SQL\n{state.get('sql') or '(none)'}\n\n"
+        f"# Query result\n{result_text(state)}\n\nAnswer:"
     )
 
 
