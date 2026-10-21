@@ -172,7 +172,7 @@ The data is the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggl
 ```bash
 python -m venv .venv
 .venv\Scripts\activate            # Windows
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # app deps + kaggle, pytest
 copy .env.example .env            # then add your API keys to .env
 
 # Data (needs %USERPROFILE%\.kaggle\kaggle.json)

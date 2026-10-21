@@ -1,10 +1,10 @@
-duckdb>=1.1
-pandas>=2.2
-python-dotenv>=1.0
-kaggle>=1.6
-pytest>=8.0
-groq>=0.11
-google-genai>=1.0
-langgraph>=1.0
-plotly>=6.0
-streamlit>=1.57
+# Runtime dependencies (Streamlit Community Cloud installs this file). Exact versions = the tested set (Python 3.12).
+# Dev tools (data download, tests): pip install -r requirements-dev.txt
+duckdb==1.5.6
+pandas==3.0.6
+python-dotenv==1.2.4
+groq==1.7.0
+google-genai==2.30.1
+langgraph==1.2.15
+plotly==7.1.0
+streamlit==1.66.0

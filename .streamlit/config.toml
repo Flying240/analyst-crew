@@ -1,0 +1,9 @@
+# Shared by local runs and Streamlit Community Cloud. Secrets go in the Cloud app's Secrets box, never here.
+[client]
+# Visitors see exception types only; full tracebacks go to the server log ("Manage app" on Cloud).
+showErrorDetails = "type"
+# Hide developer options (rerun, clear cache, deploy) from visitors.
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false
